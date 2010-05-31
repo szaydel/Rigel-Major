@@ -1,0 +1,114 @@
+#!/bin/bash
+#: Title       : Execute-daily scripts in user's home directory
+#: Date        : 2010-05-19
+#: Author      : Sam Zaydel
+#: Version     : 0.1.2
+#: Description : Check for daily scripts in user's ~/bin and execute
+#: Options     : None
+#: Path to file: /etc/cron.daily/
+
+## Enable debugging
+# set -x
+
+## Step 1 : Define Variables
+USERDIR=$(ls /home | sed 's/\///g')
+VAR1=""
+VAR2=""
+LOG=/var/log/cron-daily.log
+DATEYMD1=$(date "+%Y%m%d")  ## Produces output similar to : YYYYMMDD
+DATEYMD2=$(date +%F)  ## Produces output similar to : YYYY-MM-DD
+DATELONG=$(date "+%A, %B %d %Y")  ## Produces output similar to : Wednesday, May 19 2010
+TIME24H=$(date "+%H:%M:%S")  ## Produces output using 24hr clock, similar to : HH:MM:SS
+TIME12H=$(date +%r)
+LINE_BREAK80=$(printf "%80s\n" | tr ' ' '=')
+PID_FILE=/var/run/cron-daily.pid
+
+## Step 2 : Setup Functions
+## Function used to check if PID file exists and if it is stale
+check_pid ()
+{
+## Return codes from function are:
+## 0 - PID file does not exist, which is normal and expected
+## 1 - PID file exists, but it is stale, based on the PID being different from '$$'
+## 5 - Process is still active and should prevent new process from being spawned
+if [ -f ${PID_FILE} ]; then
+  local OLD_PID=$(cat ${PID_FILE})
+  local NEW_PID=$$
+  # This will only be read if the PID file is present
+  if [ ${OLD_PID} -eq ${NEW_PID} ]; then
+    RET_CODE=5  # If return code is '5' PID is current and this script is already running 
+    echo return ${RET_CODE}
+      else
+    /bin/ps -p $OLD_PID | grep $(basename $0) ; RET_CODE=$?
+    # If return code is '1' PID file exists, but it is old and needs to be removed
+    
+    echo return ${RET_CODE}
+  fi
+  
+    else
+  RET_CODE=0
+  echo return ${RET_CODE}
+fi
+}
+
+cleanup_pid ()
+{
+if [ -f ${PID_FILE} ]; then
+  /bin/rm -r ${PID_FILE}; RET_CODE=$?
+    else
+  return 1
+fi
+}
+
+write_pid ()
+{
+if [ ! -f ${PID_FILE} ]; then
+  echo $$ > ${PID_FILE}; RET_CODE=$?
+  else
+  return 1
+fi
+}
+
+header ()  ## Header function used at the Start of job
+{
+printf ${LINE_BREAK80}
+printf "%s\n" "${DATEYMD2} ${TIME24H} ### Started cron job ${VAR2}/${FILE} as ${VAR1} ###"
+printf ${LINE_BREAK80}
+}
+
+footer ()
+{
+printf ${LINE_BREAK80}
+printf "%s\n" "${DATEYMD2} ${TIME24H} ### Finished cron job ${FILE} for ${VAR1} ###"
+printf ${LINE_BREAK80}
+}
+
+## Count # of files to be executed
+# NO_OF_FILES=$(ls -l /home/${RUNAS}/bin/run.daily/)
+
+for VAR1 in ${USERDIR}
+   do
+     if [ -d /home/${VAR1}/bin/run.daily ]; then     
+
+# Define Varilabes used inside this for loop
+   FILELIST=$(ls /home/${VAR1}/bin/run.daily) ## File list of run.daily scipts in user's home directory  
+   VAR2=/home/${VAR1}/bin/run.daily ## Produces 
+     for FILE in ${FILELIST}; do
+     
+     linebrk >> ${LOG}
+     printf "%s\n" $(python -c 'print "-" * 20' ; date +%D; python -c 'print "-" * 20';) >> ${LOG}
+     printf "%s\n" "`date +"%R"` - Started cron job ${VAR2}/${FILE} as user ${VAR1} ..." >> ${LOG}
+     su - ${VAR1} -c ${VAR2}/${FILE} ; RESULT=$?
+     linebrk >> ${LOG}
+     printf "%s\n" "`date +"%R"` - Finished cron job ${FILE} for user ${VAR1} ..." >> ${LOG}
+
+## If job did not run successfully print message to log
+     [ ${RESULT} != 0 ] && printf "%s\n" "Job ended abnormally. Exit Status is ${RESULT} ..." >> ${LOG}
+
+# Uncomment below for debugging
+#		  [ $? = 0 ] && echo ${FILE} Ran Successfully... || echo ${FILE} Did not run Successfully...   
+		  done
+     
+       
+	  fi
+   done
