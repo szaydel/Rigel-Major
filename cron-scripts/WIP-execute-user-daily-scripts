@@ -15,49 +15,73 @@ USERDIR=$(ls /home | sed 's/\///g')
 VAR1=""
 VAR2=""
 LOG=/var/log/cron-daily.log
+PID_FILE=/var/run/cron-daily.pid
 DATEYMD1=$(date "+%Y%m%d")  ## Produces output similar to : YYYYMMDD
 DATEYMD2=$(date +%F)  ## Produces output similar to : YYYY-MM-DD
 DATELONG=$(date "+%A, %B %d %Y")  ## Produces output similar to : Wednesday, May 19 2010
 TIME24H=$(date "+%H:%M:%S")  ## Produces output using 24hr clock, similar to : HH:MM:SS
 TIME12H=$(date +%r)
 LINE_BREAK80=$(printf "%80s\n" | tr ' ' '=')
-PID_FILE=/var/run/cron-daily.pid
+MYPID=$$
 
-## Step 2 : Setup Functions
+## Step 2 : Setup Functions used throughout the script
+
 ## Function used to check if PID file exists and if it is stale
 check_pid ()
 {
-## Return codes from function are:
-## 0 - PID file does not exist, which is normal and expected
-## 1 - PID file exists, but it is stale, based on the PID being different from '$$'
-## 5 - Process is still active and should prevent new process from being spawned
-if [ -f ${PID_FILE} ]; then
-  local OLD_PID=$(cat ${PID_FILE})
-  local NEW_PID=$$
-  # This will only be read if the PID file is present
-  if [ ${OLD_PID} -eq ${NEW_PID} ]; then
-    RET_CODE=5  # If return code is '5' PID is current and this script is already running 
-    echo return ${RET_CODE}
-      else
-    /bin/ps -p $OLD_PID | grep $(basename $0) ; RET_CODE=$?
-    # If return code is '1' PID file exists, but it is old and needs to be removed
+    ## Return codes from function are:
+    # 0 - PID file does not exist, which is normal and expected
+    # 1 - PID file exists, but it is stale, based on the PID being different from '$$'
+    # 5 - Process is still active and should prevent new process from being spawned
     
-    echo return ${RET_CODE}
-  fi
-  
+if [ ! -f ${PID_FILE} ]; then
+   RET_CODE=0
+   return ${RET_CODE}
+   
     else
-  RET_CODE=0
-  echo return ${RET_CODE}
+
+  local OLD_PID=$(cat ${PID_FILE})
+  NEED_CLEANUP=""
+  
+  # This will only be read if the PID file is present
+  if [ ${OLD_PID} -ne ${MYPID} ]; then
+  
+  # We need to check for another running process
+    /bin/ps -p ${OLD_PID} | grep $(basename $0) &> /dev/null; RET_CODE=$?
+    
+    case ${RET_CODE} in
+    
+      # If return code is '0' PID belongs to a running process, and this script must die
+      0) echo "Looks like the process with id ${OLD_PID} is still active, this script should die."
+      NEED_CLEANUP=NO
+      RET_CODE=5
+      ;;
+      
+      # If return code is '1' PID file exists, but it is old and needs to be removed      
+      1) echo "The process with id ${OLD_PID} seems to no-longer exist, need clean-up."
+      NEED_CLEANUP=YES
+      RET_CODE=1
+      ;;
+    
+    esac
+        
+      return ${RET_CODE}
+  fi
 fi
 }
 
 cleanup_pid ()
 {
-if [ -f ${PID_FILE} ]; then
-  /bin/rm -r ${PID_FILE}; RET_CODE=$?
-    else
-  return 1
-fi
+local COUNTER=0
+local RET_CODE=1
+
+   while [ -f ${PID_FILE} -a ${COUNTER} -le 3 ]; do
+     /bin/rm -r ${PI1D_FILE}; RET_CODE=$?
+     COUNTER=$(($COUNTER+1))
+     [ ${RET_CODE} -eq 0 ] && COUNTER=4
+   done
+   
+   return ${RET_CODE}
 }
 
 write_pid ()
@@ -82,6 +106,19 @@ printf ${LINE_BREAK80}
 printf "%s\n" "${DATEYMD2} ${TIME24H} ### Finished cron job ${FILE} for ${VAR1} ###"
 printf ${LINE_BREAK80}
 }
+
+## Step 3 : Start of main part of the script
+
+## First we have to check for existance of PID file
+check_pid
+
+if [ ${NEED_CLEANUP} = "YES" ]; then
+   cleanup_pid
+   else
+   die
+fi
+
+## If the return code from the check_pid function 
 
 ## Count # of files to be executed
 # NO_OF_FILES=$(ls -l /home/${RUNAS}/bin/run.daily/)
