@@ -1,19 +1,22 @@
 #!/bin/bash
 #: Title       : Execute-daily scripts in user's home directory
 #: Date        : 2010-05-19
+#: Rev. Date   : 2010-06-27
 #: Author      : Sam Zaydel
-#: Version     : 0.1.2
+#: Version     : 0.1.3
 #: Description : Check for daily scripts in user's ~/bin and execute
 #: Options     : None
 #: Path to file: /etc/cron.daily/
 
 ## Enable debugging
 # set -x
-
-## Step 1 : Define Variables
+###############################################################################
+### Step 1 : Define Variables #################################################
+###############################################################################
 USERDIR=$(ls /home | sed 's/\///g')
-VAR1=""
+USERNAME=""
 VAR2=""
+DEBUG=0
 LOG=/var/log/cron-daily.log
 PID_FILE=/var/run/cron-daily.pid
 DATEYMD1=$(date "+%Y%m%d")  ## Produces output similar to : YYYYMMDD
@@ -24,7 +27,13 @@ TIME12H=$(date +%r)
 LINE_BREAK80=$(printf "%80s\n" | tr ' ' '=')
 MYPID=$$
 
-## Step 2 : Setup Functions used throughout the script
+###############################################################################
+### Step 2 : Setup Functions used throughout the script #######################
+###############################################################################
+debug_return_code ()
+{
+printf "%s\n" "Return Code: ${RET_CODE}"
+}
 
 ## Function used to check if PID file exists and if it is stale
 check_pid ()
@@ -34,32 +43,36 @@ check_pid ()
     # 1 - PID file exists, but it is stale, based on the PID being different from '$$'
     # 5 - Process is still active and should prevent new process from being spawned
     
+    ## Environment Variable 'NEED_CLEANUP' is set to YES with RET_CODE 1 or NO with RET_CODE 5
+    ## 
+    
 if [ ! -f ${PID_FILE} ]; then
    RET_CODE=0
    return ${RET_CODE}
-   
+   [ ${DEBUG} -eq 1 ] && printf "%s\n" "Return Code: ${RET_CODE}"
     else
 
   local OLD_PID=$(cat ${PID_FILE})
-  NEED_CLEANUP=""
+  [ ${DEBUG} -eq 1 ] && printf "%s\n" "The old PID is ${OLD_PID}"
   
   # This will only be read if the PID file is present
   if [ ${OLD_PID} -ne ${MYPID} ]; then
   
   # We need to check for another running process
-    /bin/ps -p ${OLD_PID} | grep $(basename $0) &> /dev/null; RET_CODE=$?
-    
+  #  /bin/ps -p ${OLD_PID} | grep $(basename $0) &> /dev/null; RET_CODE=$?
+  /bin/ps -fwwp ${OLD_PID} | grep $(basename $0); RET_CODE=$?
+  # pgrep -P ${OLD_PID}; RET_CODE=$?
     case ${RET_CODE} in
     
       # If return code is '0' PID belongs to a running process, and this script must die
-      0) echo "Looks like the process with id ${OLD_PID} is still active, this script should die."
-      NEED_CLEANUP=NO
+      0) 
+      [ ${DEBUG} -eq 1 ] && printf "%s\n" "Looks like the process with id ${OLD_PID} is still active, this script should die."
       RET_CODE=5
       ;;
       
       # If return code is '1' PID file exists, but it is old and needs to be removed      
-      1) echo "The process with id ${OLD_PID} seems to no-longer exist, need clean-up."
-      NEED_CLEANUP=YES
+      1) 
+      [ ${DEBUG} -eq 1 ] && printf "%s\n" "The process with id ${OLD_PID} seems to no-longer exist, need clean-up."
       RET_CODE=1
       ;;
     
@@ -76,7 +89,7 @@ local COUNTER=0
 local RET_CODE=1
 
    while [ -f ${PID_FILE} -a ${COUNTER} -le 3 ]; do
-     /bin/rm -r ${PI1D_FILE}; RET_CODE=$?
+     /bin/rm -r ${PID_FILE}; RET_CODE=$?
      COUNTER=$(($COUNTER+1))
      [ ${RET_CODE} -eq 0 ] && COUNTER=4
    done
@@ -86,66 +99,90 @@ local RET_CODE=1
 
 write_pid ()
 {
-if [ ! -f ${PID_FILE} ]; then
-  echo $$ > ${PID_FILE}; RET_CODE=$?
-  else
-  return 1
-fi
+    if [ ! -f ${PID_FILE} ]; then
+        echo $$ > ${PID_FILE}; RET_CODE=$?
+    else
+        return 1
+    fi
 }
 
-header ()  ## Header function used at the Start of job
+die ()
 {
-printf ${LINE_BREAK80}
-printf "%s\n" "${DATEYMD2} ${TIME24H} ### Started cron job ${VAR2}/${FILE} as ${VAR1} ###"
-printf ${LINE_BREAK80}
+exit 1
 }
 
-footer ()
+header ()               ## Header function used at the Start of job
 {
-printf ${LINE_BREAK80}
-printf "%s\n" "${DATEYMD2} ${TIME24H} ### Finished cron job ${FILE} for ${VAR1} ###"
-printf ${LINE_BREAK80}
+    exec 5>>${LOG}
+    printf ${LINE_BREAK80} >&5
+    printf "%s\n" "${DATEYMD2} ${TIME24H} ### Started cron job ${RUN_DAILY_DIR}/${SCRIPT} as user ${USERNAME} ###" >&5
+    printf ${LINE_BREAK80} >&5
+    exec 5>&-
 }
 
-## Step 3 : Start of main part of the script
+footer ()               ## Footer Function used at the End of job
+{
+    exec 5>>${LOG}
+    printf ${LINE_BREAK80} >&5
+    printf "%s\n" "${DATEYMD2} ${TIME24H} ### Finished cron job ${RUN_DAILY_DIR}/${SCRIPT} as user ${USERNAME} ###" >&5
+    printf ${LINE_BREAK80} >&5
+    exec 5>&-
+}
 
+run_script ()
+{
+    exec 5>>${LOG}
+    $*
+    RET_CODE=$?
+    sleep 5
+    exec 5>&-
+    return ${RET_CODE}
+}
+
+###############################################################################
+### Step 3 : Start of main part of the script #################################
+###############################################################################
 ## First we have to check for existance of PID file
 check_pid
 
-if [ ${NEED_CLEANUP} = "YES" ]; then
-   cleanup_pid
-   else
-   die
-fi
+    if [ ${RET_CODE} = "1" ]; then
+        cleanup_pid
+    elif [ ${RET_CODE} = "5" ]; then
+        die
+    fi
 
 ## If the return code from the check_pid function 
 
-## Count # of files to be executed
-# NO_OF_FILES=$(ls -l /home/${RUNAS}/bin/run.daily/)
+## Create PID file here, after we determined that we can continue running.
+write_pid
 
-for VAR1 in ${USERDIR}
+for USERNAME in ${USERDIR}
    do
-     if [ -d /home/${VAR1}/bin/run.daily ]; then     
+   RUN_DAILY_DIR=/home/${USERNAME}/bin/run.daily ## Sets variable RUN_DAILY_DIR to user's run.daily directory
+   
+    if [ -d ${RUN_DAILY_DIR} ]; then     
 
 # Define Varilabes used inside this for loop
-   FILELIST=$(ls /home/${VAR1}/bin/run.daily) ## File list of run.daily scipts in user's home directory  
-   VAR2=/home/${VAR1}/bin/run.daily ## Produces 
-     for FILE in ${FILELIST}; do
-     
-     linebrk >> ${LOG}
-     printf "%s\n" $(python -c 'print "-" * 20' ; date +%D; python -c 'print "-" * 20';) >> ${LOG}
-     printf "%s\n" "`date +"%R"` - Started cron job ${VAR2}/${FILE} as user ${VAR1} ..." >> ${LOG}
-     su - ${VAR1} -c ${VAR2}/${FILE} ; RESULT=$?
-     linebrk >> ${LOG}
-     printf "%s\n" "`date +"%R"` - Finished cron job ${FILE} for user ${VAR1} ..." >> ${LOG}
-
-## If job did not run successfully print message to log
-     [ ${RESULT} != 0 ] && printf "%s\n" "Job ended abnormally. Exit Status is ${RESULT} ..." >> ${LOG}
-
-# Uncomment below for debugging
-#		  [ $? = 0 ] && echo ${FILE} Ran Successfully... || echo ${FILE} Did not run Successfully...   
-		  done
-     
+        FILELIST=$(ls /home/${USERNAME}/bin/run.daily) ## File list of run.daily scipts in user's home directory  
+   
+        for SCRIPT in ${FILELIST}; 
+            do
+    # Now we use functions defined above to execute daily scripts and capture information into a log     
+            header
+            run_script su - ${USERNAME} -c ${RUN_DAILY_DIR}/${SCRIPT} ; RESULT=$?
+            footer
+        
+    ## If job did not run successfully print message to log
+            [ ${RESULT} != 0 ] && printf "%s\n" "Job ended abnormally. Exit Status is ${RESULT} ..." >> ${LOG}
+    
+    # Uncomment below for debugging
+    #		  [ $? = 0 ] && echo ${FILE} Ran Successfully... || echo ${FILE} Did not run Successfully...   
+            done
+        
        
 	  fi
    done
+   
+cleanup_pid               ## After scripts were all run, we need to clean-up the PID file
+RET_CODE=$?
+exit ${RET_CODE}
