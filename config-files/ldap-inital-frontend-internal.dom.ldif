@@ -1,0 +1,60 @@
+# Create top-level object in domain
+dn: dc=internal,dc=dom
+objectClass: top
+objectClass: dcObject
+objectclass: organization
+o: Internal Organization
+dc: Internal
+description: LDAP Example 
+
+# Admin user.
+dn: cn=Manager,dc=internal,dc=dom
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: Manager
+description: LDAP administrator
+userPassword: secret
+
+dn: ou=people,dc=internal,dc=dom
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=internal,dc=dom
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=usera,ou=people,dc=internal,dc=dom
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: usera
+sn: Doe
+givenName: John
+cn: John Doe
+displayName: John Doe
+uidNumber: 10000
+gidNumber: 1010
+userPassword: password
+gecos: John Doe
+loginShell: /bin/bash
+homeDirectory: /home/usera
+shadowExpire: -1
+shadowFlag: 0
+shadowWarning: 7
+shadowMin: 8
+shadowMax: 999999
+shadowLastChange: 10877
+mail: john.doe@example.com
+postalCode: 31000
+l: Toulouse
+o: Example
+mobile: +33 (0)6 xx xx xx xx
+homePhone: +33 (0)5 xx xx xx xx
+title: System Administrator
+postalAddress: 
+initials: JD
+
+dn: cn=admin_ldap_group,ou=groups,dc=internal,dc=dom
+objectClass: posixGroup
+cn: admin_ldap_group
+gidNumber: 1010
