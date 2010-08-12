@@ -1,5 +1,6 @@
 #!/bin/bash
-# Run backintime as szaydel daily
+# Run backintime as part of the run.daily cron job
+# This job is normally kicked-off by /etc/cron.daily/execute-user-daily-scripts
 
 ###############################################################################
 ### Step 1 - Set Variables and Create functions
