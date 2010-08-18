@@ -17,8 +17,8 @@ MYNAME=$(basename $0)
 MYPID=$$
 
 ## Log files and Debug level
-ERRLOG=${LOGSDIR}/error-${MYDATE}.log
-INFOLOG=${LOGSDIR}/info-${MYDATE}.log
+ERRLOG=${LOGSDIR}/error-${MYDATE}-${RUN_AS}.log
+INFOLOG=${LOGSDIR}/info-${MYDATE}-${RUN_AS}.log
 DEBUG=1
 
 # Functions for error control
