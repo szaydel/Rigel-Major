@@ -1,0 +1,126 @@
+#!/bin/sh
+# /etc/init.d/fastcgi-php
+#
+# System-V like init script for fastcgi-php.
+#
+### BEGIN INIT INFO
+# Provides:          fastcgi-php
+# Required-Start:    $local_fs $network $syslog
+# Required-Stop:     $local_fs $network $syslog
+# Should-Start:      nginx
+# Should-Stop:       
+# X-Start-Before:    
+# X-Stop-After:      
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# X-Interactive:     true
+# Short-Description: Fast CGI PHP gateway for Nginx WWW server
+# Description:       Script used to spawn a number of php5-cgi processes, 
+#                    which are accessed by nginx www server
+### END INIT INFO
+
+## Importing generic functions for LSB compliance
+. /lib/lsb/init-functions
+
+## Define path which should be searched by the script
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+## Debug variable could be set to 1 or above, for more detailed output
+DEBUG="0"
+FCGIPHP_BIN_PATH="/usr/bin/php5-cgi"
+FCGIPHP_USER="www-data"
+FCGIPHP_GROUP="www-data"
+FCGIPHP_CHILDREN="6"
+FCGIPHP_MAX_REQUEST="1000"
+FCGIPHP_SERVER_ADDR="127.0.0.1"
+FCGIPHP_SOCKET="/tmp/php-fastcgi.sock"
+PIDFILE="/var/run/php5-fastcgi.pid"
+SPAWN_FCGI="/usr/bin/spawn-fcgi"
+FCGIPHP_ENV="SHELL PATH USER"
+
+# Primary command used to create spawned processes
+# based on the variabled defined above
+COMMAND_ARGS="${SPAWN_FCGI} -C ${FCGIPHP_CHILDREN} -s ${FCGIPHP_SOCKET} -f ${FCGIPHP_BIN_PATH} -u ${FCGIPHP_USER} -g ${FCGIPHP_GROUP} -P ${PIDFILE}"
+
+export FCGIPHP_MAX_REQUEST
+export FCGIPHP_SERVER_ADDR
+ALLOWED_ENV="$FCGIPHP_ENV FCGIPHP_MAX_REQUEST FCGIPHP_SERVER_ADDR"
+E=""
+for i in $ALLOWED_ENV; do
+	eval "x=\$$i"
+	E="$E $i=$x"
+done
+
+start(){
+    echo "[INFO] ... STARTING PHP-FCGI ..."
+	if [ -f "${PIDFILE}" ]; then
+            echo "[WARN] PHP-FCGI is running already. PID file ${PIDFILE} exists."
+            RETVAL=1
+        elif [ -n "$(pgrep $(basename ${FCGIPHP_BIN_PATH}))" ]; then
+            echo "[WARN] PHP-FCGI is running already. PID file is missing!"
+        else
+            start_daemon ${COMMAND_ARGS}
+            RETVAL=$?
+    fi
+    
+	# echo $COMMAND_ARGS
+	# env - $E $COMMAND_ARGS
+}
+
+stop(){
+	echo "[INFO] ... STOPPING PHP-FCGI ..."	
+
+	if [ -f "${PIDFILE}" ]; then
+	        killproc -p "${PIDFILE}"
+	        rm -f "${PIDFILE}"
+            rm -f "${FCGIPHP_SOCKET}"
+	        RETVAL=$?
+        elif [ -n "$(pgrep $(basename ${FCGIPHP_BIN_PATH}))" ]; then
+            printf "%s\n" "[WARN] PHP-FCGI is not running, or" "[WARN] PID file ${PIDFILE} may have been removed."
+            ## echo "[INFO] Removing $(basename ${FCGIPHP_BIN_PATH})"
+            killall $(basename $FCGIPHP_BIN_PATH)
+            rm -f "${FCGIPHP_SOCKET}"
+            RETVAL=$?
+        else
+            echo "PHP-FCGI is not running."
+            RETVAL=1
+    fi
+}
+
+#Main################
+case "$1" in
+    'start')
+            [ "${DEBUG}" -ge 1 ] && set -x
+            log_daemon_msg "Starting Service" "fastcgi-php"
+            start
+            ;;
+    
+    'stop')
+            [ "${DEBUG}" -ge 1 ] && set -x
+            log_daemon_msg "Stopping Service" "fastcgi-php"
+            stop
+            ;;
+    
+    'status')
+            status_of_proc -p "${PIDFILE}" "${FCGIPHP_BIN_PATH}" fastcgi-php
+            exit $?
+            ;;
+
+    reload|force-reload)  
+            log_warning_msg "Online reload not supported"  
+            ;;
+    
+    'restart')
+            log_daemon_msg "Restarting Service" "fastcgi-php"
+            stop
+            sleep 2
+            start
+            ;;
+
+    *)
+            echo "usage: $0 {start|stop|reload|force-reload|restart}"
+            ;;
+
+esac
+
+exit "${RETVAL:-1}"

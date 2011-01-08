@@ -7,7 +7,7 @@
 
 Defaults	env_reset
 Defaults	set_home
-Defaults	env_keep = "LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS XDG_SESSION_COOKIE"
+Defaults	env_keep = "EDITOR LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS XDG_SESSION_COOKIE"
 # Comment out the preceding line and uncomment the following one if you need
 # to use special input methods. This may allow users to compromise  the root
 # Host alias specification
@@ -21,9 +21,9 @@ ALL	ALL = (ALL) ALL
 # Cmnd alias specification
 Cmnd_Alias      NETW = /sbin/iwconfig , /usr/bin/iw , /sbin/iwlist , /sbin/iwpriv , /sbin/ifconfig , /usr/sbin/arp , /usr/bin/arping
 Cmnd_Alias	DISK = /sbin/mdadm,/sbin/pv*,/sbin/vg*,/sbin/lv*,/sbin/fdisk,/sbin/mkfs*
-Cmnd_Alias	SFW = /usr/bin/apt*,/usr/bin/dpkg,
-Cmnd_Alias	FS = /bin/mount , /bin/umount
-# Cmnd_Alias	APTCONF = "vi /etc/apt/*"
+Cmnd_Alias	SFW = /usr/bin/apt*,/usr/bin/dpkg
+Cmnd_Alias	FS = /bin/mount,/bin/umount
+# Cmnd_Alias	APTCONF = 
 #
 # User privilege specification
 root	ALL=(ALL) ALL
@@ -36,4 +36,4 @@ root	ALL=(ALL) ALL
 # Members of the admin group may gain root privileges
 %admin ALL=(ALL) ALL
 # No Password Required for the following set of commands
-SYSADMIN	ALL=(COMMANDS_AS_ROOT) NOPASSWD: NETW , DISK , SFW, FS, APTCONF
+SYSADMIN	ALL=(COMMANDS_AS_ROOT) NOPASSWD: NETW , DISK , SFW, FS, # APTCONF
