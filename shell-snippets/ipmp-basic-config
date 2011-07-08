@@ -1,0 +1,51 @@
+file : /etc/hostname.ipmp0
+ipmp group ipmp0 10.1.10.54 netmask 255.255.255.0 up
+
+file: /etc/hostname.igb0
+10.1.10.55 netmask 255.255.255.0 mtu 9000  broadcast + group ipmp0 -failover up
+
+file: /etc/hostname.igb1
+10.1.10.56 netmask 255.255.255.0 mtu 9000  broadcast + group ipmp0 -failover up
+
+
+
+### Design based on IPMP ClearView documentation
+
+1) Edit the /etc/hostname.ipmp-interface file
+
+## file: /etc/hostname.ipmp0
+ipmp group pri_192_168_1_0 192.168.1.221 netmask 255.255.252.0 up
+	addif 192.168.1.222 netmask 255.255.252.0 up
+	addif 192.168.1.223 netmask 255.255.252.0 up
+	addif 192.168.1.224 netmask 255.255.252.0 up
+
+2) Edit the /etc/hostname.physical-interface file
+
+## file: /etc/hostname.e1000g0
+group pri_192_168_1_0 -failover mtu 9000 1.1.1.101 netmask 255.255.255.0 up
+
+## file: /etc/hostname.e1000g1
+group pri_192_168_1_0 -failover mtu 9000 1.1.1.102 netmask 255.255.255.0 up
+
+3) Create routes for monitoring network
+# route add  192.168.8.0 192.168.8.1 255.255.252.0
+
+4) Consider Startup script for Target creation
+
+#!/bin/sh
+TARGETS="192.168.85.117 192.168.85.127 192.168.85.137"
+
+case "$1" in
+        'start')
+            /usr/bin/echo "Adding static routes for use as IPMP targets"
+		for target in $TARGETS; do
+	  /usr/sbin/route add -host $target $target
+		done
+                  ;;
+        'stop')
+              /usr/bin/echo "Removing static routes for use as IPMP targets"
+		 for target in $TARGETS; do
+		/usr/sbin/route delete -host $target $target
+		 done
+                  ;;
+  esac  

@@ -1,0 +1,17 @@
+# Database settings
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+delete: olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn="cn=admin,dc=internal,dc=dom" write by * none
+-
+add: olcAccess: {0}to attrs=userPassword,shadowLastChange by dn="cn=admin,dc=internal,dc=dom" write by anonymous auth by * none
+-
+delete: olcAccess: {1}to dn.base="" by * read
+-
+add: olcAccess: {1}to dn.base="" by dn="cn=proxyagent,ou=profile,dc=internal,dc=dom" read by * read
+-
+delete: olcAccess: {2}to * by self write by dn="cn=admin,dc=internal,dc=dom" write by * read
+-
+add: olcAccess: {2}to * by dn="cn=admin,dc=internal,dc=dom" write by users read
+-
+add: olcAccess: {3}to dn.subtree="ou=people,dc=internal,dc=dom" attrs=userPassword,shadowLastChange by dn="cn=admin,dc=internal,dc=dom" write by dn="cn=proxyagent,ou=profile,dc=internal,dc=dom" write by anonymous auth by self write by * none
+-

@@ -1,0 +1,7 @@
+dn: cn=netadmins,ou=netgroups,dc=lab,dc=internal,dc=dom
+objectClass: top
+objectClass: nisNetgroup
+nisnetgrouptriple: (,usera,)
+nisnetgrouptriple: (,userb,)
+nisnetgrouptriple: (,userc,)
+cn: netadmins

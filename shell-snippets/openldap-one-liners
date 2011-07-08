@@ -1,0 +1,7 @@
+# ldapsearch -cxWD cn=admin,dc=lab,dc=internal,dc=dom -b "dc=lab,dc=internal,dc=dom"
+# ldapsearch -H ldap://localhost -x -D "cn=admin,dc=lab,dc=internal,dc=dom" \
+-W -b "dc=lab,dc=internal,dc=dom" \
+-s sub -a always \
+-z 1000 '(uid=user*)' 'objectClass'
+
+# ldapadd -cxWD cn=admin,dc=lab,dc=internal,dc=dom -f /root/name-of-input.ldif

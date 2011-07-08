@@ -1,0 +1,12 @@
+# nmc -c "show all -vv" | gzip -c > /tmp/nmc-all-p-$(hostname)-$(date +%Y%m%d).gz
+# fmdump -eV -t5day | gzip -9 -c > fmdump-$(hostname)-$(date +%Y%m%d).gz
+# /usr/bin/hddisco > /tmp/diskinfo-$(hostname)-$(date +%Y%m%d).txt
+# zfs get all > /tmp/zfs-props-$(hostname)-$(date +%Y%m%d).txt
+# iostat -En > /tmp/iostat_En-$(hostname)-$(date +%Y%m%d).txt
+# iostat -xeCn 5 5 > /tmp/iostat_xeCn-$(hostname)-$(date +%Y%m%d).txt
+
+# kstat -p *:*:mac:*errors >> /tmp/kstat_err-$(hostname)-$(date +%Y%m%d).txt
+# kstat -p *:*:statistics:*[Ee]rror* >> /tmp/kstat_err-$(hostname)-$(date +%Y%m%d).txt
+# kstat -p link:*:*:*err* >> /tmp/kstat_err-$(hostname)-$(date +%Y%m%d).txt
+# kstat -p aggr:*:statistics:*[Ee]rror* >> /tmp/kstat_err-$(hostname)-$(date +%Y%m%d).txt
+

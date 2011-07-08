@@ -1,0 +1,130 @@
+version: 1
+
+dn: uid=userb,ou=people,dc=alpha,dc=homer,dc=lab
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: userb
+gidNumber: 10101
+homeDirectory: /home/userb
+sn: UserB
+uid: userb
+uidNumber: 10003
+displayName: UserB
+gecos: I am your common LDAP user
+givenName: None
+homePhone: +33 (0)5 xx xx xx xx
+initials: UB
+l: Toulouse
+loginShell: /bin/bash
+mail: none
+mobile: +33 (0)6 xx xx xx xx
+o: Example
+postalAddress: 
+postalCode: 31000
+shadowExpire: -1
+shadowFlag: 0
+shadowLastChange: 10877
+shadowMax: 999999
+shadowMin: 8
+shadowWarning: 7
+title: Generic Lab User
+userPassword:: e1NTSEF9TU56VjQ2MFBUUkJBYVJoVGNkQ1RzRmVLRDAydWY5aVpOT24rL0E9P
+ Q==
+
+dn: uid=usera,ou=people,dc=alpha,dc=homer,dc=lab
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: usera
+gidNumber: 10101
+homeDirectory: /home/usera
+sn: UserA
+uid: usera
+uidNumber: 10002
+displayName: UserA
+gecos: I am your common LDAP user
+givenName: None
+homePhone: +33 (0)5 xx xx xx xx
+initials: UB
+l: Toulouse
+loginShell: /bin/bash
+mail: none
+mobile: +33 (0)6 xx xx xx xx
+o: Example
+postalAddress: 
+postalCode: 31000
+shadowExpire: -1
+shadowFlag: 0
+shadowLastChange: 10877
+shadowMax: 999999
+shadowMin: 8
+shadowWarning: 7
+title: Generic Lab User
+userPassword:: e1NTSEF9ZkRYTW9XSHdqMGg3NHlHVEpzWnE3N0hUUk0yb1VnZHJDYXV5MVE9P
+ Q==
+
+dn: uid=userc,ou=people,dc=alpha,dc=homer,dc=lab
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: userc
+gidNumber: 10101
+homeDirectory: /home/userc
+sn: UserC
+uid: userc
+uidNumber: 10004
+displayName: UserC
+gecos: I am your common LDAP user
+givenName: None
+homePhone: +33 (0)5 xx xx xx xx
+initials: UC
+l: Toulouse
+loginShell: /bin/bash
+mail: none
+mobile: +33 (0)6 xx xx xx xx
+o: Example
+postalAddress: 
+postalCode: 31000
+shadowExpire: -1
+shadowFlag: 0
+shadowLastChange: 10877
+shadowMax: 999999
+shadowMin: 8
+shadowWarning: 7
+title: Generic Lab User
+userPassword:: e1NTSEF9aGQ2QTdHT05mcitUNGcwMmdHT2tkRmJJaVNtMFpSeC8vbk5SSWc9P
+ Q==
+
+dn: uid=linuxapp-a,ou=people,dc=alpha,dc=homer,dc=lab
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: linuxapp-a
+gidNumber: 1099
+homeDirectory: /home/linuxapp-a
+sn: Critical Application
+uid: linuxapp-a
+uidNumber: 1099
+displayName: Critical Application NFS App Account
+gecos: I am your common LDAP user
+givenName: None
+homePhone: +33 (0)5 xx xx xx xx
+initials: UB
+l: Toulouse
+loginShell: /bin/bash
+mail: none
+mobile: +33 (0)6 xx xx xx xx
+o: Example
+postalAddress: 
+postalCode: 31000
+shadowExpire: -1
+shadowFlag: 0
+shadowLastChange: 10877
+shadowMax: 999999
+shadowMin: 8
+shadowWarning: 7
+title: Generic Lab User
+userPassword:: e1NTSEF9M0N1VDN2ZW5aZGV1RDVqUHl6RW54aGxPOGd6ZXczVHJoVHpnd3c9P
+ Q==
+

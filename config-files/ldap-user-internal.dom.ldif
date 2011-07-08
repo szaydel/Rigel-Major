@@ -1,0 +1,35 @@
+version: 1
+
+dn: cn=admin_a,ou=superusers,dc=internal,dc=dom
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: admin_a
+gidNumber: 501
+homeDirectory: /home/admin_a
+sn: Admin
+uid: admin_a
+uidNumber: 10011
+givenName: Admin A User
+loginShell: /bin/bash
+shadowExpire: -1
+shadowFlag: 0
+shadowInactive: 180
+shadowLastChange: 
+shadowMax: 999999
+shadowMin: 8
+shadowWarning: 14
+userPassword:
+
+
+
+dn: cn=netadmins,ou=netgroups,dc=lab,dc=internal,dc=dom
+objectClass: top
+objectClass: nisNetgroup
+nisnetgrouptriple: (,usera,)
+nisnetgrouptriple: (,userb,)
+nisnetgrouptriple: (,userc,)
+cn: netadmins

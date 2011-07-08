@@ -1,0 +1,145 @@
+;
+; BIND data file for internal.dom Domain
+;
+$TTL	3D
+@	IN	SOA	server03.internal.dom. root.server03. (
+			2010111141
+			604800
+			86400
+			2419200
+			604800 )
+;
+@	IN	NS	server03.internal.dom.
+server03 IN      A       192.168.1.8
+@       IN      A       192.168.1.8
+server03	IN TXT		"Main infrastructure server"
+@	IN	AAAA	::1
+;		IN Individual	Servers
+router		IN A		192.168.0.1
+router		IN TXT		"Untangle Router/Gateway Virtual Machine"
+tmrouter	IN A		192.168.1.2
+tmrouter	IN TXT		"Linksys T-Mobile WRTU54G-TM Router"
+wap		IN A		192.168.1.3
+vmhost		IN A		192.168.1.6
+vmhost		IN TXT		"VMWare ESX Virtual Host"
+server01	IN A		192.168.1.5
+server02	IN A		192.168.1.7
+server02	IN TXT		"Default NFS Server - server02"
+server03	IN A		192.168.1.8
+server03	IN TXT		"Primary Server - VM"
+server-vma-1	IN A		192.168.1.9
+server-vma-1	IN TXT		"VMware ESX Virtual Administration Appliance"
+server04	IN A		192.168.1.10
+printerc01	IN A		192.168.1.11
+printerc01	IN TXT		"Brother Color Printer"
+;		IN A		192.168.1.12	
+;		IN A		192.168.1.13
+;		IN A		192.168.1.14
+athens-wap	IN A		192.168.1.15
+athens-wap	IN TXT		"Buffalo WZR-HP-G300NH Wireless Router/AP"
+;		IN A		192.168.1.16
+;		IN A		192.168.1.17
+;		IN A		192.168.1.18
+;		IN A		192.168.1.19
+;		IN A		192.168.1.20
+;		IN A		192.168.1.21
+skrouter	IN A		192.168.1.22
+skrouter	IN TXT		"Skype VOIP Router"
+;wap		IN A		192.168.1.21
+htpc.internal.dom.	IN	A	192.168.1.25
+nasdev02	IN TXT		"Open Filer Virtual Server"
+server-vm1	IN A		192.168.1.30
+server-vm2	IN A		192.168.1.31
+server-vm3	IN A		192.168.1.32
+server-vm4	IN A		192.168.1.33
+server-vm5	IN A		192.168.1.34
+server-vm6	IN A		192.168.1.35
+server-vm7	IN A		192.168.1.36
+server-vm8	IN A		192.168.1.37
+server-vm9	IN A		192.168.1.38
+server-lab1	IN A		192.168.1.40
+server-lab1	IN TXT		"Lab server 1"
+server-lab2	IN A		192.168.1.41
+server-lab2	IN TXT		"Lab server 2"
+server-lab3	IN A		192.168.1.42
+server-lab3	IN TXT		"Lab server 3"
+server-lab4	IN A		192.168.1.43
+server-lab4	IN TXT		"Lab server 4"
+server-lab5	IN A		192.168.1.44
+server-lab5	IN TXT		"Lab server 5"
+server-lab6	IN A		192.168.1.45
+server-lab6	IN TXT		"Lab server 6"
+server-lab7	IN A		192.168.1.46
+server-lab7	IN TXT		"Lab server 7"
+server-lab8	IN A		192.168.1.47
+server-lab8	IN TXT		"Lab server 8"
+server-lab9	IN A		192.168.1.48
+server-lab9	IN TXT		"Lab server 9"
+server-lab10	IN A		192.168.1.49
+server-lab10	IN TXT		"Lab server 10"
+server-lab11	IN A		192.168.1.50
+server-lab11	IN TXT		"Lab server 11"
+server-lab12	IN A		192.168.1.51
+server-lab12	IN TXT		"Lab server 12"
+server-lab13	IN A		192.168.1.52
+server-lab13	IN TXT		"Lab server 13"
+server-lab14	IN A		192.168.1.53
+server-lab14	IN TXT		"Lab server 14"
+server-lab15	IN A		192.168.1.54
+server-lab15	IN TXT		"Lab server 15"
+filer-nex-lab1	IN A		192.168.1.70
+filer-nex-lab1	IN TXT		"Nexenta Filer - Lab server 1"
+filer-nex-lab2	IN A		192.168.1.71
+filer-nex-lab2	IN TXT		"Nexenta Filer - Lab server 2"
+filer-nex-lab3	IN A		192.168.1.72
+filer-nex-lab3	IN TXT		"Nexenta Filer - Lab server 3"
+filer-nex-lab4	IN A		192.168.1.73
+filer-nex-lab4	IN TXT		"Nexenta Filer - Lab server 4"
+filer-nex-lab5	IN A		192.168.1.74
+filer-nex-lab5	IN TXT		"Nexenta Filer - Lab server 5"
+filer-nex-lab6	IN A		192.168.1.75
+filer-nex-lab6	IN TXT		"Nexenta Filer - Lab server 6"
+filer-nex-lab7	IN A		192.168.1.76
+filer-nex-lab7	IN TXT		"Nexenta Filer - Lab server 7"
+filer-nex-lab8	IN A		192.168.1.77
+filer-nex-lab8	IN TXT		"Nexenta Filer - Lab server 8"
+filer-nex-lab9	IN A		192.168.1.78
+filer-nex-lab9	IN TXT		"Nexenta Filer - Lab server 9"
+filer-nex-lab10	IN A		192.168.1.79
+filer-nex-lab10	IN TXT		"Nexenta Filer - Lab server 10"
+pyxis-laptop	IN A		192.168.1.109
+pyxis-laptop	IN TXT		"Sam's Laptop - DHCP Addr"
+europa-laptop	IN A		192.168.1.110
+europa-laptop	IN TXT		"Laura's Laptop - DHCP Addr"
+;		IN Various	Aliases
+sam		IN CNAME	pyxis-laptop
+laura		IN CNAME	europa-laptop
+gateway		IN CNAME	router
+gw		IN CNAME	router
+vr		IN CNAME	tmrouter
+voip		IN CNAME	tmrouter
+skype		IN CNAME	skrouter
+nfsserver	IN CNAME	server02
+dns		IN CNAME	server03
+proxy		IN CNAME	server03
+ntp		IN CNAME	server03
+timeserver	IN CNAME	server03
+storage		IN CNAME	server04
+esxhost		IN CNAME	vmhost
+vma-admin	IN CNAME	server-vma-1
+puppet		IN CNAME	server-lab1
+puppet-master	IN CNAME	server-lab1
+puppet-node-1	IN CNAME	server-lab2
+lampsrv1	IN CNAME	server-vm1
+lempsrv1	IN CNAME	server-vm2
+beta		IN CNAME        server-vm2
+lampsrv2	IN CNAME	server-vm3
+alpha		IN CNAME	server-vm3
+zen		IN CNAME        server-vm3
+ldap-master	IN CNAME	server-vm4
+sandb-ns-1	IN CNAME	server-vm5
+lampsrv3	IN CNAME	server-vm6
+zulu		IN CNAME        server-vm6
+webmin.internal.dom.	IN	CNAME	server03
+joombox.internal.dom.	IN	CNAME	server-vm4
+bigstorage.internal.dom.	IN	CNAME	server-vm5

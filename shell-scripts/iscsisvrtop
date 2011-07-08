@@ -1,0 +1,288 @@
+#!/usr/bin/ksh
+#
+# iscsisvrtop - display top iSCSI I/O events on a server.
+#
+# This is measuring the response time between an incoming iSCSI operation
+# and its response. In general, this measures the server's view of how
+# quickly it can respond to requests. By default, the list shows responses
+# to each client.
+#
+# Top-level fields:
+#	load	1 min load average
+#	read	total KB read during sample
+#	write	total KB sync writes during sample
+#
+# The following per-client and "all" clients fields are shown
+#	Client	IP addr of client
+#	IOPS	NFS operations per second
+#	Reads	Read operations per second
+#	Writes	Sync write operations per second
+#	Pending	Approximate number of I/Os pending service
+#	Rd(KB)	Read KB/sec
+#	Wr(KB)	Sync write KB/sec
+#	Rd_t	Average read time in microseconds
+#	Wr_t	Average sync write time in microseconds
+#
+# INSPIRATION:  top(1) by William LeFebvre and iotop by Brendan Gregg
+#
+# Copyright 2011, Nexenta Systems, Inc. All rights reserved.
+#
+# CDDL HEADER START
+#
+#  The contents of this file are subject to the terms of the
+#  Common Development and Distribution License, Version 1.0 only
+#  (the "License").  You may not use this file except in compliance
+#  with the License.
+#
+#  You can obtain a copy of the license at Docs/cddl1.txt
+#  or http://www.opensolaris.org/os/licensing.
+#  See the License for the specific language governing permissions
+#  and limitations under the License.
+#
+# CDDL HEADER END
+#
+# Author: Richard.Elling@Nexenta.com
+#
+# Revision:
+#   1.1	31-May-2011
+#
+# TODO: running count of nfsd threads (done efficiently)
+# TODO: mount point filter
+
+##############################
+# --- Process Arguments ---
+#
+
+### default variables
+opt_client=0	# set if -c option set
+opt_clear=1		# set if screen to be cleared
+opt_top=0		# set if list trimmed to top
+top=0			# number of lines trimmed
+interval=10		# default interval
+count=-1		# number of intervals to show
+
+### process options
+while getopts c:Cm:t: name
+do
+	case $name in
+	c)	opt_client=1; client_IP=$OPTARG ;;
+	C)	opt_clear=0 ;;
+	t)	opt_top=1; top=$OPTARG ;;
+	h|?)	cat <<-END >&2
+		USAGE: iscsisvrtop [-C] [-c client_IP] [-t top] [interval [count]]
+					-c client_IP  # trace for this client only
+					-C            # don't clear the screen
+					-t top        # print top number of entries only
+		   eg,
+		        iscsisvrtop       # default output, 10 second samples
+		        iscsisvrtop 1     # 1 second samples
+		        iscsisvrtop -C 60 # 60 second samples, do not clear screen
+		        iscsisvrtop -t 20 # print top 20 lines only
+		        iscsisvrtop 5 12  # print 12 x 5 second samples
+		END
+		exit 1
+	esac
+done
+
+shift $(( $OPTIND - 1 ))
+
+### option logic
+if [[ "$1" > 0 ]]; then
+        interval=$1; shift
+fi
+if [[ "$1" > 0 ]]; then
+        count=$1; shift
+fi
+if (( opt_clear )); then
+        clearstr=$(clear)
+else
+        clearstr=""
+fi
+
+
+
+#################################
+# --- Main Program, DTrace ---
+#
+/usr/sbin/dtrace -n '
+/*
+ * Command line arguments
+ */
+inline int OPT_client	= '$opt_client';
+inline int OPT_clear 	= '$opt_clear';
+inline int OPT_top 	= '$opt_top';
+inline int INTERVAL 	= '$interval';
+inline int COUNTER 	= '$count';
+inline int TOP 	= '$top';
+inline string CLIENT	= "'$client_IP'";
+inline string CLEAR 	= "'$clearstr'";
+
+#pragma D option quiet
+
+/* increase dynvarsize if you get "dynamic variable drops" */
+#pragma D option dynvarsize=8m
+
+/*
+ * Print header
+ */
+dtrace:::BEGIN 
+{
+	/* starting values */
+	counts = COUNTER;
+	secs = INTERVAL;
+	total_bytes_read = 0;
+	total_bytes_write = 0;
+
+	printf("Tracing... Please wait.\n");
+}
+
+/*
+ * Filter as needed, based on starts
+ */
+iscsi:::xfer-start,
+iscsi:::nop-receive
+/OPT_client == 0 || CLIENT == args[0]->ci_remote/
+{ 
+	@c_io_ops[args[0]->ci_remote] = count();
+	OPT_client == 0 ? @c_io_ops["all"] = count() : 1;
+	@op_pending[args[0]->ci_remote] = sum(1);
+	ts[arg1] = timestamp;
+}
+
+/* 
+ * read operations 
+ */
+iscsi:::xfer-done 
+/ts[arg1] != 0 && arg8 != 0/
+{
+	t = timestamp - ts[arg1];
+	@op_pending[args[0]->ci_remote] = sum(-1);
+	@op_count[args[0]->ci_remote] = count();
+	@count_read[args[0]->ci_remote] = count();
+	@avgtime_read[args[0]->ci_remote] = avg(t);
+	@bytes_read[args[0]->ci_remote] = sum(args[2]->xfer_len);
+	total_bytes_read += args[2]->xfer_len;
+	ts[arg1] = 0;
+}
+
+/*
+ * write operations
+ */
+iscsi:::xfer-done 
+/ts[arg1] != 0 && arg8 == 0/
+{
+	t = timestamp - ts[arg1];
+	@op_pending[args[0]->ci_remote] = sum(-1);
+	@op_count[args[0]->ci_remote] = count();
+	@count_write[args[0]->ci_remote] = count();
+	@avgtime_write[args[0]->ci_remote] = avg(t);
+	@bytes_write[args[0]->ci_remote] = sum(args[2]->xfer_len);
+	total_bytes_write += args[2]->xfer_len;
+	ts[arg1] = 0;
+}
+
+/*
+ * nops are ops too!
+ */
+iscsi:::nop-send
+/ts[arg1] != 0/
+{
+	t = timestamp - ts[arg1];
+	@op_count[args[0]->ci_remote] = count();
+	@op_pending[args[0]->ci_remote] = sum(-1);
+	@count_nop[args[0]->ci_remote] = count();
+	@avgtime_nop[args[0]->ci_remote] = avg(t);
+	ts[arg1] = 0;
+} 
+
+/*
+ * timer
+ */
+profile:::tick-1sec
+{
+	secs--;
+}
+
+/*
+ * Print report
+ */
+profile:::tick-1sec
+/secs == 0/
+{	
+	/* fetch 1 min load average */
+	self->load1a  = `hp_avenrun[0] / 65536;
+	self->load1b  = ((`hp_avenrun[0] % 65536) * 100) / 65536;
+
+	/* convert counters to Kbytes */
+	total_bytes_read /= 1024;
+	total_bytes_write /= 1024;
+
+	/* normalize to seconds giving a rate */
+	/* todo: this should be measured, not based on the INTERVAL */
+	normalize(@c_io_ops, INTERVAL);
+	normalize(@op_count, INTERVAL);
+	normalize(@count_read, INTERVAL);
+	normalize(@count_write, INTERVAL);
+	normalize(@count_nop, INTERVAL);
+	
+	/* normalize to KB per second */
+	normalize(@bytes_read, 1024 * INTERVAL);
+	normalize(@bytes_write, 1024 * INTERVAL);
+	
+	/* normalize average to microseconds */
+	normalize(@avgtime_read, 1000);
+	normalize(@avgtime_write, 1000);
+	normalize(@avgtime_nop, 1000);
+
+	/* print status */
+	OPT_clear ? printf("%s", CLEAR) : 1;
+	printf("%Y, load: %d.%02d, read: %6d KB, write: %6d KB\n",
+	    walltimestamp, self->load1a, self->load1b, 
+		total_bytes_read, total_bytes_write);
+
+	/* print headers */
+	printf("%-15s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\n",
+	    "Client", "Ops", 
+		"Reads", "Writes", "NOPs", "Pending", 
+		"Rd_KB/s", "Wr_KB/s",
+		"Rd_t", "Wr_t", "NOP_t");
+
+	/* truncate to top lines if needed */
+	OPT_top ? trunc(@c_io_ops, TOP) : 1;
+
+	printa("%-15s\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\n",
+		@c_io_ops, @count_read, @count_write, @count_nop, @op_pending,
+		@bytes_read, @bytes_write,
+		@avgtime_read, @avgtime_write, @avgtime_nop);
+
+	/* clear data */
+	trunc(@c_io_ops); trunc(@count_read); trunc(@count_write); trunc(@count_nop);
+	trunc(@op_pending);
+	trunc(@bytes_read); trunc(@bytes_write);
+	trunc(@avgtime_read); trunc(@avgtime_write); trunc(@avgtime_nop);
+	total_bytes_read = 0;
+	total_bytes_write = 0;
+	secs = INTERVAL;
+	counts--;
+}
+
+/*
+ * end of program 
+ */
+profile:::tick-1sec
+/counts == 0/
+{
+	exit(0);
+}
+
+/*
+ * clean up when interrupted
+ */
+dtrace:::END
+{
+	trunc(@c_io_ops); trunc(@count_read); trunc(@count_write); trunc(@count_nop);
+	trunc(@op_pending);
+	trunc(@bytes_read); trunc(@bytes_write);
+	trunc(@avgtime_read); trunc(@avgtime_write); trunc(@avgtime_nop);
+}
+'

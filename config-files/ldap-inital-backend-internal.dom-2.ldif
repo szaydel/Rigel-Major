@@ -1,0 +1,72 @@
+dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcIdleTimeout: 30
+olcLogLevel: stats config
+olcReferral: ldap://ldap.internal.dom
+olcAllows: bind_anon_cred proxy_authz_anon
+olcAuthzPolicy: any
+
+# Load dynamic backend modules
+dn: cn=module,cn=config
+objectClass: olcModuleList
+cn: module
+olcModulepath: /usr/lib/ldap
+olcModuleLoad: back_hdb
+olcModuleLoad: back_monitor
+olcModuleLoad: back_password
+
+# Database settings
+dn: olcDatabase=hdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcHdbConfig
+olcDatabase: {1}hdb
+olcSuffix: dc=internal,dc=dom
+olcDbDirectory: /var/lib/ldap
+olcRootDN: cn=admin,dc=internal,dc=dom
+olcRootPW: secret
+olcDbConfig: set_cachesize 0 2097152 0
+olcDbConfig: set_lk_max_objects 1500
+olcDbConfig: set_lk_max_locks 1500
+olcDbConfig: set_lk_max_lockers 1500
+olcDbIndex: objectClass eq
+olcDbIndex: cn,sn,uid,mail pres,eq,approx,sub
+#olcDbIndex: uid eq
+#olcDbIndex: cn eq
+olcDbIndex: uidNumber eq
+olcDbIndex: gidNumber eq
+olcDbIndex: memberUid eq
+olcDbIndex: uniqueMember eq
+olcLastMod: TRUE
+olcMonitoring: TRUE
+olcDbCheckpoint: 512 30
+olcAccess: to dn.subtree="ou=people,dc=internal,dc=dom" attrs=userPassword,shadowLastChange by dn="cn=admin,dc=internal,dc=dom" write by dn="cn=proxyagent,ou=profile,dc=internal,dc=dom" write by anonymous auth by self write by * none
+olcAccess: to attrs=userPassword,shadowLastChange by dn="cn=admin,dc=internal,dc=dom" write by anonymous auth by * none
+# Below line should already exist by default in frontend.
+olcAccess: to dn.base="" by dn="cn=proxyagent,ou=profile,dc=internal,dc=dom" read by * read
+# Below line modified from "*" to "users" to prevent anonymous access.
+olcAccess: to * by dn="cn=admin,dc=internal,dc=dom" write by users read
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcRootDN
+olcRootDN: cn=admin,dc=internal,dc=dom
+-
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcRootPW
+# olcRootPW: {SSHA}LDeTJEEBhqypKL2FpQuFc2j4Na1TLTRW
+olcRootPW: {SSHA}ForoP3htvd3iJSKB8PZ2GksQDlwTgoaw
+-
+
+dn: olcDatabase={-1}frontend,cn=config
+changetype: modify
+add: olcAccess
+olcAccess: to dn.subtree="cn=Monitor" by dn="cn=admin,dc=internal,dc=dom" read
+-
+
+# http://www.openldap.org/doc/admin24/monitoringslapd.html
+dn: olcDatabase=monitor,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: {2}monitor

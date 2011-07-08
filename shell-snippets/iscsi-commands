@@ -1,0 +1,33 @@
+## Deleting a iSCSI target
+# iscsiadm -m node --op delete --targetname iqn.2011-03.dom.internal:01:filer-nex-lab1
+
+## Discover iSCSI target(s)
+# iscsiadm --mode discovery --type=sendtargets --portal=filer-nex-lab1
+
+## Discover via a specific interface
+# iscsiadm --mode discovery --type=sendtargets --portal=192.168.1.221 --interface=iscsi-0
+# iscsiadm --mode discovery --type=sendtargets --portal=192.168.1.222 --interface=iscsi-1
+
+## Create a new iSCSI interface(s)
+# iscsiadm --mode iface --op=new --interface iscsi-0
+# iscsiadm --mode iface --op=new --interface iscsi-1
+
+## Bind specific NIC to interface
+# iscsiadm --mode iface --op=update --interface iscsi-0 --name=iface.net_ifacename --value=eth1
+# iscsiadm --mode iface --op=update --interface iscsi-1 --name=iface.net_ifacename --value=eth2
+
+## Discover iSCSI target(s) with defined interfaces
+# iscsiadm --mode discovery --type=sendtargets --portal=192.168.1.222 -I iscsi-0
+# iscsiadm --mode discovery --type=sendtargets --portal=192.168.1.222 -I iscsi-1
+# iscsiadm --mode discovery --type=sendtargets --portal=192.168.1.221 -I iscsi-0
+# iscsiadm --mode discovery --type=sendtargets --portal=192.168.1.221 -I iscsi-1
+
+## Deleting an interface from the config
+# iscsiadm --mode iface --interface iscsi-0 -o delete
+# iscsiadm --mode iface --interface iscsi-1 -o delete 
+
+
+## Logging in
+# iscsiadm --mode node --targetname iqn.2011-03.dom.internal:01:filer-nex-lab1 --portal 192.168.1.221:3260,2 -I iscsi-0 --login
+
+# iscsiadm --mode node --targetname iqn.2011-03.dom.internal:01:filer-nex-lab1 --portal 192.168.1.221:3260,2 --interface=iscsi-0 --login

@@ -1,0 +1,129 @@
+#!/bin/bash
+################################################################################
+##: Title       : Untangle Gateway/Router Configuration Backup Script
+##: Date Rel    : 05/04/2011
+##: Date Upd    : n/a 
+##: Author      : "Sam Zaydel" <szaydel@gmail.com>
+##: Version     : 1.0.0
+##: Release     : First Release
+##: Description : Wrapper for an already existing native backup script
+##: XXXXXXXXXXX : this script was meant to be run as a 'cron' job
+################################################################################
+### NOTES: #####################################################################
+################################################################################
+## Script written to support scheduled backups of untangle router
+## Output will be a temporary file which will then be moved via rsync to
+## backup server 
+##
+##
+################################################################################
+### Step 1 - Set Variables and Create functions ################################
+################################################################################
+## RET_CODE=$?
+# BKUPDIR=/export/nfs/backups
+LOGGER_CMD="/usr/bin/logger -p"
+LOGNAME=ut-bkup
+LOGSDIR=/var/log/${LOGNAME}
+TMP_DIR=/tmp
+MYDATE=$(date +%Y%m%d)
+DATETIME=$(date +%Y%m%d%H%M)
+RUN_AS=$(whoami)
+FILE_NAME=ut-backup-${DATETIME}.tar.gz
+ARCHIV_NAME=${TMP_DIR}/${FILE_NAME}
+DEST=rsync@storage::pool_data00_export_nfs_backups/srv_configs/router/
+PGRP_CMD="/usr/bin/pgrep -f"
+GREP_CMD="/bin/grep -v"
+RSYNC_CMD="/usr/bin/rsync"
+RSYNC_ARGS="-avz --human-readable"
+CHMOD="/bin/chmod"
+## Used in determining if another instance is running
+MYNAME=$(basename $0)
+MYPID=$$
+
+## Log files, test mode and Debug level
+ERRLOG=${LOGSDIR}/error-${MYDATE}-${LOGNAME}.log
+INFOLOG=${LOGSDIR}/info-${MYDATE}-${LOGNAME}.log
+DEBUG=0
+TEST_MODE="N"
+
+## Redirect stdout to INFOLOG and stderr to ERRLOG
+exec 1> "${INFOLOG}"
+exec 2> "${ERRLOG}"
+
+DIV=$(printf "%80s" | tr " " "#")
+
+write_log ()
+{
+printf "%s\n" "$*" ## >> "${INFOLOG}"
+}
+
+# Functions for error control
+alert () 
+{
+RET_CODE="$1"
+# usage: alert <$?> <object>
+    if [ "${RET_CODE}" -ne 0 ]; then
+       printf "%s\n" "[WARNING] $2 did not complete successfully." >&2 
+       ${LOGGER_CMD} cron.warning "WARNING: $2 did not complete successfully."
+       return "${RET_CODE}"
+    else
+       printf "%s\n" "[INFO] $2 completed successfully."
+       ${LOGGER_CMD} cron.notice "INFO: $2 completed successfully."
+       return 0
+    fi
+}
+
+remove_logs ()
+{
+local FIND_CMD=/usr/bin/find
+"${FIND_CMD}" "${LOGSDIR}" -depth -name "[err|info]*" -mtime +30 -delete
+local RET_CODE=$?
+return "${RET_CODE}"
+}
+
+check_for_another_instance ()
+{
+${PGRP_CMD} "${MYNAME}" | ${GREP_CMD} "${MYPID}" &> /dev/null; RET_CODE=$?
+    if [[ "${RET_CODE}" = "0" ]]; then
+            return 1
+        else
+            return 0    
+    fi
+}
+
+## If another instance of this script already running 
+check_for_another_instance || exit 1
+
+################################################################################
+### Step 2 - Put it all together and run backup and log ########################
+################################################################################
+write_log "${DIV}"
+## Datestamp below will look similar to the following:
+## Sun 01 May 2011 11:08:40 AM PDT ##### \
+## [ Running Backup of Router Configuration ]
+write_log "##### $(date +%c) ##### [ Running Backup ]"
+#[[ "${TEST_MODE}" = "Y" ]] && write_log \
+#">>>> Running in Test Mode, -dry-run only <<<<"
+#write_log "${kern_array[@]}"
+#write_log "${DIV}"
+write_log "[INFO] Removing any logs older than 30 days"
+remove_logs
+write_log "[INFO] Finished log Removal"
+## Need to write log file with what is being removed
+/usr/share/untangle/bin/ut-backup-bundled.sh -o "${ARCHIV_NAME}"
+write_log "[INFO] Moving file via rsync to final destination"
+## Change mode of created file
+${CHMOD} 644 "${ARCHIV_NAME}"
+## Actually transfer the file over to storage server
+${RSYNC_CMD} ${RSYNC_ARGS} "${ARCHIV_NAME}" "${DEST}"
+RSYNC_RET_CODE=$?
+${RSYNC_CMD} -l "${DEST}${FILE_NAME}"
+
+[[ "${DEBUG}" -eq "1" ]] && write_log \
+"Return code from previous command: ${RET_CODE}"    
+write_log "${DIV}"
+
+## Create an entry in the system log
+alert "${RSYNC_RET_CODE}" "Untangle Router Backup"
+exit "${RSYNC_RET_CODE}"
+

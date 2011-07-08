@@ -1,0 +1,9 @@
+solaris.smf.manage.:::Manage All SMF Service States::help=SmfManageHeader.html
+
+
+Nexenta SMF Management:::Manage Services via Service Management Facility:profiles=Service Management
+
+
+
+
+SMB Management,VSCAN Management;auths=solaris.smf.manage.autofs,solaris.smf.manage.shares.*, solaris.smf.value.shares.*,solaris.admin.fsmgr.*,solaris.admin.diskmgr.*,solaris.admin.volmgr.*;help=RtFileSysMngmnt.html

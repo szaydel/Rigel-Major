@@ -1,0 +1,35 @@
+* Random 4k writes on randomly selected files.
+*
+* 'format=yes' first creates (depth*width*files) 1000 128k files.
+* After 'stopafter=100' writes the file is closed and a new
+* file is randomly selected.
+
+* Set jvms below to required number of JVM instances (where one JVM
+* is approx 50K IOPS) for random write tests. VDbench will start
+* multiple JVMs to achieve the thruput. Do *NOT* include this
+* directive for sequential workloads, where VDbench guarantees
+* sequential operation via a single threaded JVM (default).
+*
+* hd=localhost,jvms=4
+
+fsd=fsd1,anchor=/mnt/nfsv4,depth=1,width=1,files=1000,size=1024k
+
+fwd=fwd1,fsd=fsd1,operation=read,xfersize=4k,fileio=random,
+fileselect=random,stopafter=100,threads=1
+fwd=fwd2,fsd=fsd1,operation=read,xfersize=4k,fileio=random,
+fileselect=random,stopafter=100,threads=2
+fwd=fwd3,fsd=fsd1,operation=read,xfersize=4k,fileio=random,
+fileselect=random,stopafter=100,threads=4
+fwd=fwd4,fsd=fsd1,operation=read,xfersize=4k,fileio=random,
+fileselect=random,stopafter=100,threads=8
+fwd=fwd5,fsd=fsd1,operation=read,xfersize=4k,fileio=random,
+fileselect=random,stopafter=100,threads=16
+fwd=fwd6,fsd=fsd1,operation=read,xfersize=4k,fileio=random,
+fileselect=random,stopafter=100,threads=32
+
+rd=rd1,fwd=fwd1,fwdrate=max,format=yes,elapsed=120,interval=1
+rd=rd2,fwd=fwd2,fwdrate=max,format=yes,elapsed=120,interval=1
+rd=rd3,fwd=fwd3,fwdrate=max,format=yes,elapsed=120,interval=1
+rd=rd4,fwd=fwd4,fwdrate=max,format=yes,elapsed=120,interval=1
+rd=rd5,fwd=fwd5,fwdrate=max,format=yes,elapsed=120,interval=1
+rd=rd6,fwd=fwd6,fwdrate=max,format=yes,elapsed=120,interval=1

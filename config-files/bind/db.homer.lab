@@ -1,0 +1,31 @@
+;
+; BIND forward data file for internal.dom Domain - Master Zone
+;
+$ttl 604800
+homer.lab.	IN	SOA	server03. root.server03. (
+			2011040802
+			10800
+			3600
+			604800
+			38400 )
+homer.lab.	IN	NS	server03.
+server-lab1.homer.lab.	IN	A	10.10.100.10
+server-lab2.homer.lab.	IN	A	10.10.100.11
+server-lab3.homer.lab.	IN	A	10.10.100.12
+server-lab4.homer.lab.	IN	A	10.10.100.13
+server-lab5.homer.lab.	IN	A	10.10.100.14
+server-lab6.homer.lab.	IN	A	10.10.100.15
+server-lab7.homer.lab.	IN	A	10.10.100.16
+server-lab8.homer.lab.	IN	A	10.10.100.17
+server-lab9.homer.lab.	IN	A	10.10.100.18
+server-lab10.homer.lab.	IN	A	10.10.100.19
+server-lab11.homer.lab.	IN	A	10.10.100.20
+server-lab12.homer.lab.	IN	A	10.10.100.21
+server-lab13.homer.lab.	IN	A	10.10.100.22
+server-lab14.homer.lab.	IN	A	10.10.100.23
+server-lab15.homer.lab.	IN	A	10.10.100.24
+server-lab16.homer.lab.	IN	A	10.10.100.25
+server-lab17.homer.lab.	IN	A	10.10.100.26
+server-lab18.homer.lab.	IN	A	10.10.100.27
+server-lab19.homer.lab.	IN	A	10.10.100.28
+server-lab20.homer.lab.	IN	A	10.10.100.29

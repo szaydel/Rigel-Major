@@ -1,0 +1,72 @@
+;
+; BIND reverse data file for internal.dom Domain
+;
+$ttl 604800
+1.168.192.in-addr.arpa.	IN	SOA	server03. root.server03. (
+			2010111125
+			604800
+			86400
+			2419200
+			604800 )
+;
+1.168.192.in-addr.arpa.	IN	NS	server03.
+1.0.168.192.in-addr.arpa. IN	PTR	router.internal.dom.
+2	IN PTR		tmrouter.internal.dom.
+3	IN PTR		wap.internal.dom.
+6	IN PTR		vmhost.internal.dom.
+5	IN PTR		server01.internal.dom.
+7	IN PTR		server02.internal.dom.
+8	IN PTR		server03.internal.dom.
+9	IN PTR		server-vma-1.internal.dom.
+10	IN PTR		server04.internal.dom.
+11	IN PTR		printerc01.internal.dom.
+;12	IN PTR		;
+;13	IN PTR		;
+;14	IN PTR		;
+15	IN PTR		athens-wap.internal.dom.
+;16	IN PTR		;
+;17	IN PTR		;
+;18	IN PTR		;
+;19	IN PTR		;
+;20	IN PTR		;
+;21	IN PTR		;
+22	IN PTR		skrouter.internal.dom.
+30      IN PTR          vm-server1.internal.dom.
+31	IN PTR		vm-server2.internal.dom.
+32	IN PTR		vm-server3.internal.dom.
+33	IN PTR		vm-server4.internal.dom.
+34	IN PTR		server-vm5.internal.dom.
+35	IN PTR		vm-server6.internal.dom.
+36	IN PTR		vm-server7.internal.dom.
+37	IN PTR		vm-server8.internal.dom.
+38	IN PTR		vm-server9.internal.dom.
+39	IN PTR		placeholder.internal.dom.
+40	IN PTR		server-lab1.internal.dom.
+41	IN PTR		server-lab2.internal.dom.
+42	IN PTR		server-lab3.internal.dom.
+43	IN PTR		server-lab4.internal.dom.
+44	IN PTR		server-lab5.internal.dom.
+45	IN PTR		server-lab6.internal.dom.
+46	IN PTR		server-lab7.internal.dom.
+47	IN PTR		server-lab8.internal.dom.
+48	IN PTR		server-lab9.internal.dom.
+49	IN PTR		server-lab10.internal.dom.
+50	IN PTR		server-lab11.internal.dom.
+51	IN PTR		server-lab12.internal.dom.
+52	IN PTR		server-lab13.internal.dom.
+53	IN PTR		server-lab14.internal.dom.
+54	IN PTR		server-lab15.internal.dom.
+70	IN PTR		filer-nex-lab1.internal.dom.
+71	IN PTR		filer-nex-lab2.internal.dom.
+72	IN PTR		filer-nex-lab3.internal.dom.
+73	IN PTR		filer-nex-lab4.internal.dom.
+74	IN PTR		filer-nex-lab5.internal.dom.
+75	IN PTR		filer-nex-lab6.internal.dom.
+76	IN PTR		filer-nex-lab7.internal.dom.
+77	IN PTR		filer-nex-lab8.internal.dom.
+78	IN PTR		filer-nex-lab9.internal.dom.
+79	IN PTR		filer-nex-lab10.internal.dom.
+109.1.168.192.in-addr.arpa.	IN	PTR	pyxis-laptop.internal.dom.
+110.1.168.192.in-addr.arpa.	IN	PTR	europa-laptop.internal.dom.
+25.1.168.192.in-addr.arpa.	IN	PTR	htpc.internal.dom.
+231	IN PTR		testserver.internal.dom.

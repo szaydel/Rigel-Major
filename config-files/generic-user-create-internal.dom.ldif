@@ -1,0 +1,34 @@
+version: 1
+
+dn: uid=szaydel,ou=people,dc=lab,dc=internal,dc=dom
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Sam Zaydel
+gidNumber: 1010
+homeDirectory: /home/szaydel
+sn: Zaydel
+uid: szaydel
+uidNumber: 10001
+displayName: Sam Zaydel
+gecos: Nothing Valuable Here
+givenName: Sam
+homePhone: +33 (0)5 xx xx xx xx
+initials: SZ
+l: Toulouse
+loginShell: /bin/bash
+mail: none
+mobile: +33 (0)6 xx xx xx xx
+o: Example
+postalAddress: 
+postalCode: 31000
+shadowExpire: -1
+shadowFlag: 0
+shadowLastChange: 10877
+shadowMax: 999999
+shadowMin: 8
+shadowWarning: 7
+title: System Administrator
+userPassword:: e1NTSEF9aGQ2QTdHT05mcitUNGcwMmdHT2tkRmJJaVNtMFpSeC8vbk5SSWc9P
+ Q==
+

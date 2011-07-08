@@ -1,0 +1,36 @@
+version: 1
+
+#!RESULT OK
+#!CONNECTION ldap://server-lab1.homer.lab:389
+#!DATE 2011-05-20T18:15:22.470
+dn: ou=netgroups,dc=alpha,dc=homer,dc=lab
+objectClass: organizationalUnit
+ou: netgroups
+
+#!RESULT OK
+#!CONNECTION ldap://server-lab1.homer.lab:389
+#!DATE 2011-05-20T18:15:22.482
+dn: cn=netadmins,ou=netgroups,dc=alpha,dc=homer,dc=lab
+objectClass: top
+objectClass: nisNetgroup
+cn: netadmins
+nisNetgroupTriple: (,usera,)
+nisNetgroupTriple: (,userb,)
+nisNetgroupTriple: (,userc,)
+nisNetgroupTriple: (,szaydel,)
+
+#!RESULT OK
+#!CONNECTION ldap://server-lab1.homer.lab:389
+#!DATE 2011-05-20T18:15:22.510
+dn: cn=eng-nfs-clients,ou=netgroups,dc=alpha,dc=homer,dc=lab
+objectClass: top
+objectClass: nisNetgroup
+cn: eng-nfs-clients
+nisNetgroupTriple: (192.168.1.43,-,-)
+nisNetgroupTriple: (192.168.1.231,-,-)
+nisNetgroupTriple: (192.168.1.232,-,-)
+nisNetgroupTriple: (192.168.1.233,-,-)
+nisNetgroupTriple: (192.168.1.234,-,-)
+nisNetgroupTriple: (192.168.1.235,-,-)
+nisNetgroupTriple: (192.168.1.236,-,-)
+

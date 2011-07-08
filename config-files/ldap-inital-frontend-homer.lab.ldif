@@ -1,0 +1,78 @@
+## To add the config we do:
+# ldapadd -cxWD cn=admin,dc=homer,dc=lab -f filename
+## Make sure that there is not already an existing config in place
+
+# Create top-level object in domain
+dn: dc=homer,dc=lab
+objectClass: top
+objectClass: dcObject
+objectclass: organization
+o: Deneb Homer Lab
+dc: Deneb
+description: Centralized Directory Services for Homer Lab
+
+# Create sub-domain object under dc=homer,dc=lab
+dn: dc=alpha,dc=homer,dc=lab
+objectClass: top
+objectClass: organizationalUnit
+ou: alpha
+description: Subdomain Alpha for Homer Lab
+
+# Admin user.
+dn: cn=admin,dc=homer,dc=lab
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP administrator
+userPassword: {SSHA}LDeTJEEBhqypKL2FpQuFc2j4Na1TLTRW
+
+dn: ou=people,dc=alpha,dc=homer,dc=lab
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=alpha,dc=homer,dc=lab
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=szaydel,ou=people,dc=alpha,dc=homer,dc=lab
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: szaydel
+sn: Zaydel
+givenName: Sam
+cn: Sam Zaydel
+displayName: Sam Zaydel
+uidNumber: 10001
+gidNumber: 10010
+userPassword: password
+gecos: Nothing Valuable Here
+loginShell: /bin/bash
+homeDirectory: /home/szaydel
+shadowExpire: -1
+shadowFlag: 0
+shadowWarning: 7
+shadowMin: 8
+shadowMax: 999999
+shadowLastChange: 10877
+mail: none
+postalCode: 31000
+l: Toulouse
+o: Example
+mobile: +33 (0)6 xx xx xx xx
+homePhone: +33 (0)5 xx xx xx xx
+title: Homer.lab Domain Owner
+postalAddress: 
+initials: SZ
+
+dn: cn=deneb,ou=groups,dc=alpha,dc=homer,dc=lab
+objectClass: posixGroup
+cn: deneb
+gidNumber: 10010
+memberUid: uid=szaydel,ou=people,dc=alpha,dc=homer,dc=lab
+
+dn: cn=ldapadmin,ou=groups,dc=alpha,dc=homer,dc=lab
+objectClass: posixGroup
+cn: ldapadmin
+gidNumber: 1001
+memberUid: uid=szaydel,ou=people,dc=alpha,dc=homer,dc=lab

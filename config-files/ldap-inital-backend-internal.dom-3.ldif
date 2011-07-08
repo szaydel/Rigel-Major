@@ -1,0 +1,44 @@
+## Dump out contests of existing cn=config
+# ldapsearch -LLLQY EXTERNAL -H ldapi:/// -b cn=config \
+# "(|(cn=config)(olcDatabase={1}hdb))"
+dn: cn=config
+changetype: modify
+#add: olcLogLevel
+replace: olcLogLevel
+olcLogLevel: stats config
+-
+#changetype: modify
+add: olcReferral
+#replace: olcReferral
+olcReferral: ldap://ldap.homer.lab
+-
+#changetype: modify
+add: olcIdleTimeout
+#replace: olcIdleTimeout
+olcIdleTimeout: 30
+-
+#changetype: modify
+add: olcAllows
+#replace: olcAllows
+olcAllows: bind_anon_cred proxy_authz_anon
+-
+#changetype: modify
+add: olcAuthzPolicy
+#replace: olcAuthzPolicy
+olcAuthzPolicy: any
+
+## Modifying olcDatabase={1}hdb,cn=config
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+add: olcDbIndex
+olcDbIndex: sn,uid,mail pres,eq,approx,sub
+-
+add: olcDbIndex
+olcDbIndex: cn eq
+-
+add: olcDbIndex
+olcDbIndex: ou eq
+-
+add: olcDbIndex
+olcDbIndex: dc eq
+

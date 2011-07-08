@@ -1,0 +1,24 @@
+./configure \
+--prefix=/opt/squid3.1 \
+--enable-inline \
+--enable-optimizations \
+--enable-storeio=ufs \
+--enable-removal-policies=heap,lru \
+--enable-icmp \
+--enable-delay-pools=no \
+--enable-esi=no \
+--disable-snmp \
+--enable-cachemgr-hostname=proxy.internal.dom \
+--enable-arp-acl \
+--enable-ssl \
+--enable-htcp \
+--enable-arp-acl \
+--enable-cache-digests=no \
+--enable-auth=no \
+--with-default-user=proxy \
+--with-logdir=/var/log/squid3 \
+--with-pidfile=/var/run/squid3.pid \
+--with-large-files \
+--with-filedescriptors=8192
+
+

@@ -1,0 +1,34 @@
+;
+; BIND reverse data file for homer.lab Domain
+;
+$ttl 604800
+100.10.10.in-addr.arpa.	IN	SOA	server03. root.server03. (
+			2011040801
+			604800
+			86400
+			2419200
+			604800 )
+;
+100.10.10.in-addr.arpa.	IN	NS	server03.
+1.100.10.10.in-addr.arpa. IN	PTR	router-gw-10-10-100-1.homer.lab.
+10.100.10.10.in-addr.arpa.	IN	PTR	server-lab1.homer.lab.
+11.100.10.10.in-addr.arpa.	IN	PTR	server-lab2.homer.lab.
+12.100.10.10.in-addr.arpa.	IN	PTR	server-lab3.homer.lab.
+13.100.10.10.in-addr.arpa.	IN	PTR	server-lab4.homer.lab.
+14.100.10.10.in-addr.arpa.	IN	PTR	server-lab5.homer.lab.
+15.100.10.10.in-addr.arpa.	IN	PTR	server-lab6.homer.lab.
+16.100.10.10.in-addr.arpa.	IN	PTR	server-lab7.homer.lab.
+17.100.10.10.in-addr.arpa.	IN	PTR	server-lab8.homer.lab.
+18.100.10.10.in-addr.arpa.	IN	PTR	server-lab9.homer.lab.
+19.100.10.10.in-addr.arpa.	IN	PTR	server-lab10.homer.lab.
+20.100.10.10.in-addr.arpa.	IN	PTR	server-lab11.homer.lab.
+21.100.10.10.in-addr.arpa.	IN	PTR	server-lab12.homer.lab.
+22.100.10.10.in-addr.arpa.	IN	PTR	server-lab13.homer.lab.
+23.100.10.10.in-addr.arpa.	IN	PTR	server-lab14.homer.lab.
+24.100.10.10.in-addr.arpa.	IN	PTR	server-lab15.homer.lab.
+25.100.10.10.in-addr.arpa.	IN	PTR	server-lab16.homer.lab.
+26.100.10.10.in-addr.arpa.	IN	PTR	server-lab17.homer.lab.
+27.100.10.10.in-addr.arpa.	IN	PTR	server-lab18.homer.lab.
+28.100.10.10.in-addr.arpa.	IN	PTR	server-lab19.homer.lab.
+29.100.10.10.in-addr.arpa.	IN	PTR	server-lab20.homer.lab.
+

@@ -1,0 +1,26 @@
+#!RESULT OK
+#!CONNECTION ldap://server-lab8:389
+#!DATE 2011-05-08T18:20:22.945
+#dn: cn=netadmins,ou=netgroups,dc=lab,dc=internal,dc=dom
+#objectClass: top
+#objectClass: nisNetgroup
+#nisnetgrouptriple: (,usera,)
+#nisnetgrouptriple: (,userb,)
+#nisnetgrouptriple: (,userc,)
+#cn: netadmins
+
+dn: cn=eng-nfs-clients,ou=netgroups,dc=lab,dc=internal,dc=dom
+changetype: delete
+
+dn: cn=eng-nfs-clients,ou=netgroups,dc=lab,dc=internal,dc=dom
+changetype: add
+objectClass: top
+objectClass: nisNetgroup
+nisnetgrouptriple: (192.168.1.43,-,-)
+nisnetgrouptriple: (192.168.1.231,-,-)
+nisnetgrouptriple: (192.168.1.232,-,-)
+nisnetgrouptriple: (192.168.1.233,-,-)
+nisnetgrouptriple: (192.168.1.234,-,-)
+nisnetgrouptriple: (192.168.1.235,-,-)
+nisnetgrouptriple: (192.168.1.236,-,-)
+cn: eng-nfs-clients

@@ -1,0 +1,5 @@
+# Main repository sources
+deb http://nexenta.com/apt/d9c98856eb96a5cb48dea562ed834a23 hardy-unstable main contrib non-free
+deb http://nexenta.com/apt/d9c98856eb96a5cb48dea562ed834a23/plugins hardy-unstable main contrib non-free
+deb-src http://nexenta.com/apt/d9c98856eb96a5cb48dea562ed834a23 hardy-unstable main contrib non-free
+deb-src http://nexenta.com/apt/d9c98856eb96a5cb48dea562ed834a23/plugins hardy-unstable main contrib non-free

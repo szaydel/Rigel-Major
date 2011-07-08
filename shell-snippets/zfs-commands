@@ -1,0 +1,5 @@
+### Disable prefetching file-level
+# echo zfs_prefetch_disable/W0t1 | mdb -kw
+
+### Enable prefetching file-level
+echo zfs_prefetch_disable/W0t0 | mdb -kw

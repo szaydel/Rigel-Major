@@ -1,0 +1,44 @@
+# /etc/sudoers
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# See the man page for details on how to write a sudoers file.
+#
+
+Defaults	env_reset
+Defaults	set_home
+Defaults	env_keep = "EDITOR LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS XDG_SESSION_COOKIE"
+# Comment out the preceding line and uncomment the following one if you need
+# to use special input methods. This may allow users to compromise  the root
+# Host alias specification
+
+# User alias specification
+User_Alias	SYSADMIN = szaydel,admin
+#
+Runas_Alias	COMMANDS_AS_ROOT = root
+ALL	ALL = (ALL) ALL
+#
+# Cmnd alias specification
+Cmnd_Alias  NETW = /sbin/iwconfig,/usr/bin/iw,/sbin/iwlist,/sbin/iwpriv, \
+            /bin/ip,/sbin/ifconfig,/usr/sbin/arp,/usr/bin/arping
+Cmnd_Alias	DISK = /sbin/mdadm,/sbin/pv*,/sbin/vg*,/sbin/lv*,/sbin/fdisk, \
+            /sbin/sfdisk,/usr/sbin/iscsi*,/usr/bin/iscsiadm
+Cmnd_Alias	DEBS = /usr/bin/apt*,/usr/bin/dpkg*
+Cmnd_Alias	FS = /sbin/tune2fs,/sbin/mkfs*,/sbin/mkswap \
+            /sbin/fsck,/sbin/dumpe2fs,/bin/mount,/bin/umount
+# Service management commands
+Cmnd_Alias  SVCS = /sbin/start,/sbin/stop,/usr/sbin/service
+# Cmnd_Alias	APTCONF = 
+#
+# User privilege specification
+root	ALL=(ALL) ALL
+#
+# Uncomment to allow members of group sudo to not need a password
+# (Note that later entries override this, so you might need to move
+# it further down)
+# %sudo ALL=NOPASSWD: ALL
+
+# Members of the admin group may gain root privileges
+%admin ALL=(ALL) ALL
+# No Password Required for the following set of commands
+SYSADMIN	ALL=(COMMANDS_AS_ROOT) NOPASSWD:NETW,DISK,DEBS,FS,SVCS

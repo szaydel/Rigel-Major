@@ -1,0 +1,15 @@
+version: 1
+
+dn: cn=eng-nfs-clients,ou=netgroups,dc=alpha,dc=homer,dc=lab
+objectClass: top
+objectClass: nisNetgroup
+cn: eng-nfs-clients
+nisNetgroupTriple: (10.10.100.10,,)
+nisNetgroupTriple: (10.10.100.11,,)
+nisNetgroupTriple: (10.10.100.12,,)
+nisNetgroupTriple: (server-lab1.homer.lab,,)
+nisNetgroupTriple: (server-lab1,,homer.lab)
+nisNetgroupTriple: (server-lab1,,)
+nisNetgroupTriple: (,server-lab1,)
+nisNetgroupTriple: (,server-lab1,homer.lab)
+nisNetgroupTriple: (,,homer.lab)

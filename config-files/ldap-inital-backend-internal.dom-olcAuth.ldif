@@ -1,0 +1,32 @@
+# Database settings
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+add: olcAccess
+olcAccess: {0}to attrs=userPassword,shadowLastChange by dn="cn=admin,dc=alpha,dc=homer,dc=lab" write by anonymous auth by * none
+-
+add: olcAccess
+olcAccess: {1}to dn.base="" by dn="cn=proxyagent,ou=profile,dc=alpha,dc=homer,dc=lab" read by * read
+-
+add: olcAccess
+olcAccess: {2}to * by dn="cn=admin,dc=alpha,dc=homer,dc=lab" write by users read
+-
+add: olcAccess
+olcAccess: {3}to dn.subtree="ou=people,dc=alpha,dc=homer,dc=lab" attrs=userPassword,shadowLastChange by dn="cn=admin,dc=alpha,dc=homer,dc=lab" write by dn="cn=proxyagent,ou=profile,dc=alpha,dc=homer,dc=lab" write by anonymous auth by self write by * none
+
+#dn: olcDatabase={0}config,cn=config
+#changetype: modify
+#replace: olcRootDN
+#olcRootDN: cn=admin,cn=config
+#olcRootDN: cn=admin,dc=lab,dc=internal,dc=dom
+#-
+
+#dn: olcDatabase={0}config,cn=config
+#changetype: modify
+#replace: olcRootPW
+## There is some issue that prevents setting this after changing
+#from:
+#olcRootDN: cn=admin,cn=config
+#to:
+#olcRootDN: cn=admin,dc=internal,dc=dom
+# olcRootPW: {SSHA}AP8Hx5l3wPRpqwLNDjPMcP7G1rqDDdsV
+#-

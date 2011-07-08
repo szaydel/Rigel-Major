@@ -1,0 +1,4 @@
+## syslog-ng compile
+
+./configure --prefix /opt/syslog-ng --enable-debug --enable-ssl --enable-tcp-wrapper --enable-sun-streams EVTLOG_LIBS=/opt/eventlog/lib EVTLOG_CFLAGS=/opt/eventlog/include/eventlog
+

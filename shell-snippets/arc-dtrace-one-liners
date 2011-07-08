@@ -1,0 +1,4 @@
+## ARC 1-liners
+
+dtrace -n 'fbt::arc_evict:entry {this->ts=timestamp} fbt::arc_evict:return /this->ts/{@a=count();t=timestamp-this->ts;@b=sum(t)}'
+dtrace -n 'fbt::arc_evict_ghost:entry {this->ts=timestamp} fbt::arc_evict_ghost:return /this->ts/{@a=count();t=timestamp-this->ts;@b=sum(t)}'

@@ -1,0 +1,4 @@
+## Results will be a list of 10 IPs suitable for Forward lookup zones (DNS)
+for a in $(seq 0 9); do printf "%s\t%s %s\t\t%s\n" "server-lab$(($a+1))" "IN" "A" "192.168.1.4$a"; printf "%s\t%s %s\t\t%s\n" "server-lab$(($a+1))" "IN" "TXT" "\"Lab server $(($a+1))\""; done
+
+
