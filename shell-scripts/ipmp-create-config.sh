@@ -51,17 +51,18 @@ GREP=/usr/bin/grep
 EGREP=/usr/bin/egrep
 DLADM=/usr/sbin/dladm
 EXEC_DIR=$(dirname $0)
+EXPR=/usr/bin/expr
 IPMP_IF_ARRAY=()		## Array with all interfaces to add to IPMP group
-IPMP_ALIASES_ARRAY=()	## Array of data IP aliases to be assigned to IPMP interface
-IPMP_IF_NAME=ipmp0		## Name of ipmp interface to be created
-IPMP_GRP_NAME=nex_primary	## Name of actual IPMP group, not all that critical
+IPMP_ALIASES_ARRAY=()	## Array of data IPs to be assigned to IPMP interface
+IPMP_GRP_NAME=data0		## Name of actual IPMP group, not all that critical
+IPMP_IF_NAME="${IPMP_GRP_NAME}"	## Name of ipmp interface to be created
 COMMON_MTU=1500
 TEST_IP_SUBNET_M="255.255.255.0"
 DATA_IP_SUBNET_M="255.255.255.0"
 IPMP_DATA_ADDR_COUNT=0
 WORKDIR=/tmp			## By default, all config files will go here, not /etc
 PROBE_BASED=""
-VERS=1.0.4
+VERS=1.0.5
 ################################################################################
 ### Revision Notes: ############################################################
 ################################################################################
@@ -73,11 +74,12 @@ VERS=1.0.4
 # 				/etc/hostname.ipmp_group_name, instead of using hostname.ipmp0
 #				Need to make IPMP Probe-based failure optional, and link-based
 #				the default option, instead of probe-based being default.
-#
-#
-#
-#
-#
+# 2011/07/27 :	Modified script to account for, and report aggregates correcly.
+#				Changed IPMP group naming to match hostname.interface name to
+#				the name of the group. If there is no trailing ordinal in group
+#				name, we will add a zero, if there is one, we will not add zero
+#				Changed IPMP Probe-based function check to warn about using
+#				probe-based detection, and the possible consequences.
 #
 #
 ################################################################################
@@ -119,15 +121,15 @@ local W=$1
 
 if [[ ! -d "${W}" ]]; then
 		newline
-		printf "%s\n" "*** Unable to set Work Directory to ${W}. It does not exist. ***"
+		printf "%s\n" "[CRITICAL] Unable to set Work Directory to ${W}. It does not exist."
 		local RET_CODE=1
 elif [[ ! -w "${W}" ]]; then
 		newline
-		printf "%s\n" "*** Write Access to ${W} is not permitted, unable to continue. ***"
+		printf "%s\n" "[CRITICAL] Write Access to ${W} is not permitted, unable to continue."
 		local RET_CODE=0
 	else
 		newline
-		printf "%s\n" "*** Write Access to ${W} is permitted, able to continue. ***"
+		printf "%s\n" "[CRITICAL] Write Access to ${W} is permitted, able to continue."
 		local RET_CODE=0
 fi
 return "${RET_CODE}"
@@ -259,7 +261,28 @@ newline
 
 printf "%s\n%s" "[*] IPMP Groups Requires a name (Default is ${IPMP_GRP_NAME})" \
 "Group name, or Enter for default: "; read N_IPMP_GRP_NAME
-IPMP_GRP_NAME="${N_IPMP_GRP_NAME:=$IPMP_GRP_NAME}"
+## If we have a custom group name, let's make sure that there is an ordinal
+## at the end of the group name, as that's what we have to have, in order
+## for the IPMP hostname.groupname file to be valid
+
+if [ ! -z "${N_IPMP_GRP_NAME}" ]; then
+	## Variable ${ISINT} should contain a digit, if groupname was created
+	## with a trailing ordinal, i.e. 0-9
+	ISINT=$(echo $(${EXPR} match "${N_IPMP_GRP_NAME}" '.*\([0-9]\)'))
+	if [ $(echo "${ISINT}"|${GREP} [0-9]) ]; then
+			IPMP_GRP_NAME="${N_IPMP_GRP_NAME}"
+		else
+			## If we cannot locate an ordinal at the end of the groupname,
+			## we want to make sure that we add one, since IPMP interface names
+			## have to end with an ordinal
+			IPMP_GRP_NAME="${N_IPMP_GRP_NAME}0"
+	fi
+	## We need to make sure to update the interface name for the IPMP interface,
+	## if we are changing the ${IPMP_GRP_NAME} variable
+	IPMP_IF_NAME="${IPMP_GRP_NAME}"
+fi
+## Below line was replaced with the nested 'if' statement above
+## IPMP_GRP_NAME="${N_IPMP_GRP_NAME:=$IPMP_GRP_NAME}"
 newline
 
 printf "%s\n%s" "[*] At least one Data IP interface is required. How many additional IP's will you require? (Default is ${IPMP_DATA_ADDR_COUNT})" \
@@ -312,9 +335,12 @@ ipmp_interfaces_array ()
 
 local counter="0"
 local IF_IPMP=""
-local IF_LIST=( $(${DLADM} show-phys -po LINK | ${GREP} -v "aggr") )
+# local IF_LIST=( $(${DLADM} show-phys -po LINK | ${GREP} -v "aggr") )
 
-printf "%s\n" "Now we need to identify which interfaces to add to IPMP group"
+printf "%s\n" "We need to select interfaces which will comprise IPMP group [${IPMP_GRP_NAME}]"
+printf "%s\n" "" "All Currently Present Interfaces:" \
+"$(${DLADM} show-link -o LINK,MTU,STATE)" ""
+
 while [[ -z "${IPMP_IF_ARRAY[@]}" ]]
     do
         printf "%s\n%s" "Please enter space separated list of Interfaces" "Interfaces (i.e. e1000g0,e1000g1,etc.): "; read IF_IPMP
@@ -325,9 +351,11 @@ while [[ -z "${IPMP_IF_ARRAY[@]}" ]]
 	## to existing physical interface
 	for IF in "${IPMP_IF_ARRAY[@]}"
 		do 
-			if [[ $( ${DLADM} show-phys "${IF}" 2>/dev/null ) ]]; then
+			## Need to be sure we are not checking for physical interfaces, rather logical
+			if [[ $( ${DLADM} show-link "${IF}" 2>/dev/null ) ]]; then
+			# if [[ $( ${DLADM} show-phys "${IF}" 2>/dev/null ) ]]; then
 					printf "%s\n" "[GOOD] Interface ${IF} exists on system"
-					${DLADM} show-phys "${IF}"
+					${DLADM} show-link "${IF}"
 					newline
 				else
 					## Catch any interfaces that do not exist, and break out of the loop
@@ -344,19 +372,46 @@ return "${RET_CODE:-0}"
 
 use_probe_based_fail_detect ()
 {
+################################################################################
+## We need to check for probe-based failure usage   ############################
+################################################################################
+## Probe-based failure detection is problematic when there are not enough
+## targets defined to test against
+## In many cases storage networks will not have a defined gateway, and so
+## targets have to be explicitly defined, else probes will not work correctly
+## In a cluster situation we want to be absolutely certain that heads do not
+## use each other as targets, since this defeats the purpose of IPMP and failure
+## of one node will cause IPMP group(s) to fail on the other node
 local yes_no=""
-printf "%s\n%s" "Are you planning to use Probe-based Failure detection? Recommended!" "Answer [Y|N]: "; read yes_no
+printf "%s\n%s" "Are you planning to use Probe-based Failure detection?" "Answer [Y|N]: "; read yes_no
 newline
 
 	while [[ -z "${PROBE_BASED}" ]]
 		do
 			case "${yes_no}" in
 				Y|y) 
-					printf "%s\n" "We will next ask for a test IP for each interface, which is required for Probe-based detection."
+				printf "%s\n" \
+"
+********************************************************************************
+***** WARNING * WARNING * WARNING * WARNING * WARNING * WARNING * WARNING  *****
+********************************************************************************
+* IPMP Probe-based failure detection mechanism should be enabled only if you   *
+* understand what you are doing. Failure to correctly configure Probe-based    *
+* failure detection may result in serious issues with functionality of the     *
+* IPMP group. As such, please ONLY enable it if you are certain about expected *
+* results and what is necessary to configure it correctly.                     *
+********************************************************************************
+***** WARNING * WARNING * WARNING * WARNING * WARNING * WARNING * WARNING  *****
+********************************************************************************
+"
+					printf "%s\n" "If you are uncertain about Probe-based failure, please hit <Control-C> no, and start over." \
+					"" \
+					"We will next ask for a test IP for each interface, which is required for Probe-based detection."
+
 					PROBE_BASED=Y
 					;;
 				N|n|*) 
-					printf "%s\n" "!!! Probe-based failure detection will not be enabled. !!!"
+					printf "%s\n" "Probe-based failure detection will not be enabled!"
 					PROBE_BASED=N
 					;;
 			esac
