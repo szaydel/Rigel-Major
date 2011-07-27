@@ -65,13 +65,14 @@ VERS=1.0.4
 ################################################################################
 ### Revision Notes: ############################################################
 ################################################################################
-# 2011/07/15 : Modified ipmp MTU configuration, to only set MTU once on the 
-# entire group, as that should propagate through the entire set of aliases on
-# the ipmp interface.
-# 2011/07/15 : Revised wording on input of number of additional data interfaces
-#
-#
-#
+# 2011/07/15 :  Modified ipmp MTU configuration, to only set MTU once on the 
+# 				entire group, as that should propagate through the entire set of
+#				aliases on the ipmp interface.
+# 2011/07/15 :  Revised wording on input of number of additional data interfaces
+# 2011/07/22 :  Enhancement 1 - Match ipmp_group_name to 
+# 				/etc/hostname.ipmp_group_name, instead of using hostname.ipmp0
+#				Need to make IPMP Probe-based failure optional, and link-based
+#				the default option, instead of probe-based being default.
 #
 #
 #
@@ -349,16 +350,16 @@ newline
 
 	while [[ -z "${PROBE_BASED}" ]]
 		do
-					case "${yes_no}" in
-						Y|y) 
-							printf "%s\n" "We will next ask for a test IP for each interface, which is required for Probe-based detection."
-							PROBE_BASED=Y
-							;;
-						N|n|*) 
-							printf "%s\n" "!!! Probe-based failure detection will not be enabled. !!!"
-							PROBE_BASED=N
-							;;
-					esac
+			case "${yes_no}" in
+				Y|y) 
+					printf "%s\n" "We will next ask for a test IP for each interface, which is required for Probe-based detection."
+					PROBE_BASED=Y
+					;;
+				N|n|*) 
+					printf "%s\n" "!!! Probe-based failure detection will not be enabled. !!!"
+					PROBE_BASED=N
+					;;
+			esac
 		done
 }
 
