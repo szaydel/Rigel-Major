@@ -6,6 +6,7 @@
 # Copyright 2011 Nexenta Systems, Inc.
 #
 nmc_cmd=$(which nmc)
+hdd_cmd="/usr/bin/hddisco"
 fma_faulty_cmd="/usr/sbin/fmadm faulty"
 fmdump_cmd="/usr/sbin/fmdump"
 iostat_cmd="/usr/bin/iostat"
@@ -21,15 +22,16 @@ PRE=${WORK_DIR}/${host_n}
 GZ_OUT_F=${host_n}-syst-bundle-${ts}.tar.gz
 ZPOOL_ARR=( $(zpool list -H -o name) )
 FILES_ARR=()
-_FMA="1"	## Enable fmadm data gathering
-_FMD="1"	## Enable fmdump data gathering
-_KST="1"	## Enable stat data gathering
-_ZHIST="1"	## Enable zpool history gathering
-_IOST="1"	## Enable iostat gathering
+_FMA="1"		## Enable fmadm data gathering
+_FMD="1"		## Enable fmdump data gathering
+_KST="1"		## Enable stat data gathering
+_ZHIST="1"		## Enable zpool history gathering
+_IOST="1"		## Enable iostat gathering
+_HDDISCO="1"	## Enable hddisco gathering
 iostat_repeat="60"
 iostat_range="1"
 fmd_num_days="14"
-VER=1.0.4
+VER=1.0.5
 
 func_cleanup ()
 {
@@ -136,18 +138,23 @@ if [[ ${_KST} -eq 1 ]]; then
 	printf "%s\n" "[STOP] Collecting Kernel Statistics."
 	func_add_to_f_array ${PRE}-kstat-var.txt
 	func_add_to_f_array ${PRE}-kstat-sderr.txt
-
 fi
 
 ################################################################################
-### All information collected from NMC #########################################
+### All information collected about Disks ######################################
 ################################################################################
 ## Grab some iostats, as long as we enabled iostat via ${_IOST} earlier
 if [ ${_IOST} -eq 1 ]; then
 	${iostat_cmd} -YxnzTd ${iostat_range} ${iostat_repeat} >> ${PRE}-iostat-YxnzTd.txt
+	${iostat_cmd} -En >> ${PRE}-iostat-En.txt
 	func_add_to_f_array ${PRE}-iostat-YxnzTd.txt
+	func_add_to_f_array ${PRE}-iostat-En.txt
 fi
 
+if [ ${_HDDISCO} -eq 1 ]; then
+	${hdd_cmd} >> ${PRE}-hddisco.txt
+	func_add_to_f_array ${PRE}-hddisco.txt
+fi
 ###############################################################################s#
 ### Stop All gathering activities here #########################################
 ################################################################################
