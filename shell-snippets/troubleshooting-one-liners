@@ -1,0 +1,86 @@
+# fmdump -eV -t2day | gzip -9 -c > /tmp/fmdump-$(hostname)-$(date +%Y%m%d).gz
+
+### Most immediate issues
+# fmdump -v -u <Event-ID>
+# zpool status -xv
+# for a in H S T; do kstat -p sderr:*:sd*,err:$a*Err*; done >> /tmp/sderr-kstat-$(hostname)-$(date +%Y%m%d).log
+
+### Some sense of history
+# fmdump -e -t14day
+# fmadm faulty -ags >> /tmp/fmadm-output-$(hostname)-$(date +%Y%m%d).log
+# fmadm faulty -agr >> /tmp/fmadm-output-$(hostname)-$(date +%Y%m%d).log
+# fmadm faulty -agv >> /tmp/fmadm-output-$(hostname)-$(date +%Y%m%d).log
+
+## Logs from service management for NZA
+# cd /var/svc/log/ && tar czf /tmp/nza-svcs-$(hostname)-$(date +%Y%m%d).tgz $(ls *nm[csv]*|xargs)
+
+## Collect all the NZA system logs from /var/log
+# cd /var/log/ && tar czf /tmp/nza-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./nm* | xargs -0 ls --)
+
+## State of services
+# for i in $(svcs -oFMRI|egrep nm[csv]); do echo "Start ++++ $i ++++"; svcs -l $i; echo "Stop ++++ $i ++++"; done
+
+# cd /var/adm && tar czvf /tmp/<case-number-##>-messages-$(hostname).tar.gz $(find . -name "messages*" -print)
+
+### Get IRQ info
+# echo '::interrupts -d' | mdb -k
+
+### IoZone one-liners
+# Used to specify which tests to run. (0=write/rewrite, 1=read/re-read, 2=random-read/write
+# 3=Read-backwards, 4=Re-write-record, 5=stride-read, 6=fwrite/re-fwrite, 7=fread/Re-fread,
+# 8=random mix, 9=pwrite/Re-pwrite, 10=pread/Re-pread, 11=pwritev/Re-pwritev, 12=preadv/Repreadv).
+# One will always need to specify 0 so that any of the following tests will have a file to measure.
+# -i # -i # -i # is also supported so that one may select more than one test.
+# iozone -Ra -g 2G -i 0 -i 2 -i 5 -i 8 -n 32 -O -q 5
+
+# iozone -Ra -g 30G -i 0 -i 2 -i 6 -i 5 -i 8 -n 32 -O -q 8 -f /path/to/file
+
+## Run with min/max blocksize of 4K, 0=write/rewrite, 1=read/re-read, 2=random-read/write
+## Output #'s in operations per sec., min. 1MB filesize, 
+# iozone -g (Total Phys Mem + 1GB) -i 0 -i 1 -i 2 -RaO -n 1m -q 4k -y 4k -z  -f /path/to/file
+
+## Get list of SRV records from MS DNS
+# dig @NAMESERVER _ldap._tcp.dc._msdcs.domainname SRV +short
+
+### Network Statistics
+# netstat -s -Td
+
+# netstat -ian -f inet -Td 1
+# netstat -s -Td -i 30 20 >> /tmp/netstat-s-$(hostname).log &
+# arp -na
+# dladm show-ether -x
+for a in $(dladm show-link -p -o LINK | sed -e 's/[0-9]$//g' | uniq); do kstat -p $a:*|grep -i err; done
+
+
+### Netcat tools
+# nc -l -p 1999 | dd of=/tmp/out.f &
+# dd if=/dev/zero bs=1M count=10 | nc 192.168.1.221 1999
+
+
+## Monitoring system performance
+
+# echo "::findleaks" | mdb -k
+# echo "::kmastat" | mdb -k
+# pmap PID
+
+## prstat snippets
+
+# prstat -s size
+
+
+Also, if we identify which process is growing (via "prstat -s size"), we can look inside it using "pmap PID".
+
+
+## Lockstat one-liners
+
+# lockstat -cgIkW -D 20 -i997 sleep 5
+
+
+
+# echo ::spa | mdb -k
+ADDR                 STATE NAME                                                
+ffffff00c6788b00    ACTIVE lab9_pool_a
+ffffff00c6788080    ACTIVE lab9_pool_b
+ffffff00c6789580    ACTIVE syspool
+
+echo ffffff00c6788b00::zfs_blkstats | mdb -k
