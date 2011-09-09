@@ -3,13 +3,15 @@
 # when mailer configuration is not working, or not setup.
 #
 # Author: Sam Zaydel
-# Copyright 2011 Nexenta Systems, Inc.
+# Copyright 2011 Nexenta Systems, Inc. 
 #
 nmc_cmd=$(which nmc)
 hdd_cmd="/usr/bin/hddisco"
 fma_faulty_cmd="/usr/sbin/fmadm faulty"
 fmdump_cmd="/usr/sbin/fmdump"
 iostat_cmd="/usr/bin/iostat"
+cfgadm_cmd="/usr/sbin/cfgadm"
+devfsadm_cmd="/usr/sbin/devfsadm"
 kstat_cmd="/usr/bin/kstat"
 mv_cmd="/usr/bin/mv"
 host_n=$(hostname)
@@ -22,16 +24,18 @@ PRE=${WORK_DIR}/${host_n}
 GZ_OUT_F=${host_n}-syst-bundle-${ts}.tar.gz
 ZPOOL_ARR=( $(zpool list -H -o name) )
 FILES_ARR=()
+_CFGADM="1"		## Enable cfgadm data gathering
 _FMA="1"		## Enable fmadm data gathering
 _FMD="1"		## Enable fmdump data gathering
 _KST="1"		## Enable stat data gathering
 _ZHIST="1"		## Enable zpool history gathering
 _IOST="1"		## Enable iostat gathering
 _HDDISCO="1"	## Enable hddisco gathering
+_DEVFSA="1"		## Enable devfsadm data gathering
 iostat_repeat="60"
 iostat_range="1"
 fmd_num_days="14"
-VER=1.0.5
+VER=1.0.6
 
 func_cleanup ()
 {
@@ -143,18 +147,37 @@ fi
 ################################################################################
 ### All information collected about Disks ######################################
 ################################################################################
+printf "%s\n" "[START] Collecting Disk-related Statistics."
 ## Grab some iostats, as long as we enabled iostat via ${_IOST} earlier
 if [ ${_IOST} -eq 1 ]; then
 	${iostat_cmd} -YxnzTd ${iostat_range} ${iostat_repeat} >> ${PRE}-iostat-YxnzTd.txt
 	${iostat_cmd} -En >> ${PRE}-iostat-En.txt
+	${iostat_cmd} -en >> ${PRE}-iostat-en.txt
 	func_add_to_f_array ${PRE}-iostat-YxnzTd.txt
 	func_add_to_f_array ${PRE}-iostat-En.txt
+	func_add_to_f_array ${PRE}-iostat-en.txt
 fi
 
 if [ ${_HDDISCO} -eq 1 ]; then
 	${hdd_cmd} >> ${PRE}-hddisco.txt
 	func_add_to_f_array ${PRE}-hddisco.txt
 fi
+
+## Output from 'cfgadm -al' is meaningful when diagnosing disk issues
+if [ ${_CFGADM} -eq 1 ]; then
+	${cfgadm_cmd} -al >> ${PRE}-cfgadm-al.txt
+	func_add_to_f_array ${PRE}-cfgadm-al.txt
+fi
+
+if [ ${_DEVFSA} -eq 1 ]; then
+	${devfsadm_cmd} -Csv >> ${PRE}-devfsadm-Csv.txt
+	${devfsadm_cmd} -c disk -sv >> ${PRE}-devfsadm-c-disk-sv.txt
+	func_add_to_f_array ${PRE}-devfsadm-Csv.txt
+	func_add_to_f_array ${PRE}-devfsadm-c-disk-sv.txt
+fi
+
+printf "%s\n" "[STOP] Collecting Disk-related Statistics."
+
 ###############################################################################s#
 ### Stop All gathering activities here #########################################
 ################################################################################
