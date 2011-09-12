@@ -5,6 +5,9 @@
 # Author: Sam Zaydel
 # Copyright 2011 Nexenta Systems, Inc. 
 #
+################################################################################
+### STEP (1) Define Variables for all commands here ############################
+################################################################################
 nmc_cmd=$(which nmc)
 hdd_cmd="/usr/bin/hddisco"
 fma_faulty_cmd="/usr/sbin/fmadm faulty"
@@ -24,6 +27,10 @@ PRE=${WORK_DIR}/${host_n}
 GZ_OUT_F=${host_n}-syst-bundle-${ts}.tar.gz
 ZPOOL_ARR=( $(zpool list -H -o name) )
 FILES_ARR=()
+################################################################################
+### STEP (2) Enable/Disable commands via a flag ################################
+################################################################################
+
 _CFGADM="1"		## Enable cfgadm data gathering
 _FMA="1"		## Enable fmadm data gathering
 _FMD="1"		## Enable fmdump data gathering
@@ -35,12 +42,32 @@ _DEVFSA="1"		## Enable devfsadm data gathering
 iostat_repeat="60"
 iostat_range="1"
 fmd_num_days="14"
-VER=1.0.7
+VER=1.0.8
+################################################################################
+### : Notes : ##################################################################
+# It is easy to add new items to collect with this script. 
+# <<< Follow these steps: >>>
+# 1) Create variable to represent absolute path to a command, suffix it with
+# _cmd, as a standard convention. See STEP (1)
+# 2) Create a flag to enable/disable logging of this command. Add any additional
+# options for your command(s) here as well. See STEP (2)
+# 3) Add any necessary functions to make command produce what you need it
+# to produce. See STEP (3)
+# 4) Simply copy an already present block, and maintain the same structure.
+# Make sure that you are using 'func_add_to_f_array' to add log to array of
+# all files, which are then all wrapped into the archive.
+# Redirecting the output of the file to '${PRE}-name-of-sommand-with-opts.log'
+# will assure that all logs remain standardized and make it into the archive.
+################################################################################
+################################################################################
+
+################################################################################
+### STEP (3) Define any necessary functions here ###############################
+################################################################################
 
 func_cleanup ()
 {
 	/usr/bin/rm -f ${FILES_ARR[@]}
-	# /usr/bin/rm -f /tmp/general-diag*.txt.*
 	return $?
 }
 
@@ -76,6 +103,9 @@ elif [ ! -x "${nmc_cmd}" ]; then
 	"This script may not be apporpriate for this system."
 	exit 1
 fi
+################################################################################
+### STEP (4) Add lines calling the commands here ###############################
+################################################################################
 
 ################################################################################
 ### Begin Gathering of logs here ###############################################
