@@ -35,7 +35,7 @@ _DEVFSA="1"		## Enable devfsadm data gathering
 iostat_repeat="60"
 iostat_range="1"
 fmd_num_days="14"
-VER=1.0.6
+VER=1.0.7
 
 func_cleanup ()
 {
@@ -92,7 +92,7 @@ printf "%s\n" "[START] Collecting Diagnostics and System Logs via NMC."
 ${nmc_cmd} -c "setup diagnostics run -y" && ${mv_cmd} ${WORK_DIR}/general-diag*.txt.gz ${PRE}-diags.txt.gz
 ${nmc_cmd} -c "show appliance syslog dmesg" > ${PRE}-dmesg.txt
 ${nmc_cmd} -c "show all" > ${PRE}-config.txt
-${nmc_cmd} -c  "show faults -v" > ${PRE}-faults-verbose.txt
+${nmc_cmd} -c  "show faults -v" > ${PRE}-show-faults-v.txt
 
 for iter in -diags.txt.gz \
 			-dmesg.txt \
@@ -113,15 +113,18 @@ if [[ ${_FMA} -eq 1 ]]; then
 	for args in ${fma_args[@]}; do 
 		${fma_faulty_cmd} -${args} >> ${PRE}-fmadm-diag.txt
 	done
-	printf "%s\n" "[STOP] Collecting Fault Management Data."
 	func_add_to_f_array ${PRE}-fmadm-diag.txt
+	printf "%s\n" "[STOP] Collecting Fault Management Data."
 fi
 
+## Added both '-eV' and '-e' for clarity, and ease of data parsing
 if [[ ${_FMD} -eq 1 ]]; then
 	printf "%s\n" "[START] Collecting Fault Management RAW Diagnostic Data."
 	${fmdump_cmd} -eV -t${fmd_num_days}day >> ${PRE}-fmdump-eV.txt
-	printf "%s\n" "[STOP] Collecting Fault Management RAW Diagnostic Data."
+	${fmdump_cmd} -eV -t${fmd_num_days}day >> ${PRE}-fmdump-e.txt
 	func_add_to_f_array ${PRE}-fmdump-eV.txt
+	func_add_to_f_array ${PRE}-fmdump-e.txt
+	printf "%s\n" "[STOP] Collecting Fault Management RAW Diagnostic Data."
 fi
 
 ################################################################################
@@ -139,9 +142,9 @@ if [[ ${_KST} -eq 1 ]]; then
 	for iter in H S T; do
 		${kstat_cmd} -p sderr:*:sd*,err:${iter}*Err* >> ${PRE}-kstat-sderr.txt
 	done
-	printf "%s\n" "[STOP] Collecting Kernel Statistics."
 	func_add_to_f_array ${PRE}-kstat-var.txt
 	func_add_to_f_array ${PRE}-kstat-sderr.txt
+	printf "%s\n" "[STOP] Collecting Kernel Statistics."
 fi
 
 ################################################################################
