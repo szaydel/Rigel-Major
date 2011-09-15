@@ -20,6 +20,7 @@ mv_cmd="/usr/bin/mv"
 host_n=$(hostname)
 ts=$(date +%Y%m%d)
 tail_cmd="/usr/bin/tail"
+tar_cmd="/usr/bin/tar"
 zp_cmd="/usr/sbin/zpool"
 un="/usr/bin/uname"
 WORK_DIR="/tmp"
@@ -42,7 +43,7 @@ _DEVFSA="1"		## Enable devfsadm data gathering
 iostat_repeat="60"
 iostat_range="1"
 fmd_num_days="14"
-VER=1.0.8
+VER=1.1.0
 ################################################################################
 ### : Notes : ##################################################################
 # It is easy to add new items to collect with this script. 
@@ -58,6 +59,10 @@ VER=1.0.8
 # all files, which are then all wrapped into the archive.
 # Redirecting the output of the file to '${PRE}-name-of-sommand-with-opts.log'
 # will assure that all logs remain standardized and make it into the archive.
+#
+# Ignore weird checking of the tarball. It looks like we cannot rely on exit
+# code from the tar command. Tarball may have been created, but tar returns a
+# non-zero return code.
 ################################################################################
 ################################################################################
 
@@ -218,7 +223,10 @@ printf "%s\n" "[STOP] Collecting Disk-related Statistics."
 cd ${WORK_DIR}
 tar czvf ${GZ_OUT_F} $(echo ${FILES_ARR[@]}) &>/dev/null
 
-if [ $? -eq 0 ]; then
+## Modified validation of tar using 'tar tvf', instead of return code from
+## running above command because tar may succeed, seemingly and still return
+## a non-zero return code, go figure
+if [[ $(${tar_cmd} tvf ${GZ_OUT_F}) ]]; then
 	printf "%s\n" "Successfully generated archive." \
 	"[Archive] $(ls -l ${GZ_OUT_F})" \
 	"Please, supply this file with your reponse to the case. Thank you!"
