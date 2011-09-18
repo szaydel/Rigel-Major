@@ -1,15 +1,14 @@
 # /etc/sudoers
+## Version 1.0.0
+## This is a supplemental sudoers configuration file that should be placed in 
+## /etc/sudoers.d/ directory with perms set to 0440.
 #
-# This file MUST be edited with the 'visudo' command as root.
-#
-# See the man page for details on how to write a sudoers file.
-#
-
 # User alias specification
-User_Alias	SYSADMIN = szaydel,admin
+User_Alias	SYSADMIN = admin,%admin,labadm,szaydel,%labadm
+User_Alias  REMOTE_ADMIN = labadm,%labadm
 #
 Runas_Alias	COMMANDS_AS_ROOT = root
-ALL	ALL = (ALL) ALL
+# ALL	ALL = (ALL) ALL
 #
 # Cmnd alias specification
 Cmnd_Alias  NETW = /sbin/iwconfig,/usr/bin/iw,/sbin/iwlist,/sbin/iwpriv, \
@@ -23,7 +22,7 @@ Cmnd_Alias	FS = /sbin/tune2fs,/sbin/mkfs*,/sbin/mkswap \
 # Cmnd_Alias	APTCONF = 
 #
 # User privilege specification
-root	ALL=(ALL) ALL
+# root	ALL=(ALL) ALL
 #
 # Uncomment to allow members of group sudo to not need a password
 # (Note that later entries override this, so you might need to move
@@ -31,6 +30,7 @@ root	ALL=(ALL) ALL
 # %sudo ALL=NOPASSWD: ALL
 
 # Members of the admin group may gain root privileges
-%admin ALL=(ALL) ALL
+#%admin ALL=(ALL) ALL
 # No Password Required for the following set of commands
 SYSADMIN	ALL=(COMMANDS_AS_ROOT) NOPASSWD:NETW,DISK,DEBS,FS
+REMOTE_ADMIN    ALL=(COMMANDS_AS_ROOT) NOPASSWD: ALL
