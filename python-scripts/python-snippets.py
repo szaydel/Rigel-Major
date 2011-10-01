@@ -48,6 +48,99 @@ a = list(range(0,10,1))    ## Create a list of numbers from 0 through 9, increme
 p = re.compile('[a-z]+',re.IGNORECASE)  ## create a MatchObject, which we store in variable 'p'
 q = p.match('sam')          ## Create a variable with string with regex result based on string 'sam'
 
+## Lambda anon functions
+is_even = lambda x : True if x % 2 == 0 else False
+l2 = [i for i in l1 if not is_even(i) ]
+
+is_letter = lambda letter,x: True if letter in x else False
+l4 = [ i for i in l3 if is_letter('a',i) ]
+
+check_len = lambda x: True if len(x.strip('\n')) <= 3 else False
+l5 = [i for i in open('/tmp/file.o','r') if check_len(i)]
+
+## Use Lambda to filter out black_list items
+black_list = ['a','m','y']
+anonf = lambda value: value if value[0] not in black_list else None
+filtered_li = map(anonf, ['apple','orange','banana'])
+
+## Modification 
+filtered_li[anonf(i) for i in ['Cherry','Green','apple','orange','banana'] \
+ if i[0] == i[0].upper() ]
+## Dict from list of tuples
+my_list = [('a', 1), ('b', 2)]
+dict(my_list)
+{'a': 1, 'b': 2}
+
+## Dictionary from tuples
+t = ((1, 'a'),(2, 'b'))
+dict((y, x) for x, y in t)
+{'a': 1, 'b': 2}
+
+## Dictionary with key:value generated from zipping string and range
+d = dict(zip('abc', range(3)))
+{'a': 0, 'c': 2, 'b': 1}
+
+## Build dictionary from keys, values using zip
+keys = ['lun_n','lun_sz','lun_blocksz','lun_sparse']
+values = ['mylun_1','1G','8k',1]
+mydict = dict(zip(keys,values))
+[('lun_n', 'mylun_1'), ('lun_sz', '1G'), ('lun_blocksz', '8k'),
+ ('lun_sparse', 1)]
+
+## Build dictionary from keys, values using izip
+keys = ['lun_n','lun_sz','lun_blocksz','lun_sparse']
+vals = ['mylun_1','1G','8k',1]
+myDict = {}
+for key,value in izip(keys, vals):
+    myDict[key] = value
+{'lun_blocksz': '8k', 'lun_n': 'mylun_1', 'lun_sparse': 1, 'lun_sz': '1G'}
+
+## Build dictionary from keys, values using izip
+from itertools import izip, count
+str_vals = 'mylun_1;1G;8k;1'
+keys = ['lun_n','lun_sz','lun_blocksz','lun_sparse']
+vals = str_vals.split(';')
+
+MyDict = {}
+for i, f, s in izip(count(), keys, vals):
+    print 
+    MyDict[f] = s  
+print MyDict
+
+## Build dictionary from keys, values using izip
+from itertools import izip, count
+str_vals = 'mylun_1;1G;8k;1'
+keys = ['lun_n','lun_sz','lun_blocksz','lun_sparse']
+vals = str_vals.split(';')
+
+MyDict = { k:v for k, v in izip(keys, vals) }   
+print MyDict
+
+
+## split string into groups of tuples
+from itertools import izip, chain, repeat
+
+def grouper(n, iterable, padvalue=None):
+    "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
+    return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+
+## Build a dictionary of sets
+myDict = {}
+myDict.update(dict.fromkeys(izip(['a', 'b', 'c'], ['1','2','3']), ('a','')))
+{('a', '1'): ('a', ''), ('b', '2'): ('a', ''), ('c', '3'): ('a', '')}
+
+## List comprehension with sets
+l1 = [1,2,3,4]
+l2 = [2,3,4,5]
+s1 = set(l1)
+s2 = set(l2)
+## Find difference between lists
+s1.difference(s2)
+## Find elements common to both lists
+s1.intersection(s2)
+## Two methods to convert sets to lists
+l3 = list(s1.intersection(s2))
+l4 = [ x for x in s1.intersection(s2) ]
 ## File selection using regex
 for file in glob.glob('pathname'):
     print(file)
@@ -136,3 +229,88 @@ if os.path.exists('/home/build/test/sandboxes/'+todaystr+'/new_sandbox/Makefile'
 
 ## .. change to the right directory
 os.chdir(os.path.join('/home/build/test/sandboxes/', todaystr, '/new_sandbox/'))
+
+## Convert Decimal to HEX
+ip = "192.168.157.128"
+ip = ip.split('.')
+' '.join((hex(int(i))[2:] for i in ip)) ## Result 'c0 a8 9d 80'
+
+## Simple readline processing loop
+## Will read file until nothing to read, then will break-out of loop
+with open('/tmp/file.o', 'r') as f:
+    while True:
+        line = f.readline()
+        if not line:
+            print '%s' % ('End-of-File')
+            break
+        print line.strip('\n')
+
+## Another version of the above loop
+with open('/tmp/file.o', 'r') as f:
+    while True:
+        line = f.readline()
+        if line == '':
+            print '%s' % ('End-of-File')
+            break
+        print line.strip('\n')
+## One more version of reading one line at a time, without while True
+f = open('/tmp/file.o', 'r')
+for line in f.readlines():
+    if not line:
+        break
+    else:
+        print line.rstrip('\n')
+f.close()
+
+
+f = open('/tmp/file.o', 'r')
+while True:
+    try:
+        print(next(f), end='')
+    except StopIteration:
+        break
+
+## Jump to a particular line in a file, in this case, line 6
+with open('/tmp/file.o','rt') as f:
+    a = f.readlines()[6]
+    print a
+
+## Yet another method to skip through lines in a file
+file_contents = []
+with open('/tmp/file.t','rt') as f:
+    while True:
+        line = f.readline()
+        if not line:
+            print '%s' % ('End-of-File')
+            break
+        elif len(line) > 1:
+            file_contents.append(line.strip('\n'))
+
+## Use the fileinput module to read through a file
+## line at a time, and match using re
+import fileinput, import re
+fi = fileinput.FileInput(['/tmp/file.o'])
+while True:
+    line = fi.readline().strip('\n')
+    pattern = re.compile('^s', re.IGNORECASE)
+    match = re.match(pattern, line)
+    if match:
+        print 'Line #: <%s> %s' %(fi.filelineno(), line)
+    elif line == '':
+        fi.close()
+        print 'End-of-Input'
+        break
+    else:
+        print 'Line #: <%s> Line does not match' % (fi.lineno())
+
+## Nested functions with maintaining state
+def myfunc(start):
+    global state
+    state = start
+    def nested(name):
+        global state
+        print(name, state)
+        state += 1
+    return nested
+a = myfunc(0)
+a('somename')

@@ -21,13 +21,15 @@
 #	SWrites Sync write operations per second
 #	AWrites Async write operations per second
 #	Commits	Commits per second
-#	Rd(KB)	Read KB/sec
-#	SWr(KB)	Sync write KB/sec
-#	AWr(KB)	Async write KB/sec
+#	Rd_bw	Read KB/sec
+#	SWr_bw	Sync write KB/sec
+#	AWr_bw	Async write KB/sec
 #	Rd_t	Average read time in microseconds
 #	SWr_t   Average sync write time in microseconds
 #	AWr_t   Average async write time in microseconds
 #	Com_t	Average commit time in microseconds
+#   Align%  Percentage of read/write operations that have offset aligned to
+#           blocksize (default=4096 bytes)
 #
 # Note: NFSv4 compound operations are not measured, per se, but they are
 # counted in the total operations count.
@@ -57,7 +59,7 @@
 # Author: Richard.Elling@Nexenta.com
 #
 # Revision:
-#   1.1	31-May-2011
+#   1.4	8-Jul-2011
 #
 # TODO: running count of nfsd threads (done efficiently)
 # TODO: mount point filter
@@ -67,8 +69,10 @@
 #
 
 ### default variables
+opt_blocksize=4096  # blocksize for alignment measurements
 opt_client=0	# set if -c option set
 opt_clear=1		# set if screen to be cleared
+opt_json=0		# set if output is JSON
 opt_top=0		# set if list trimmed to top
 top=0			# number of lines trimmed
 opt_vers=0		# set if NFS version restricted
@@ -77,57 +81,64 @@ interval=10		# default interval
 count=-1		# number of intervals to show
 
 ### process options
-while getopts c:Cm:n:t: name
+while getopts b:c:Cjn:t: name
 do
 	case $name in
+    b)  opt_blocksize=$OPTARG ;;
 	c)	opt_client=1; client_IP=$OPTARG ;;
 	C)	opt_clear=0 ;;
+	j)	opt_json=1 ;;
 	n)	opt_vers=1; vers=$OPTARG ;;
 	t)	opt_top=1; top=$OPTARG ;;
-	h|?)	cat <<-END >&2
-		USAGE: nfssvrtop [-C] [-c client_IP] [-t top] [interval [count]]
-						-c client_IP	# trace for this client only
-		                -C      # don't clear the screen
-		                -t top  	# print top number of entries only
-		   eg,
-		        nfssvrtop       # default output, 10 second samples
-		        nfssvrtop 1     # 1 second samples
-				nfssvrtop -n 4	# only show NFSv4 traffic
-		        nfssvrtop -C 60 # 60 second samples, do not clear screen
-		        nfssvrtop -t 20 # print top 20 lines only
-		        nfssvrtop 5 12  # print 12 x 5 second samples
-		END
+	h|?)	cat <<END >&2
+USAGE: nfssvrtop [-Cj] [-b blocksize] [-c client_IP] [-n vers] [-t top] 
+                 [interval [count]]
+             -b blocksize # alignment blocksize (default=4096)
+             -c client_IP # trace for this client only
+             -C           # don't clear the screen
+             -j           # print output in JSON format
+             -n vers      # show only NFS version
+             -t top       # print top number of entries only
+   examples:
+     nfssvrtop         # default output, 10 second samples
+     nfssvrtop -b 1024 # check alignment on 1KB boundary
+     nfssvrtop 1       # 1 second samples
+     nfssvrtop -n 4	   # only show NFSv4 traffic
+     nfssvrtop -C 60   # 60 second samples, do not clear screen
+     nfssvrtop -t 20   # print top 20 lines only
+     nfssvrtop 5 12    # print 12 x 5 second samples
+END
 		exit 1
 	esac
 done
 
-shift $(( $OPTIND - 1 ))
+shift $(($OPTIND - 1))
 
 ### option logic
-if [[ "$1" > 0 ]]; then
+if [ ! -z "$1" ]; then
         interval=$1; shift
 fi
-if [[ "$1" > 0 ]]; then
+if [ ! -z "$1" ]; then
         count=$1; shift
 fi
-if (( opt_clear )); then
+if [ $opt_clear = 1 ]; then
         clearstr=$(clear)
 else
         clearstr=""
 fi
 
-
-
 #################################
 # --- Main Program, DTrace ---
 #
-/usr/sbin/dtrace -n '
+/usr/sbin/dtrace -Cn '
 /*
  * Command line arguments
  */
+inline int OPT_blocksize = '$opt_blocksize';
 inline int OPT_client	= '$opt_client';
 inline int OPT_clear 	= '$opt_clear';
 inline int OPT_top 	= '$opt_top';
+inline int OPT_json	= '$opt_json';
 inline int OPT_vers	= '$opt_vers';
 inline int INTERVAL 	= '$interval';
 inline int COUNTER 	= '$count';
@@ -281,6 +292,8 @@ nfsv4:nfssrv::op-read-start
 	@read_b[self->vers, args[0]->ci_remote] = sum(args[2]->count);
 	OPT_client == 0 ? @read_b[self->vers, "all"] = sum(args[2]->count) : 1;
 	total_read_b += args[2]->count;
+    @avg_aligned[self->vers, args[0]->ci_remote] = 
+        avg((args[2]->offset % OPT_blocksize) ? 0 : 100);
 }
 
 nfsv3:nfssrv::op-read-done,
@@ -306,6 +319,8 @@ nfsv3:nfssrv::op-write-start
 	@swrite_b[self->vers, args[0]->ci_remote] = sum(data_len);
 	OPT_client == 0 ? @swrite_b[self->vers, "all"] = sum(data_len) : 1;
 	total_swrite_b += data_len;
+    @avg_aligned[self->vers, args[0]->ci_remote] = 
+        avg((args[2]->offset % OPT_blocksize) ? 0 : 100);
 }
 
 nfsv4:nfssrv::op-write-start
@@ -318,6 +333,8 @@ nfsv4:nfssrv::op-write-start
 	@swrite_b[self->vers, args[0]->ci_remote] = sum(data_len);
 	OPT_client == 0 ? @swrite_b[self->vers, "all"] = sum(data_len) : 1;
 	total_swrite_b += data_len;
+    @avg_aligned[self->vers, args[0]->ci_remote] = 
+        avg((args[2]->offset % OPT_blocksize) ? 0 : 100);
 }
 
 nfsv3:nfssrv::op-write-done,
@@ -343,6 +360,8 @@ nfsv3:nfssrv::op-write-start
 	@awrite_b[self->vers, args[0]->ci_remote] = sum(data_len);
 	OPT_client == 0 ? @awrite_b[self->vers, "all"] = sum(data_len) : 1;
 	total_awrite_b += data_len;
+    @avg_aligned[self->vers, args[0]->ci_remote] = 
+        avg((args[2]->offset % OPT_blocksize) ? 0 : 100);
 }
 
 nfsv4:nfssrv::op-write-start
@@ -355,6 +374,8 @@ nfsv4:nfssrv::op-write-start
 	@awrite_b[self->vers, args[0]->ci_remote] = sum(data_len);
 	OPT_client == 0 ? @awrite_b[self->vers, "all"] = sum(data_len) : 1;
 	total_awrite_b += data_len;
+    @avg_aligned[self->vers, args[0]->ci_remote] = 
+        avg((args[2]->offset % OPT_blocksize) ? 0 : 100);
 }
 
 nfsv3:nfssrv::op-write-done,
@@ -410,32 +431,50 @@ profile:::tick-1sec
 	normalize(@avgtime_commit, 1000);
 
 	/* print status */
-	OPT_clear ? printf("%s", CLEAR) : 1;
-	printf("%Y, load: %d.%02d, read: %6d KB, swrite: %6d KB, awrite: %6d KB\n",
-	    walltimestamp, self->load1a, self->load1b, 
-		total_read_b, total_swrite_b, total_awrite_b);
+	OPT_clear && !OPT_json ? printf("%s", CLEAR) : 1;
+	
+	OPT_json ? 
+		printf("{ \"time\": \"%Y\", \"timestamp\": %d, \"interval\": %d, \"load\": %d.%02d, \"read (KB)\": %d, \"sync write (KB)\": %d, \"async write (KB)\": %d,\n \"sample\": [",
+			walltimestamp, walltimestamp, INTERVAL, 
+			self->load1a, self->load1b, 
+			total_read_b, total_swrite_b, total_awrite_b)
+	:
+		printf("%Y, load: %d.%02d, read: %-8d KB, swrite: %-8d KB, awrite: %-8d KB\n",
+			walltimestamp, self->load1a, self->load1b, 
+			total_read_b, total_swrite_b, total_awrite_b);
 
 	/* print headers */
-	printf("%s\t%-15s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\n",
-	    "Ver", "Client", "NFSOPS", 
-		"Reads", "SWrites", "AWrites", "Commits",
-		"Rd(KB)", "SWr(KB)", "AWr(KB)",
-		"Rd_t", "SWr_t", "AWr_t", "Com_t");
+	OPT_json ? 1 :
+		printf("%s\t%-15s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\n",
+			"Ver", "Client", "NFSOPS", 
+			"Reads", "SWrites", "AWrites", "Commits",
+			"Rd_bw", "SWr_bw", "AWr_bw",
+			"Rd_t", "SWr_t", "AWr_t", "Com_t", "Align%");
 
 	/* truncate to top lines if needed */
 	OPT_top ? trunc(@c_nfsops, TOP) : 1;
 
-	printa("%s\t%-15s\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\n",
-		@c_nfsops, @c_read_client, @c_swrite_client, @c_awrite_client, @c_commit_client,
-		@read_b, @swrite_b, @awrite_b,
-		@avgtime_read, @avgtime_swrite, @avgtime_awrite,
-		@avgtime_commit);
+	OPT_json ?
+		printa("{\"version\": \"%s\", \"address\": \"%s\", \"NFSOPS\": %@d, \"reads\": %@d, \"sync writes\": %@d, \"async writes\": %@d, \"commits\": %@d, \"read bw\": %@d, \"sync write bw\": %@d, \"async write bw\": %@d, \"avg read time\": %@d, \"avg sync write time\": %@d, \"avg async write time\": %@d, \"avg commit time\", %@d, \"aligned%%\", %@d },\n",
+			@c_nfsops, @c_read_client, @c_swrite_client, @c_awrite_client, 
+            @c_commit_client, @read_b, @swrite_b, @awrite_b,
+			@avgtime_read, @avgtime_swrite, @avgtime_awrite,
+			@avgtime_commit, @avg_aligned)
+	:
+		printa("%s\t%-15s\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\t%7@d\n",
+			@c_nfsops, @c_read_client, @c_swrite_client, @c_awrite_client, 
+            @c_commit_client, @read_b, @swrite_b, @awrite_b,
+			@avgtime_read, @avgtime_swrite, @avgtime_awrite,
+			@avgtime_commit, @avg_aligned);
+	
+	OPT_json ? printf("]}\n") : 1;
 
 	/* clear data */
-	trunc(@c_nfsops); trunc(@c_read_client); trunc(@c_swrite_client); trunc(@c_awrite_client);
-	trunc(@c_commit_client);
+	trunc(@c_nfsops); trunc(@c_read_client); trunc(@c_swrite_client); 
+    trunc(@c_awrite_client); trunc(@c_commit_client);
 	trunc(@read_b); trunc(@awrite_b); trunc(@swrite_b);
-	trunc(@avgtime_read); trunc(@avgtime_swrite); trunc(@avgtime_awrite); trunc(@avgtime_commit);
+	trunc(@avgtime_read); trunc(@avgtime_swrite); trunc(@avgtime_awrite); 
+    trunc(@avgtime_commit); trunc(@avg_aligned);
 	total_read_b = 0;
 	total_swrite_b = 0;
 	total_awrite_b = 0;
@@ -457,9 +496,10 @@ profile:::tick-1sec
  */
 dtrace:::END
 {
-	trunc(@c_nfsops); trunc(@c_read_client); trunc(@c_swrite_client); trunc(@c_awrite_client);
-	trunc(@c_commit_client);
+	trunc(@c_nfsops); trunc(@c_read_client); trunc(@c_swrite_client); 
+    trunc(@c_awrite_client); trunc(@c_commit_client);
 	trunc(@read_b); trunc(@awrite_b); trunc(@swrite_b);
-	trunc(@avgtime_read); trunc(@avgtime_swrite); trunc(@avgtime_awrite); trunc(@avgtime_commit);
+	trunc(@avgtime_read); trunc(@avgtime_swrite); trunc(@avgtime_awrite); 
+    trunc(@avgtime_commit); trunc(@avg_aligned);
 }
 '

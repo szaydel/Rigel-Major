@@ -1,0 +1,649 @@
+#!/bin/bash
+
+: ${username=`whoami`}
+echo "The user logged in currently is $username"
+# VAR1=`whoam1`
+# echo $VAR1
+echo "User currently logged in is `whoami` " # Will expand the whoami command...
+
+## Test for interactive or non-intercative shell
+if [ -z "$PS1" ]; then
+        echo This shell is not interactive
+else
+        echo This shell is interactive
+fi
+
+case "$-" in
+*i*)	echo This shell is interactive ;;
+*)	echo This shell is not interactive ;;
+esac
+
+## Variable subst : remove . and _
+i="._sam"; echo ${i//[._]/}
+sam
+
+## Test if there is at least one dir under /tmp
+foo="/tmp/";  shopt -s nullglob; dirs=("$foo"*/); if ((${#dirs[@]})); then echo "at least one dir matches"; fi
+
+
+## Use awk to print all but the first column
+$ awk '{$1=""; print}'
+
+## Use awk to join lines together
+cat filename | awk '{ if ( ( NR % 3 ) == 0 ) { printf("%s\n",$0) } else { printf("%s ",$0) } }'
+cat filename | awk '{ printf("%s ",$0); if ( NR%3 == 0 ) printf("\n") }'
+
+## use sed to join lines together
+
+for A in 2:0:5:952 2:0:4:952 0:0:3:952 0:0:2:952; do lsscsi -vlk "${A}"|sed -e :a -e '$!N; s/\n/ /; ta' | wc -l; done
+
+## Execute a command with a timeout
+timeout 10 sleep 11
+
+
+# cat /dev/null > empty.file	# Will create an empty file.
+: > empty.file	# Same as above, just shorter.
+
+## Store contents of file in a variable
+x=$(<foo)
+
+## Send stdout of command one to command 2 as stdin
+command1 > >(command2)
+
+# Comparison of two variables -ne=not equal -eq=equal
+x=3
+y=4
+if [ "$x" -ne "$y" ]
+then
+echo "This is a true statement."
+else
+echo "This is a false statement."
+fi
+
+# Simple Loop
+# for i in 1 2 3 4 5 6 7 8 9 10 # First loop.
+# do
+# ls -al "$i "
+# done
+
+# Simple loop to test metadevices on linux
+for i in 0 1 ; do mdadm --misc --test /dev/md$i ; [ `echo $?` == 0 ] || echo "md$i Wrong..." ; done ;
+
+## For Loop to create a number of directories
+
+for a in d$(seq 1..17) ; do echo $a; done
+
+if [ -z "$z" ]
+then
+echo "Yep, this is a true statement."
+else
+echo "Nope, this is wrong."
+fi
+
+## Until Loop
+
+until ping 56.224.33.1 -c 3 > /dev/null
+	do
+		echo "This is broke..."
+		sleep 2
+	done
+
+echo "Seems to be working now..."
+
+
+for file in *; do chown usps_edi $file; chmod 660 $file; mv $file /tmp; done
+
+## Read list of patches from file and check existance
+cat patch_order| while read line ; do showrev -p $line; done;
+
+# Used to parse log files
+cat ~/bin/log | awk '{print $1	$2	$5	$7}'
+
+## While loop to read from < file one line at a time
+while IFS= read -r line; do printf "%s\n" ${line}; done < filename
+
+## Another While Loop variation
+MYIN=$(cat /tmp/input)
+while read LINE; do netcat -z -w2 -vv $LINE 389; netcat -z -w2 -vv $LINE 636; done <<EOF
+$MYIN
+EOF
+
+
+# Do something with a file
+
+if [ -x "$filename" ]; then
+	echo "File $filename exists."; cp $filename $filename.bak
+	else
+	echo "File $filename not found."; touch $filename
+fi; echo "File test complete."
+
+
+# Brace Expansion exercise
+cat {file1,file2,file3} > combined_file
+# Concatenates the files file1, file2, and file3 into combined_file.
+
+cp file22.{txt,backup}
+# Copies "file22.txt" to "file22.backup"
+
+for i in `cat /tmp/list_of_servers`; \
+do scp  "$i":/opt/syslog-ng/etc/syslog-ng.conf ./syslog-ng.conf."$i" ; done;
+
+
+# Conditional execution of something
+# If filename doesn't exist... ! = not
+if [ ! -f /path_to_file/filename ]; then
+	do something
+	else
+	do something else
+	done
+
+# Another For Loop
+for i in *
+	do
+	echo “File is $i”
+	done
+
+# One more For Loop
+
+for i in $( ls ); do
+	echo item: $i
+	done
+
+# ID'ing and killing a process
+# Substitute /firefox/ with any process which may need to be killed
+#
+for PID in $(ps -ef | awk '/firefox/ { print $2 }'); do
+	kill -TERM $PID
+	done
+
+# Create Directory and change Perms and Ownership
+# Requires input from command line
+for cr in $1; do
+	mkdir $cr
+	chmod 777 $cr
+	done
+
+# Process multiple command line arguments
+#!/usr/bin/sh
+# PURPOSE: This script is used to process all of the tokens which
+# Are pointed to by the command-line arguments, $1, $2, $3, etc... -
+#
+# REV LIST:
+#
+#
+# Start a for loop
+for TOKEN in $*
+do
+process each $TOKEN
+done
+
+# Used to verify Return Code
+
+test -d /usr/local/bin
+if [ “$?” -eq 0 ] # Check the return code
+	then 			# The return code is zero
+	echo ‘/usr/local/bin does exist’
+else # The return code is NOT zero
+	echo ‘/usr/local/bin does NOT exist’
+fi
+
+
+# Filter ps processes
+ps | grep rman | awk {'print $8'} | sort | uniq
+
+
+# Select and delete files or dirs based on perms
+rm -rf `ls -l | grep -v drw | awk {'print $9'} | xargs`
+
+# Simple test to check if system is Linux
+
+#!/bin/bash
+#
+OS=`/bin/uname`
+if [ $OS == "Linux" ]
+
+then
+	echo "This is a Linux System"; exit 0
+else
+	echo "Not running Linx"; exit 1
+fi
+
+## Useful FIND command variations
+
+
+## Find all dot files and dirs
+ls -a | egrep "^\.\w"
+
+## Perform same action on multiple files/dirs
+for file in `ls`; do chown wsadmin:wsadmin $file; done
+
+## Various Disk Space checking commands
+sudo du -sh `ls -d */` 2> /dev/null
+
+## Use sfdisk to copy partition table from disk to disk
+sfdisk -d /dev/sda | sed 's/sda/sdb/g' | sfdisk /dev/sdb
+
+## Easily read input from a file and use each line as
+## an argument for a command
+
+function pause()
+{
+read -p "$*"
+}
+
+
+	for I in $INPUT
+	do
+	sudo passwd -r files -l "$I"
+	done
+
+## Compare two files and output 10000 lines
+## ignoring anything starting with -d
+gdiff --unified=10000 compfile2 compfile1 | egrep -v '^-\d'
+gdiff --unified=10000 old-mmc.ftpout old-mmc.ftpin | egrep -v "(^\+\d|^\-\d)"
+
+gdiff --unified=10000 input.file1 inpute.file2 | egrep -v "(^\+[a-z]|^\-[a-z])"| sort > outputfile.sorted
+
+snoop -d bge0 port 22 and src ether "0:3:ba:f0:f6:ed" and dst hostname
+
+## Snooping for NFS info
+snoop -v -d igb0 rpc nfs
+
+## Quickly mount more than one filesystem listed in /etc/vfstab
+for i in d00 d04 d05 d10 d11 d12 ; do mount /mstr/tmp-mstrmd/$i; done
+for i in d00 d04 d05 d10 d11 d12 d13 d14 d15 d16 d17 d18 d19 d20 ; do mount /mstr/tmp-mstrst/$i; done
+
+## Find and empy log files over 5000K
+for file in `find /var/log/ -type f -size +5000k`; do > $file; done
+
+## Create new files with defined size
+dd if=/dev/random of=testfile bs=1024 count=100
+dd if=/dev/zero of=testfile bs=1024 count=100	# Much faster...
+
+## Create random 32-character string with only hex-compatible characters
+printf "%s $(< /dev/urandom tr -dc a-f0-9 | head -c32)\n"
+
+## Use dd to create a number of files
+for a in 1 2 3 4 ; do  dd if=/dev/zero of=/tmp/test"$a" bs=512 count=100; done;
+
+## Use zcat to extract a .cpio archive
+zcat -dc testfile.cpio.gz | cpio -i
+
+## Wrap tar archive with 7z compression
+tar cf - filenames | 7z a -si filename.tar.7z
+7z x -so testfile2.tar.7z | tar xf -
+
+## List contents of tar within a 7z archive
+7z x -so testfile.tar.7z | tar tvf -
+
+## Tar files using standard input and output
+tar cvf - /etc/sysconfig/network/ | tar xvf -
+
+## Create tar archive with gz highest compression using standard out from tar
+tar cf - testdir/testfile |gzip -9 > testdir/testfile.tar.gz
+
+## Another way of combining find and tar
+tar -cvzf arch.tgz $(find /path/dir -not -type d)
+
+## Use tar to extract files from internet without saving file locally
+wget -O - http://example.com/a.gz | tar xz
+
+## Use lofiadm to mount ISO filesystem on Solaris
+sudo mount -F hsfs -o ro `sudo lofiadm -a /export/home/szaydel/solaris/sol-10-u7-ga-sparc-dvd.iso /dev/lofi/1` /media/export
+
+## Clone a volume /dev/sda via ssh to file on remote system
+dd if=/dev/sda | gzip -c | ssh user@hostname 'dd of=/mnt/backups/sda.dd'
+
+## Sorting by Rows
+## Usage: sort_file < sort_me.csv > out_file.csv
+infile=$1 \
+for i in $(cat $infile) do echo $i | tr "," "\n" | sort -n | tr "\n" "," | sed "s/,$//" echo done
+
+## Search for id in xferlog
+sudo grep perfmeas /var/log/xferlog* | awk {'print $14'} | sort -u
+
+## Using GPG to encrypt from stdin
+echo 'some text to be encrypted' | gpg --encrypt --armor --recipient NAME -output mykey.gpg
+
+## Test range of IP Addresses with a ping ahd print those IPs that respond
+for i in 192.168.1.{10..30}; do ping -c 1 $i &> /dev/null ; if [[ $? -eq 0 ]]; then echo $i; fi; done
+
+## Check for all open ports on the system without using nmap and netcat instead
+time { i=0; while [ $(( i < 65535 )) -eq 1 ] ; do netcat -zw2 localhost $((++i)) && echo port $i opened ; done; }
+
+## Do a search-and-replace using perl
+perl -i'.bak' -pe 's/old/new/g' <filename>
+
+## Find and sort files larger than 10MB from current dir as root
+find ./ -size +10M -type f -print0 | xargs -0 ls -Ssh1 --color
+
+## On solaris used for Alom control
+/usr/platform/`uname -i`/sbin/scadm help
+
+## Use echo with for loop
+for a in `df -h | grep edi | awk {'print $6'} | grep mway | sort` ; do echo "hcsServiceHasMount= '$a'"; done;
+
+
+## Compare information from showrev to list of patches
+for i in `showrev -p | grep VRTS | awk {'print $2'}`; do ls | grep "$i"; done;
+
+## Show All UDP TCP and ICMP Traffic, but not port 22
+tcpdump -n -v tcp or udp or icmp and not port 22
+
+## Debug mode for a bash script with all output redirected
+bash -x test.sh 2>&1 | tee --append out.test
+
+## List Reverse DNS Records for a Subnet
+nmap -R -sL 56.224.33.1/27 | awk '{if($3=="not")print"("$2") no PTR";else print$3" is "$2}' | grep '('
+
+## Test ping a list of servers
+for i in `cat /tmp/list_of_servers`; \
+do ping -q -c1 -w3 "$i" 2&>1 /dev/null || echo "$i" Ping Failed... ; \
+done
+
+## Cleanup Firefox's Database
+find ~/.mozilla/firefox/ -type f -name "*.sqlite" -exec sqlite3 {} VACUUM \;
+
+## Use find with a pattern of file extensions
+find . -regex '.*\(h\|cpp\)'
+
+## Reconfigure LLT - Change interface
+lltconfig -t ce3 -d /dev/ce:3 -b ether # Add interface as one of the configured links
+lltconfig -a delete nodename ce1 # Remove node on specified interface
+lltconfig -u ce1 # Remove interface as one of the configured links
+
+## VMware Conversion tool
+/opt/vmware/ovftool/ovftool /path/to/file.vmx path/to/file.ovf
+
+## Creating Archives with TAR
+tar czf /path/archive_of_foo.`date -I`.tgz /path/foo
+
+## Use tar to replace ls -lR
+tar -cvf /dev/null . | while read i; do ls -l $i; done
+
+## Using nmap and ssh to discover hostnames for give IPs
+for i in `nmap -v -sP 56.42.136.1/22 | grep 'up' | awk {'print $2'}` ; do ssh "$i" hostname >> /tmp/hostames.log ; done ;
+
+
+## Network Status Commands
+kstat -c net -n ce0 | egrep 'auto|link'
+
+## MDADM Creating Raid Config file
+sudo mdadm --detail --scan --verbose > /tmp/mdadm.conf
+
+## Less pager and grep used together
+argv=("$@"); rest=${argv[@]:1}; less -JMN +"/$1" `grep -l $1 $rest`
+## If an alias was created 'lgrap' then the following would work:
+lgrep Exception $(find . -name "qc*.log")
+
+## Rsync and find used together
+find . -name "whatever.*" -print0 | rsync -av --files-from=- --from0 ./ ./destination/
+
+## Use netcat to copy entire disk
+SOURCE: dd if=/dev/sda bs=16065b | netcat ip-target 1234
+TARGET: netcat -l -p 1234 | dd of=/dev/mapper/laptop bs=16065b
+STATS on target: watch -n60 -- kill -USR1 $(pgrep dd)
+
+## GNUPG Encrypting/Decrypting and Sending
+cat private-file | gpg2 --encrypt --armor --recipient "Disposable Key" | mailx -s "Test Message" user@email.com
+
+## Convert man page (man) to PDF
+man -t man | ps2pdf - > man.pdf
+
+## Use python to print repeating characters
+python -c 'print "-" * 50'
+
+## Use bash to print repeating characters
+printf "%50s\n"|tr ' ' -
+
+## Use printf to repeat a pattern
+printf -v f "%10s" ; printf "%s\n" "${f// /+}"
+
+## Use sed to replace space with "new line" character
+
+## Use getent to populate local passwd database and create appropriate Home Dir.
+getent passwd d5trb0 >> /etc/passwd ; for i in 'd5trb0'; do mkdir /export/home/$i ; chown $i:users /export/home/$i ; chmod 700 /export/home/$i ; done ;
+
+## Gather HBA info on SUSE Systems
+for i in 0 1 2 3 ; do cat /sys/class/fc_host/host"$i"/port_name; done ;
+
+## Pointing to the right Java browser plugin
+sudo ln -s /usr/lib64/jvm/jre-sun/lib/amd64/libnpjp2.so /usr/lib64/browser-plugins/libnpjp2.so
+
+
+## Case in bash scripts
+DIR=$(dirname $0)
+MYREL=$(uname -r)
+MYARCH=$(uname -p)
+
+case $MYREL in
+        5.10)
+                case $MYARCH in
+                        sparc)
+                                echo "Using agent for Solaris $MYREL $MYARCH"
+                                AGENT="opsware-agent-34c.0.0.123-solaris-5.10"
+                                ;;
+                        i386)
+                                AGENT="opsware-agent-34c.0.0.123-solaris-5.10-X86"
+                                ;;
+                        *)
+                                echo "Unsupported arch: $MYARCH"
+                                exit 1
+                                ;;
+                esac
+                ;;
+        5.9)
+                AGENT="opsware-agent-34c.0.0.123-solaris-5.9"
+                ;;
+        5.8)
+                AGENT="opsware-agent-34c.0.0.123-solaris-5.8"
+                ;;
+        *)
+                echo "Unsupported release: $MYREL"
+                exit 1
+                ;;
+
+
+
+## Use systool to quickly identify WWNNs
+systool -c fc_host -v | grep port_name | gawk {'print $3'} | sed 's/\"//g'
+
+## Get wwid of a block device
+scsi_id -g -u -s /block/sdju
+
+## Map of Block devices to physical Paths
+ls -l /sys/block/*/device
+
+## List a number of files, based on a pattern, and then read lines from each file and execute a series of commands against those files.
+for N in $(ls /dbss/ora1002/u00/crs/ASMdisks.*[db.fra]) do while IFS= read -r line; do echo ${N} >> /tmp/logfile; echo "multipath -l ${line}" >> /tmp/logfile; done < ${N}; done
+
+## Option 2 to above - this one prints divider lines, separating output of lines.
+for N in $(ls /dbss/ora1002/u00/crs/ASMdisks.*[db.fra]); do while IFS= read -r line; do echo ${N} >> /tmp/logfile; multipath -l ${line} >> /tmp/logfile; python -c 'print "-" * 55' >> /tmp/logfile; done < ${N}; done
+
+## From nicstat sort top 500 samples of KB/sec received
+arr1=($(awk '{ print $3 | "grep -v KB|sort -n|tail -500" }' source-of-data.log)); sum=0; for i in {1..500}; do sum=$(echo "$sum + ${arr1[$i]}"| bc); done; echo $((sum/${#arr1[@]}))
+
+## Remove N characters fron Variable
+${1/${1: -5}}
+
+## LVM get lv info including physical locations of stripes if more than one
+lvdisplay -v -m /dev/vg_temp/lv_troot
+
+## Check if volume is Active and Open
+lvdisplay --noheadings -C --separator " " /dev/vg_rootdisk/lv_root | cut -d " " -f5 | awk '{ print substr($0, length($0) -1, length($0)) }'
+
+## Extract disk id suitable for Multipath
+pvscan | awk '/vg_rootsan/ {print $2}' | tr "[=-=] [=/=]" " " | cut -d " " -f7
+pvscan | awk '/vg_rootsan/ {print $2}' | sed 's/[-|/|]/ /g' | cut -d " " -f7
+
+
+## Establish correct boot disk based on PV for vg_rootsan
+pvscan 2> /dev/null | grep vg_rootsan | cut -d " " -f4 | sed -e "s/\-part[1-4]/\-part1/g" -e "s/p[1-4]/p1/g"
+
+## Tail commands - line a second
+tail -f somefile | while read line ; do echo $line  ; sleep 1; done
+
+## Use inq tool to find all clariion storage and print only the WWN
+inq -nodots -clar_wwn | grep -v "\/dev/sd" | awk '{printf("%s\n",$6)}'
+inq -nodots -clar_wwn | grep -v "\/dev/sd" | awk '{printf("%s\n3",$6)}' | egrep --regex "([0-9]|[a-z]){33}"| sort | uniq > /tmp/all-clar-devs.txt
+
+## Use sysfs to local ALL paths to a LUN when target and LUN are known
+ls -l /sys/devices/pci0000:00/0000:00:13.0/0000:*:00.*/host0/rport-0:0-*/target[0-3]:0:[0-5]/[0-2]:0:[0-5]:101/block*
+
+## Using Known Target and LUN, we can identify our block devices
+lsscsi -d | grep "0:0:[0-5]:101" | awk '{printf("%s\n",$6)}' | sed -r -e "s/\[([0-9,\:]{1,}\])//g"
+
+## Using Target and LUN information to identify block device files including /dev/disk/by-id|/dev/disk/by-path symlinks
+MYVAR1=$(lsscsi -d | grep "0:0:[0-5]:101" | awk '{printf("%s\n",$6)}' | sed -r -e "s/\[([0-9,\:]{1,}\])//g")
+for A in ${MYVAR1[@]}; do egrep -e "${A}\," /tmp/hw-mep008.txt | egrep -E "/dev/disk/by-id" | sed -e "s/\,//g"; done
+
+## Device path information for a disk
+grep 360060480000190103437533030324343 /tmp/hw-mep006.txt | tr "\," " " | sed -e "s/  */ /g" | awk '{ORS="\n\n"; OFS=" "}{ print $1, $2 }{OFS="\n"}{ print $3, $4, $5 }'
+
+## Properly formatted information for all SCSI disks on the system
+lsscsi -vk | awk '{ if ( ( NR % 2 ) == 0 ) { printf("%s\n",$0) } else { printf("%s ",$0) } }' | sed -e "s/  */ /g" > /tmp/scsi_dev-mep006.txt
+
+## Collect only Non-Prod disks from /dev/mapper...
+ls /dev/mapper/3600* | egrep -v --regexp="part[0-4]" | cut -d "/" -f4 | egrep -v --regexp="([0-9]{33})" | sort | uniq
+
+## Return bus information for a disk by /dev/sdXXX name
+lsscsi -vk | awk '{ if ( ( NR % 3 ) == 0 ) { printf("%s\n",$0) } else { printf("%s ",$0) } }' | egrep "/dev/sdh$" | sed -e "s/  */ /g" | cut -d " " -f 10-12
+
+## Query inq for information about disks based on the list of "sdXX" devices with Buffer I/O errors in the "messages" log file
+for I in $(bzcat -c /var/log/messages-20100709.bz2 | egrep "Buffer I/O error on device" | awk '{printf "%s\n", $11}' | sed -e 's/\,//g' | sort | uniq); do grep -h "$I " /tmp/san-sym_wwn-eagnmnmep006.txt /tmp/san-clar_wwn-eagnmnmep006.txt; done
+
+## Tie 'inq' output for Clariion to ASM diskgroup information using 'oracleasm' command
+NONPROD_ASM_ARRAY=( $(cat /tmp/san-clar_wwn-mep006.txt | egrep -E "sd" | sed -e "s/  */ /g" | cut -d " " -f6 | sed -e "s/^/3/g" | sort -u))
+for DISK in ${NONPROD_ASM_ARRAY[@]}; do oracleasm querydisk /dev/mapper/"${DISK}-part1"; done
+
+## Checking if a disk's partition table is not empty
+[[ $(sfdisk -l "/dev/mapper${EACH_LUN}"  | sed -e "s/\  */ /g" -e "s/[\,,\:]//g" | egrep -E "(83 Linux)|Empty") != "" && $(sfdisk -l "/dev/mapper${EACH_LUN}" | egrep -E "^\/dev/" | wc -l) ]]
+
+## Restart SUN SMF when doing svcs -xv shows any failed services
+## Always manually stop the services in question prior to doing this HUP
+kill -HUP /lib/svc/bin/svc.configd
+
+## Test list of servers - ssh access
+for A in $(cat /tmp/ifl-server.list|grep -v '^#'); do netcat -z -vv -w5 $A 22; done
+
+## Pulling serial number out of the bios
+hwinfo --bios|egrep -m 1 "Serial:"|cut -d\" -f 2
+
+## zsh re-write Array list items using for loop
+for A in "${MYARR[@]}"; do echo ${A/.usps.gov/}; done
+
+## bash return array index and values
+A=(one two three four)
+for i in "${!A[@]}"; do echo "$i" "${A[$i]}"; done
+0 one
+1 two
+2 three
+3 four
+
+## Take in list of 2 columns IP_add + hostname and rewrite in /etc/hosts format adding -dr-ilo suffix
+for a in ${arr_a[@]}; do b=$(grep $a dr-ilos.list | cut -d " " -f2) \
+a=$(echo $a | sed -e "s/$/-dr-ilo/g"); \
+echo -e "$b \t $a.usps.gov \t $a" ; done
+
+## Select only specific element from 3rd column using awk
+awk '$3 ~ /^6$/' input-filename
+
+## Rewrite email address list form Exchange
+cat emails.t| sed -e "s/\; /\n/g" | awk '{print $3}' | tr '<|>' ' '| sed -e "s/ //g" | tr '[:upper:]' '[:lower:]'
+
+## Working with paths using bash variables
+echo `basename $PWD`        # Basename of current working directory.
+echo "${PWD##*/}"           # Basename of current working directory.
+echo
+echo `basename $0`          # Name of script.
+echo $0                     # Name of script.
+echo "${0##*/}"             # Name of script.
+echo
+filename=test.data
+echo "${filename##*.}"      # data
+                            # Extension of filename.
+
+Build arrays of drives and automate zpool creation process
+ARRAY1=($(cat /tmp/file-1)); ARRAY2=($(cat /tmp/file-2)); ARRAY3=($(cat /tmp/file-3))
+for a in $(echo ${#ARRAY1[@]}); do echo ${ARRAY1[$a]} ${ARRAY2[$a]} ${ARRAY3[$a]}; done
+
+## Pad string to given length, 25 in this case
+typeset -Z25 VAR_STRING; VAR_STRING=1234
+
+## Mounting ISO for NexentaStor
+mkdir /mnt/CD;mount -F hsfs `lofiadm -a /media/Nexenta_InstallCD/usr.img.zlib` /mnt/CD
+
+## ZFS Create array and read in from file
+myarr=( ${(f)"$(<input.file)"} )
+
+## Get list of service related commands in NS from execsnoop output
+# for each in $(egrep "svc:" /tmp/execsnoop-san1.log |sed -e's/  */ /g'|cut -d' ' -f9-|grep svc|sort -u); do echo "SVC: ${each}"; echo -e\n "COUNT:"; grep "$each" /tmp/execsnoop-san1.log|wc -l; done
+
+## C-style for loop
+len=${#array[@]}; for ((i=0; i<len; i++)); do if <whatever>; then i--; fi
+
+## Split 12 char strings into 2-char MAC addr format xx:xx:xx:xx:xx:xx
+while read -n2 mac[i++]; do :; done; (IFS=:; echo "${mac[*]}")
+
+## Run commands, and send stderr to /dev/null, then return a true or 0 retcode
+## regardless of actual return code from commands
+{ ls /tmp } 2> /dev/null || :
+
+## Redirects
+1> /tmp/o 2> /dev/null ls /tmp
+
+## Mercurial diff two latest changesets
+myarr=($(hg history|grep -m2 changeset|sed -re 's/^[a-z:]+.* \W//g')); hg diff -r ${myarr[2]} -r ${myarr[1]}
+
+## Convert seconds to hh:mm:ss
+secs=32433; printf '%02d:%02d:%02d\n' "$((secs/(60*60)))" "$(((secs/60)%60))" "$((secs%60))"
+
+## Pass a wildcard to xargs and execute 'rm -r' for each entry
+printf '%s\0' ./foo* | xargs -0 rm -r --
+find . -name 'foo*' -exec rm -f {} +
+
+## Parameter expansion example
+var=foo.mp3.mp3.wav.mp3.wav; echo "${var%%*(.mp3|.wav)}" ## result should be 'foo'
+
+## Function to write a log of events
+log() { "$@" >>"$logfile" 2>&1; }; log mkdir "$backup_dir"
+
+## Essentially same as above, but using descriptors
+exec 3>>"$logfile"; command_1 >&3 2>&1; command_2 blah >&3 2>&1; exec 3>&-
+
+## Counter in a for loop
+n=5; for ((i=0; i < n; i++)); do echo run this command: "${i}"; done
+
+## Function to grep stuff out of files with specifc ext
+foogrep() { find . -name .foo -prune -o -type f -exec grep "$@" /dev/null {} +; }
+
+## Build array of files in current dir
+shopt -s dotglob ; for file in *; do [[ -f ${file} ]] && files+=( "${file}" ); done;  printf '%s\n' "${#files[@]}"
+
+## Count files in current dir
+find -maxdepth 1 -type f -exec printf 'X%.s' {} + | wc -c
+
+## Remove _1 from filename, useful for VMWare vm files
+for i in $(ls); do mv ${i} ${i/_1/}; done
+
+## Output all 256 colors with tput
+( x=`tput op` y=`printf %$((${COLUMNS}-6))s`;for i in {0..256};do o=00$i;echo -e ${o:${#o}-3:3} `tput setaf $i;tput setab $i`${y// /=}$x;done; )
+
+## Increment $REPLY by one, and $i by value of $REPLY
+i=0; while read; do (( i += $REPLY )); do something with $i; done < <(seq 0 100)
+
+## Same as above, but much more involved seemingly
+find /tmp -type f -exec awk '{ while (match($0, /value=[0-9]+/)) { s = substr($0, RSTART, RLENGTH); sub(/^value=/, "", s); count += s; $0 = substr($0, RSTART + RLENGTH) } } END { print count }' {}  + | awk '{ total += $1 } END { print total }'
+
+## Manipulating random numbers
+let R=$RANDOM%10; echo $R # For a number between 0 and 9
+
+let R=$RANDOM%100; echo $R # For a number between 0 and 99 
+
+let R=$RANDOM%100+1; echo $R # For a number between 1 and 100
+
+# Another random number generator
+max=875 min=236; echo "$(( RANDOM % (max - min) + min + 1 ))"
+
+# Read-in file and split on ',' adding each to 'array'
+while IFS=, read -rd val; do array+=("$val"); done < filename

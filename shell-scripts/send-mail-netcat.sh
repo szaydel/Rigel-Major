@@ -9,7 +9,7 @@ host_n=$(hostname)
 get_usr=$(/usr/bin/getent passwd "${UID}")
 
 ## Your default mailserver goes here
-mail_svr=server03.internal.dom
+mail_svr=mail-server-here
 ## Port for your mailserver goes here
 port=25
 

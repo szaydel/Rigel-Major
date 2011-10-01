@@ -1,0 +1,10 @@
+lun_1:
+    - {zname: lun_name_1, 
+        lunsz: 1G, 
+        blocksz: 4, 
+        sparse: 1
+    }
+    - {host_grp: name_of_hostgrp, 
+        tgt_grp: name_of_tgtgrp,
+        lun_num: 1
+    }

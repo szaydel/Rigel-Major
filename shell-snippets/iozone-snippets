@@ -1,0 +1,5 @@
+## IOZone parameters that Andy uses
+iozone -ec -r 32 -s 49134m -l 2 -i 0 -i 1 -i 8 -i 2
+
+## Test for 4K workloads
+iozone -i 0 -i 1 -i 2 -RaO -n 1m -g 20g -q 4k -y 4k -z

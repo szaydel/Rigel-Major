@@ -1,0 +1,13 @@
+{
+  "keyboard_shortcut": "", 
+  "name": "Write.New.File", 
+  "value": [
+    "with open('/tmp/filename','wt') as f:", 
+    "    f.write('Write something to the file')", 
+    "    f.close()!@#_currentPos!@#_anchor"
+  ], 
+  "set_selection": "false", 
+  "version": "1.0.7", 
+  "type": "snippet", 
+  "indent_relative": "false"
+}

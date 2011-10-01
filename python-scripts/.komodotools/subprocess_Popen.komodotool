@@ -1,0 +1,13 @@
+{
+  "keyboard_shortcut": "", 
+  "name": "subprocess.Popen", 
+  "value": [
+    "x = subprocess.Popen(['/bin/ls','/ddd'], \\", 
+    "    stdout=subprocess.PIPE,stderr=subprocess.PIPE)", 
+    "with open('/tmp/errorlog','wb') as f:!@#_currentPos!@#_anchor"
+  ], 
+  "set_selection": "false", 
+  "version": "1.0.7", 
+  "type": "snippet", 
+  "indent_relative": "false"
+}

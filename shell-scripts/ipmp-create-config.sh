@@ -404,7 +404,7 @@ newline
 ***** WARNING * WARNING * WARNING * WARNING * WARNING * WARNING * WARNING  *****
 ********************************************************************************
 "
-					printf "%s\n" "If you are uncertain about Probe-based failure, please hit <Control-C> no, and start over." \
+					printf "%s\n" "If you are uncertain about Probe-based failure, please hit <Control-C> now, and start over." \
 					"" \
 					"We will next ask for a test IP for each interface, which is required for Probe-based detection."
 

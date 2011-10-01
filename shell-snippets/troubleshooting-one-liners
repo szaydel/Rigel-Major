@@ -14,8 +14,14 @@
 ## Logs from service management for NZA
 # cd /var/svc/log/ && tar czf /tmp/nza-svcs-$(hostname)-$(date +%Y%m%d).tgz $(ls *nm[csv]*|xargs)
 
-## Collect all the NZA system logs from /var/log
+## Collect NZA and other logs
+
 # cd /var/log/ && tar czf /tmp/nza-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./nm* | xargs -0 ls --)
+# cd /var/log/ && tar czf /tmp/nza-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./nm* | xargs -0 ls --)
+# cd /var/svc/log/ && tar czf /tmp/auto-sync-svc-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./*zfs-auto* | xargs -0 ls --)
+# cd /var/log/rr/ && tar czf /tmp/rr-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./rr* | xargs -0 ls --)
+
+
 
 ## State of services
 # for i in $(svcs -oFMRI|egrep nm[csv]); do echo "Start ++++ $i ++++"; svcs -l $i; echo "Stop ++++ $i ++++"; done
@@ -84,3 +90,20 @@ ffffff00c6788080    ACTIVE lab9_pool_b
 ffffff00c6789580    ACTIVE syspool
 
 echo ffffff00c6788b00::zfs_blkstats | mdb -k
+
+## List vdevs and state
+echo ffffff0d285ed080::spa_vdevs|mdb -k
+
+## Modifying RCS protected files
+# co  -f -l /etc/nmsrc
+# ci -u -m'SZ added two comments' /etc/nmsrc
+
+
+## Hot refresh cluster config
+/opt/HAC/RSF-1/bin/config_dist --hot <config> <node> <node> <node>
+
+
+## watch for activity in evacuation of device from vdev
+echo "::spa -c" | mdb -k
+dtrace -n 'spa_offline_log:return {printf("spa_offline_log returns %d\n", args[1])}'
+dtrace -n 'spa_vdev_remove_evacuate:return {printf("spa_offline_log returns %d\n", args[1])}'

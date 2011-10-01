@@ -1,0 +1,29 @@
+# kstat -p e1000g:*:mac:*errors
+# kstat -p e1000g:*:statistics:*[Ee]rror*
+# kstat -p link:*:e1000g*:*err*
+
+# kstat -p e1000g:*:statistics:*[Ee]rror*
+
+# kstat -p aggr:*:statistics:*[Ee]rror*
+
+# kstat -p link:*:aggr*:*err* <- if aggregates exist
+
+
+kstat -p *:*:statistics:*[Ee]rror*
+kstat -p link:*:*:*[Ee]rr*
+
+sderr:9:sd9,err:Hard Errors
+
+stmf:0:itl_0.1.11:lu-guid
+
+printf "%s %5s %s\n" "Current ARC Size:" "$(( $(kstat -p zfs:*:arc*:size|awk '{print $2}') /1024/1024 ))" "MB" >> /some/file/path
+
+### Check C-states on system
+# kstat -p cpu_info:::current_cstate | awk '$2 ~ /^[2-9]$/'
+# kstat -p cpu_info:::supported_max_cstates | awk '$2 ~ /^[3-9]$/'
+
+### Arcstats one-liners
+# printf "%s %s\n" "ARC Target:" "$(( $(kstat -p ::arcstats|head -1|cut -f2) / 1048576 ))MB"
+
+## Errors on all disks
+# for a in H S T; do kstat -p sderr:*:sd*,err:$a*Err*; done

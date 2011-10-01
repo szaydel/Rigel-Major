@@ -1,0 +1,76 @@
+*****
+* /etc/system changes applied by root using the ./NexTune.sh script
+* on Tue May 24 02:06:50 CEST 2011
+***
+* set ZFS txg commit interval to 5 seconds from 30 seconds (default)
+set zfs:zfs_txg_timeout=5
+
+* set ZFS txg synctime target
+set zfs:zfs_txg_synctime_ms=800
+
+* set default SCSI command timeout to 20 seconds from 60 seconds (default)
+set sd:sd_io_time=20
+
+* * set default SCSI command retry count to 3 from 3 or 5 (default)
+* set sd:sd_retry_count=3
+* set TCP squeue policy to NODRAIN, helping performance for systems with 
+* relatively few connections
+set ip:tcp_squeue_wput=1
+*****
+
+echo zfs_nocacheflush/W0t1 | mdb -kw
+Revert to default:
+echo zfs_nocacheflush/W0t0 | mdb -kw
+Set the following parameter in the /etc/system file
+set zfs:zfs_nocacheflush = 1
+
+
+## ARC meta limit tuning in /etc/system file
+set zfs:zfs_arc_meta_limit = <value in bytes or hex>
+
+## Real-time set txg_timeout to 5 seconds
+# echo zfs_txg_timeout/W0t5 | mdb -kw
+
+# echo zfs_txg_synctime_ms/W0t800 | mdb -kw
+
+## Get all tunables with mdb 
+echo "::zfs_params" | mdb -k
+
+## Disable ZFS prefetch in ARC and l2arc
+echo zfs_prefetch_disable/W0t1 | mdb -kw
+echo l2arc_noprefetch/W0t1 | mdb -kw
+
+## Quick check of arc_c_max and arc_meta_limit
+# kstat zfs::arcstats:c_max && echo arc_meta_limit/E | mdb -k
+
+# for a in zfs_txg_synctime_ms zfs_txg_timeout zfs_vdev_max_pending zfs_nocacheflush; do echo $a/D | mdb -k|grep [0-9] ; done
+
+txg_synctime represents expected time to ﬂush a TXG (5 sec)
+txg_timeout is typical frequency of ﬂush (30 sec)
+
+
+## Memory 
+
+## Each reference to a L2ARC entry requires an entry in ARC (ram)
+# echo ::sizeof arc_buf_hdr_t | mdb -k
+
+## Each entry in the DDT is a fixed size
+# echo ::sizeof ddt_entry_t | mdb -k
+
+## Get arc_meta_limit 
+# echo "arc_meta_limit/G" | mdb -k
+
+Set arc_meta_limit dynamically, this example sets it to 4GB
+# echo "arc_meta_limit/Z 0x4000000" | mdb -kw
+
+## Kernel memory statistical breakdown
+ echo ::kmastat | mdb -k
+
+ set zfs:arc_meta_limit = 0x1000000000
+echo "arc_meta_limit/Z 0x1000000000" | mdb -kw
+
+## Information about vdevs
+
+## Output similar to zdb -l
+echo "::spa -c" | mdb -k
+

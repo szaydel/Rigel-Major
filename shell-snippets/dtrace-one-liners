@@ -1,0 +1,19 @@
+### Dtrace one liners collection
+
+dtrace -n 'nfsv3:::op-write-start { @[args[1]->noi_curpath] = count(); }'
+
+dtrace -n 'nfsv3:::op-write-start { self->t = timestamp; } nfsv3:::op-write-done /self->t != 0/ { printf("spent %d ms in read(2)\n", (timestamp - self->t) / 1000000); }'
+
+dtrace -n 'nfsv3:::op-write-start { self->t = timestamp; } nfsv3:::op-write-done /self->t != 0 / { printf("%s spent %d ms in write(2)\n", args[1]->noi_curpath, (timestamp - self->t) / 1000000); } nfsv3:::op-write-done /self->t != 0/ { @[args[1]->noi_curpath] = count(); }'
+
+## Watch ARC
+dtrace -n 'sdt:::arc-delete,sdt:::arc-evict,sdt:::arc-hit,sdt:::arc-miss { @[probefunc] = count(); }'
+
+## Top system calls against ZFS storage, with 
+dtrace -n 'syscall::read:entry /fds[arg0].fi_fs == "zfs"/ { @[execname] = count(); }'
+
+## Monitor state of log device being offlined
+dtrace -n 'spa_offline_log:return {printf("spa_offline_log returns %d\n", args[1])}'
+
+## Monitor device being evacuated from a vdev
+dtrace -n 'spa_vdev_remove_evacuate:return {printf("spa_offline_log returns %d\n", args[1])}'

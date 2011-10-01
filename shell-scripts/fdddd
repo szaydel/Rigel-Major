@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# simple script to find where a disk might be
+#
+# Copyright 2011, Nexenta Systems, Inc. All rights reserved.
+#
+# Author: Richard.Elling@Nexenta.com
+#
+# version 1.1	20-May-2011
+
+DOSLOTMAP=0
+PATH=/usr/bin
+HDDISCO=/usr/bin/hddisco
+if [ ! -x "$HDDISCO" ]; then
+	echo "error: NexentaStor command $HDDISCO not found"
+	exit 1
+fi
+FMTOPO=/usr/lib/fm/fmd/fmtopo
+if [ ! -x "$FMTOPO" ]; then
+	echo "error: NexentaOS command $HDDISCO not found"
+	exit 1
+fi
+
+while getopts hs name
+do
+	case $name in
+	s)	DOSLOTMAP=1 ;;
+	h|?)	cat <<-END >&2
+		USAGE: fdddd [-s] diskname [...]
+				-s	# create NexentaStor slotmap output
+		   where diskname is of the form c#t#d# or /dev/rdsk/c#t#d#s#
+		END
+		exit 1
+	esac
+done
+
+shift $(( $OPTIND - 1 ))
+
+
+T=$($FMTOPO | grep "bay=")
+if [ -z "$T" ]; then
+	if [ $(id -u) != "0" ]; then
+		echo "warning: $0 running as non-root user"
+	fi
+	echo "error: system topology does not contain disk bay information"
+	exit 1
+fi
+
+for i in $*
+do
+	T=$(basename $i)
+	T=$(echo $T | sed -e "s,s[0-9]$,,;s,s[0-9][0-9]$,,")
+	SN=$(hddisco | awk -v d=$T 'BEGIN {disk="="d;f=0}{if(f==1 && $1 == "serial"){print $2;exit}if($0 == disk){f=1}}END{if(f==0){exit 1}}')
+	if [ ! -z "$SN" ]; then
+		A=$($FMTOPO | grep serial="$SN" | awk -F: '{split($8,b,"/");if(b[4]=="disk=0"){printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", $4, $5, $6, $7, b[1], b[2], b[3], b[4])}}')
+		if [ ! -z "$A" ]; then
+			if [ $DOSLOTMAP = 0 ]; then
+				echo $T"	"$A
+			else
+				DID=$(hddisco | awk -v d=$T 'BEGIN {disk="="d;f=0}{if(f==1 && $1 == "guid"){print $2;exit}if($0 == disk){f=1}}END{if(f==0){exit 1}}')
+				if [ -z "$DID" ]; then
+					DID=$(hddisco | awk -v d=$T 'BEGIN {disk="="d;f=0}{if(f==1 && $1 == "devid"){print $2;exit}if($0 == disk){f=1}}END{if(f==0){exit 1}}')
+				fi
+				CID=$(echo $A | sed -e "s,^.*ses-enclosure=,,;s, .*,,")
+				BAY=$(echo $A | sed -e "s,^.*bay=,,;s, .*,,")
+				printf "%s:%s%04d\n" $DID $CID $BAY
+			fi
+		fi
+	fi
+done
+

@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+################################################################################
+### Script used to display a complete view of a ZVOL mappings and groups #######
+################################################################################
+#: Title       : User-friendly output of ZVOL Mappings in a single view
+#: Date        : 2011-07-06
+#: Rev. Date   : 2011-07-07
+#: Author      : Sam Zaydel
+#: Version     : 1.0.3
+#: Description : Use stmfadm to collect necessary information about any given
+#:             : Logical Unit configured under COMSTAR
+#: Options     : No options are available at the moment, simply run script with
+#:             : with the GUID
+#: Path to file: not-defined
+#: Copyright   : Nexenta Systems, inc. 2011
+##
+# encoding: utf-8
+#
+import subprocess
+from string import upper
+import sys
+from subprocess import Popen
+from subprocess import call
+from subprocess import PIPE
+
+stmf_bin = '/usr/sbin/stmfadm'
+## Args should contain a tuple of script name and GUID    
+args = sys.argv[:]
+
+if len(args) != 2:  ## If length is anything other than 2, we need to complain
+    print 'Incorrect Number of Arguments. Try: %s %s' % (args[0],'GUID')
+    print 'Example: %s %s %s' % (args[0],'600144F0C2B6C30000004FF8AC190009','\n')
+    sys.exit(1)
+    
+guid = upper(args[1])   ## GUID for the logical unit
+
+def generic_subp(cmd):
+    
+    try:
+        retcode = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=False)
+        stdout,stderr = retcode.communicate()
+        
+        if retcode.wait() < 0:
+            print >>sys.stderr, "Child was terminated by signal", -retcode.wait()
+        else:
+            # print >>sys.stderr, "Subprocess returned", retcode.wait()
+            return stdout,stderr
+    except OSError, e:
+        print >>sys.stderr, "Execution failed:", e
+        return e    
+# stmfadm list-lu -v 600144F0C2B6C30000004DE8FB130003    
+try:
+    stmf_verb_info = Popen([stmf_bin, 'list-lu', '-v', guid], 
+                            stdout=subprocess.PIPE,
+                            )
+
+    if stmf_verb_info.wait() < 0:
+        print >>sys.stderr, "Child was terminated by signal", -stmf_verb_info.wait()
+        sys.exit(1)
+    elif stmf_verb_info.wait() != 0:
+        print >>sys.stderr, "Command failed to complete with given identifier.", 'Exit Code:', stmf_verb_info.wait()
+        sys.exit(1)
+    else:
+        # print >>sys.stderr, "Subprocess returned", retcode.wait()
+        # return stdout,stderr
+        res_stmf_verb_info = stmf_verb_info.stdout
+except OSError, e:
+    print >>sys.stderr, "Execution failed:", e
+    sys.exit(1)
+
+res_stmf_verb_info = stmf_verb_info.stdout
+
+print '%s' % ('-' * 80)
+print '>>>> Logical Unit Info: <<<<'
+print '%s%s' % ('-' * 80,'\n')
+
+for line in res_stmf_verb_info:
+    print line.strip()
+    
+# stmfadm list-view --lu-name 600144F0C2B6C30000004DE8FB130003
+
+stmf_view_info = Popen([stmf_bin, 'list-view', '--lu-name', guid], 
+                        stdout=subprocess.PIPE,
+                        )
+
+res_stmf_view_info = stmf_view_info.stdout
+
+print '%s%s' % ('\n','-' * 80)
+print '>>>> LUN Mapping Info: <<<<'
+print '%s%s' % ('-' * 80,'\n')
+
+for line in res_stmf_view_info:
+    print line.strip()
+    if 'Host group' in line:
+        ## Select lines that contain phrase Host group, and split
+        hg = line.split(':')
+        hg = hg[1].strip('\n').lstrip(' ')
+    elif 'Target group' in line:
+        ## Select lines that contain phrase Target group, and split
+        tg = line.split(':')
+        tg = tg[1].strip('\n').lstrip(' ')
+
+print ''
+
+if not hg == None:
+    host_group = generic_subp([stmf_bin, 'list-hg', '-v', hg])
+    for line in host_group:
+        print line.strip()
+
+if not tg == None:
+    tgt_group = generic_subp([stmf_bin, 'list-tg', '-v', tg])
+    for line in tgt_group:
+        print line.strip()
+        
+sys.exit(0)

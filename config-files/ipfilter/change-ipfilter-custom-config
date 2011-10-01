@@ -1,0 +1,8 @@
+http://support.nexenta.com/crm/iportal.php# svccfg -s ipfilter:default setprop \
+                        firewall_config_default/policy = astring: "custom"
+
+# svccfg -s ipfilter:default setprop \
+                        firewall_config_default/custom_policy_file = astring: \
+                        "/etc/ipf/ipf.conf"
+
+# svcadm refresh ipfilter:default

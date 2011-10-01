@@ -1,0 +1,3 @@
+## rename a set of files named "31-*" to "52-*" in one dir
+autoload zmv; zmv -W '31-*' '52-*'
+autoload zmv; zmv '31-(*)' '52-$1'
