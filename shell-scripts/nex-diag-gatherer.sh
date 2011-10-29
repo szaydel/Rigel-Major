@@ -3,7 +3,7 @@
 # when mailer configuration is not working, or not setup.
 #
 # Author: Sam Zaydel
-# Copyright 2011 Nexenta Systems, Inc. 
+# Copyright 2011 Nexenta Systems, Inc.
 #
 ################################################################################
 ### STEP (1) Define Variables for all commands here ############################
@@ -46,7 +46,7 @@ fmd_num_days="14"
 VER=1.1.0
 ################################################################################
 ### : Notes : ##################################################################
-# It is easy to add new items to collect with this script. 
+# It is easy to add new items to collect with this script.
 # <<< Follow these steps: >>>
 # 1) Create variable to represent absolute path to a command, suffix it with
 # _cmd, as a standard convention. See STEP (1)
@@ -84,7 +84,7 @@ func_add_to_f_array ()
 
 func_get_zfs_history ()
 {
-## Function 
+## Function
 ## Collect zpool history information for each pool imported on the system
 ##
 local NUM_LINES=100		## Number of lines to select from end of history
@@ -145,7 +145,7 @@ printf "%s\n" "[STOP] Collecting Diagnostics and System Logs via NMC."
 if [[ ${_FMA} -eq 1 ]]; then
 	printf "%s\n" "[START] Collecting Fault Management Data."
 	fma_args=( ags agr agv )
-	for args in ${fma_args[@]}; do 
+	for args in ${fma_args[@]}; do
 		${fma_faulty_cmd} -${args} >> ${PRE}-fmadm-diag.txt
 	done
 	func_add_to_f_array ${PRE}-fmadm-diag.txt

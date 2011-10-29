@@ -42,10 +42,10 @@ check_pid ()
     # 0 - PID file does not exist, which is normal and expected
     # 1 - PID file exists, but it is stale, based on the PID being different from '$$'
     # 5 - Process is still active and should prevent new process from being spawned
-    
+
     ## Environment Variable 'NEED_CLEANUP' is set to YES with RET_CODE 1 or NO with RET_CODE 5
-    ## 
-    
+    ##
+
 if [ ! -f ${PID_FILE} ]; then
    RET_CODE=0
    return ${RET_CODE}
@@ -54,30 +54,30 @@ if [ ! -f ${PID_FILE} ]; then
 
   local OLD_PID=$(cat ${PID_FILE})
   [ ${DEBUG} -eq 1 ] && printf "%s\n" "The old PID is ${OLD_PID}"
-  
+
   # This will only be read if the PID file is present
   if [ ${OLD_PID} -ne ${MYPID} ]; then
-  
+
   # We need to check for another running process
   #  /bin/ps -p ${OLD_PID} | grep $(basename $0) &> /dev/null; RET_CODE=$?
   /bin/ps -fwwp ${OLD_PID} | grep $(basename $0); RET_CODE=$?
   # pgrep -P ${OLD_PID}; RET_CODE=$?
     case ${RET_CODE} in
-    
+
       # If return code is '0' PID belongs to a running process, and this script must die
-      0) 
+      0)
       [ ${DEBUG} -eq 1 ] && printf "%s\n" "Looks like the process with id ${OLD_PID} is still active, this script should die."
       RET_CODE=5
       ;;
-      
-      # If return code is '1' PID file exists, but it is old and needs to be removed      
-      1) 
+
+      # If return code is '1' PID file exists, but it is old and needs to be removed
+      1)
       [ ${DEBUG} -eq 1 ] && printf "%s\n" "The process with id ${OLD_PID} seems to no-longer exist, need clean-up."
       RET_CODE=1
       ;;
-    
+
     esac
-        
+
       return ${RET_CODE}
   fi
 fi
@@ -93,7 +93,7 @@ local RET_CODE=1
      COUNTER=$(($COUNTER+1))
      [ ${RET_CODE} -eq 0 ] && COUNTER=4
    done
-   
+
    return ${RET_CODE}
 }
 
@@ -151,7 +151,7 @@ check_pid
         die
     fi
 
-## If the return code from the check_pid function 
+## If the return code from the check_pid function
 
 ## Create PID file here, after we determined that we can continue running.
 write_pid
@@ -159,30 +159,30 @@ write_pid
 for USERNAME in ${USERDIR}
    do
    RUN_DAILY_DIR=/home/${USERNAME}/bin/run.daily ## Sets variable RUN_DAILY_DIR to user's run.daily directory
-   
-    if [ -d ${RUN_DAILY_DIR} ]; then     
+
+    if [ -d ${RUN_DAILY_DIR} ]; then
 
 # Define Varilabes used inside this for loop
-        FILELIST=$(ls /home/${USERNAME}/bin/run.daily) ## File list of run.daily scipts in user's home directory  
-   
-        for SCRIPT in ${FILELIST}; 
+        FILELIST=$(ls /home/${USERNAME}/bin/run.daily) ## File list of run.daily scipts in user's home directory
+
+        for SCRIPT in ${FILELIST};
             do
-    # Now we use functions defined above to execute daily scripts and capture information into a log     
+    # Now we use functions defined above to execute daily scripts and capture information into a log
             header
             run_script su - ${USERNAME} -c ${RUN_DAILY_DIR}/${SCRIPT} ; RESULT=$?
             footer
-        
+
     ## If job did not run successfully print message to log
             [ ${RESULT} != 0 ] && printf "%s\n" "Job ended abnormally. Exit Status is ${RESULT} ..." >> ${LOG}
-    
+
     # Uncomment below for debugging
-    #		  [ $? = 0 ] && echo ${FILE} Ran Successfully... || echo ${FILE} Did not run Successfully...   
+    #		  [ $? = 0 ] && echo ${FILE} Ran Successfully... || echo ${FILE} Did not run Successfully...
             done
-        
-       
+
+
 	  fi
    done
-   
+
 cleanup_pid               ## After scripts were all run, we need to clean-up the PID file
 RET_CODE=$?
 exit ${RET_CODE}

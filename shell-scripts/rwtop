@@ -10,7 +10,7 @@
 #
 # USAGE:	rwtop [-cC] [-j|-Z] [-n name] [-p pid]
 #		      [-t top] [interval [count]]
-# 
+#
 #		rwtop		# default output, 5 second samples
 #
 #		-C		# don't clear the screen
@@ -87,7 +87,7 @@ do
 	h|?)	cat <<-END >&2
 		USAGE: rwtop [-cC] [-j|-Z] [-n name] [-p pid]
 		             [-t top] [interval [count]]
- 
+
 		                -C        # don't clear the screen
 		                -c        # print counts
 		                -j        # print project ID
@@ -152,13 +152,13 @@ fi
  inline int PID		= '$pid';
  inline string NAME 	= "'$pname'";
  inline string CLEAR 	= "'$clearstr'";
- 
+
  #pragma D option quiet
 
  /*
   * Print header
   */
- dtrace:::BEGIN 
+ dtrace:::BEGIN
  {
         /* starting values */
         counts = COUNTER;
@@ -175,7 +175,7 @@ fi
  sysinfo:::readch,
  sysinfo:::writech
  /pid != $pid/
- { 
+ {
 	/* default is to trace unless filtering, */
 	this->ok = FILTER ? 0 : 1;
 
@@ -207,7 +207,7 @@ fi
  {
 	/* choose statistic to track */
 	this->value = OPT_bytes ? arg0 : 1;
-	
+
 	/*
 	 * Save details
 	 */

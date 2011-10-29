@@ -2,7 +2,7 @@
 # Run restart-squid-proxy.bash as a cron job at night
 # This job is normally configured to run at midnight, and meant to
 # loop through array 'SERVICE_NAME' and restart all services in
-# the array 
+# the array
 ###############################################################################
 ### Step 1 - Set Variables and Create functions
 ###############################################################################
@@ -25,7 +25,7 @@ INFOLOG=${LOGSDIR}/info-${MYDATE}-${RUN_AS}.log
 DEBUG=2
 
 # Functions for error control
-alert () 
+alert ()
 {
 # usage: alert <$?> <object>
 if [ "$1" -ne 0 ]; then
@@ -40,7 +40,7 @@ log_service_state ()
 {
 if [ "${RET_CODE}" = 0 ]; then
 	logger -p cron.info "INFO: Service $1 is currently in a running state."
-else 
+else
 	logger -p cron.warning "WARNING: Service $1 is not currently in a running state."
 fi
 }
@@ -57,7 +57,7 @@ pgrep "${MYNAME}" | grep -v "${MYPID}" &> /dev/null; RET_CODE=$?
     if [[ "${RET_CODE}" = "0" ]]; then
             return 1
         else
-            return 0    
+            return 0
     fi
 }
 
@@ -75,13 +75,13 @@ check_for_another_instance || exit 1
 for SERVICE_NAME in "${SERVICE_NAME_ARRAY[@]}"
 	do
 	while [[ "${SERVICE_STATE}" -ne "0" ]]
-		do 
+		do
 			PID_FILE="${PID_DIR}/${SERVICE_NAME}.pid"
 			## If the service is running, status will be '0', in which
 			## case we will simply issue a simple restart
 			/sbin/service "${SERVICE_NAME}" status; RET_CODE=$?
-			log_service_state "${SERVICE_NAME}"		
-			
+			log_service_state "${SERVICE_NAME}"
+
 			## If pid file still exists, we will remove PID, to make for
 			## a cleaner service restart
 			if [[ "${RET_CODE}" -eq "0" ]]; then
@@ -92,11 +92,11 @@ for SERVICE_NAME in "${SERVICE_NAME_ARRAY[@]}"
 					[[ -f "${PID_FILE}" ]] && rm -f "${PID_FILE}"
 					/sbin/service "${SERVICE_NAME}" start
 					SERVICE_STATE=$?
-					log_service_state "${SERVICE_NAME}"		
+					log_service_state "${SERVICE_NAME}"
 			fi
 		done
 	done
-	
+
 ## [[ "${DEBUG}" -ge "2" ]] && (echo Going to sleep; sleep 3600)
 # alert ${RET_CODE} "backintime: Backup job for ${RUN_AS}"
 

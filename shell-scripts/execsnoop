@@ -63,7 +63,7 @@
 # 02-Jul-2005 	   "      "	Added projid, safe printing.
 # 11-Sep-2005	   "      "	Increased switchrate.
 # 11-Sep-2005	   "      "	Last update.
-# 
+#
 
 
 ##############################
@@ -131,14 +131,14 @@ fi
  inline int OPT_proj 	= '$opt_proj';
  inline int FILTER 	= '$filter';
  inline string COMMAND 	= "'$command'";
- 
+
  #pragma D option quiet
  #pragma D option switchrate=10hz
- 
+
  /*
   * Print header
   */
- dtrace:::BEGIN 
+ dtrace:::BEGIN
  {
 	/* print optional headers */
  	OPT_time    ? printf("%-14s ", "TIME") : 1;
@@ -156,7 +156,7 @@ fi
   * Print exec event
   */
  syscall::exec:return, syscall::exece:return
- /(FILTER == 0) || (OPT_cmd == 1 && COMMAND == execname)/ 
+ /(FILTER == 0) || (OPT_cmd == 1 && COMMAND == execname)/
  {
 	/* print optional fields */
  	OPT_time ? printf("%-14d ", timestamp/1000) : 1;

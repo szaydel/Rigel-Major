@@ -23,7 +23,7 @@ Cmnd_Alias      NETW = /sbin/iwconfig , /usr/bin/iw , /sbin/iwlist , /sbin/iwpri
 Cmnd_Alias	DISK = /sbin/mdadm,/sbin/pv*,/sbin/vg*,/sbin/lv*,/sbin/fdisk,/sbin/mkfs*
 Cmnd_Alias	SFW = /usr/bin/apt*,/usr/bin/dpkg
 Cmnd_Alias	FS = /bin/mount,/bin/umount
-# Cmnd_Alias	APTCONF = 
+# Cmnd_Alias	APTCONF =
 #
 # User privilege specification
 root	ALL=(ALL) ALL

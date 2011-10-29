@@ -28,7 +28,7 @@ Cmnd_Alias	FS = /sbin/tune2fs,/sbin/mkfs*,/sbin/mkswap \
             /sbin/fsck,/sbin/dumpe2fs,/bin/mount,/bin/umount
 # Service management commands
 Cmnd_Alias  SVCS = /sbin/start,/sbin/stop,/usr/sbin/service
-# Cmnd_Alias	APTCONF = 
+# Cmnd_Alias	APTCONF =
 #
 # User privilege specification
 root	ALL=(ALL) ALL

@@ -12,11 +12,11 @@ alias router='ssh root@router'
 # Security and Encryption
 
 	if [ -x $(/usr/bin/ecryptfsd) ]; then # Create aliases if ecryptfs exists
-		
+
 		alias secreton='ecryptfs-mount-private'
 		alias secretoff='ecryptfs-umount-private'
 	fi
-	
+
 alias protect-file='openssl aes-256-cbc -a -salt -in $1 -out $1'
 # alias genpass='openssl rand -base64 37 | cut -c 1-10'
 alias mykey='clear; gpg2 --decrypt ~/Private/mykeys.gpg'
@@ -29,7 +29,7 @@ alias my-mount-passphrase='printf "%s1d35792c8208974cfba3996b1c1cc0bb\n" '
 # Aptitude
 
 	if [ -x $(which apt-get) ]; then
-		
+
 		AP=$(which apt-get) # Variable to use in all Aptitude aliases referencing /usr/bin/apt-get
 			alias install='sudo ${AP} install'
 			alias remove='sudo ${AP} remove'
@@ -41,7 +41,7 @@ alias my-mount-passphrase='printf "%s1d35792c8208974cfba3996b1c1cc0bb\n" '
 			alias show='apt-cache show'
 			alias sources='sudo vim /etc/apt/sources.list'
 			alias addkey='sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com'
-	fi	
+	fi
 
 # File Management
 alias packup='/bin/tar -czvf'
@@ -94,7 +94,7 @@ alias workpc='ssh 56.224.33.67'
 alias rsync='rsync -r -p --rsh=ssh --progress'
 
 # Virtual Machines - Headless
-alias vm2='VBoxHeadless --startvm Linux-AMD64-VM2' 
+alias vm2='VBoxHeadless --startvm Linux-AMD64-VM2'
 alias vm3='VBoxHeadless --startvm NAS-AMD64-VM3'
 
 # VM Tools

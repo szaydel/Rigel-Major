@@ -12,7 +12,7 @@ printf "%s\n" "----------------------[ Restarting NexentaStor Services ]--------
 
 ## First we restart each service
 for svc in "${ns_svcs[@]}"; do
-    ${svcs_r} "${svc}" 
+    ${svcs_r} "${svc}"
 done
 
 sleep "${delay}"
@@ -30,7 +30,7 @@ while [ "${count}" -lt 4 ]; do
 done
 
 ## Now we check status of services
-for svc in "${ns_svcs[@]}"; do 
+for svc in "${ns_svcs[@]}"; do
     ${svc_info} "${svc}"
 done
 

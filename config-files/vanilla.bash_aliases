@@ -13,11 +13,11 @@ alias rsh='rsync --rsh="ssh -o ClearAllForwardings=yes" --verbose --human-readab
 # Security and Encryption
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	if [ -x $(which ecryptfsd) ]; then # Create aliases if ecryptfs exists
-		
+
 		alias secreton='ecryptfs-mount-private'
 		alias secretoff='ecryptfs-umount-private'
 	fi
-	
+
 alias protect-file='openssl aes-256-cbc -a -salt -in $1 -out $1'
 # alias genpass='openssl rand -base64 37 | cut -c 1-10'
 alias mykey='clear; gpg2 --decrypt ~/Private/mykeys.gpg 2> /dev/null | nano --view -'
@@ -32,7 +32,7 @@ alias my-mount-passphrase='printf "%s1d35792c8208974cfba3996b1c1cc0bb\n" '
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # If server is a Ubuntu/Debian Server - simplify package and update management
 	if [ -x $(which apt-get) ]; then
-		
+
 		AP=$(which apt-get) # Variable to use in all Aptitude aliases referencing /usr/bin/apt-get
 			alias install='sudo ${AP} install'
 			alias remove='sudo ${AP} remove'
@@ -46,11 +46,11 @@ alias my-mount-passphrase='printf "%s1d35792c8208974cfba3996b1c1cc0bb\n" '
 			alias addkey='sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com'
 			alias addppa='sudo add-apt-repository'
 	fi
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++	
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # GIT
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	if [ -x $(which git) ]; then
-	
+
      GIT=$(which git)
         alias git-push-all='git-push-github && git-push-rubyforge'
         alias git-push-origin='git push origin master'
@@ -66,8 +66,8 @@ alias my-mount-passphrase='printf "%s1d35792c8208974cfba3996b1c1cc0bb\n" '
         alias git-commit='git commit'
         alias git-commit-all='git commit --all --status'
         alias git-commit-test='git commit --status --dry-run'
-        alias git-commit-nostage='git commit --all --message'       
-        
+        alias git-commit-nostage='git commit --all --message'
+
 alias gcam='git commit -am'
 alias gcm='git commit -m'
 alias gl='git pull'
@@ -147,7 +147,7 @@ if [[ -x /usr/bin/mysql ]]; then
     alias mysql-status='mysqladmin -p status'               # Gives a short status message from the server
     alias mysql-ext-status='mysqladmin -p extended-status'  # Gives an extended status message from the server
     alias mysql-create='mysqladmin -p create'               # Create a new database
-    alias mysql-drop='mysqladmin -p drop'                   # Delete a database and all its tables   
+    alias mysql-drop='mysqladmin -p drop'                   # Delete a database and all its tables
     alias mysql-flush-hosts='mysqladmin -p flush-hosts'      # Flush all cached hosts
     alias mysql-flush-logs='mysqladmin -p flush-logs'        # Flush all logs
     alias mysql-flush-status='mysqladmin -p flush-status'    # Clear status variables

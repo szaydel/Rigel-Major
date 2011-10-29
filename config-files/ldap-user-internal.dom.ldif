@@ -18,7 +18,7 @@ loginShell: /bin/bash
 shadowExpire: -1
 shadowFlag: 0
 shadowInactive: 180
-shadowLastChange: 
+shadowLastChange:
 shadowMax: 999999
 shadowMin: 8
 shadowWarning: 14

@@ -39,7 +39,7 @@ OPTIND=1
 while getopts lf:bmcdexh ARGS
     do
         case $ARGS in
-        
+
         l)
             ;;
 
@@ -56,12 +56,12 @@ while getopts lf:bmcdexh ARGS
                     return 1
              fi
             ;;
-        
+
         b)
             ;;
-          
+
         m) ## Enable modify functionality
-        PARAM=EDIT      
+        PARAM=EDIT
             ;;
 
         c)
@@ -81,11 +81,11 @@ while getopts lf:bmcdexh ARGS
         h) echo -e $Usage
             ;;
 
-        *) echo -e $Usage 
+        *) echo -e $Usage
         #return
             ;;
     esac
-done   
+done
 
 while [[ -z "$SRC_FILE" ]]
     do
@@ -93,7 +93,7 @@ while [[ -z "$SRC_FILE" ]]
         RET_CODE=1
         break
     done
-    
+
 return "${RET_CODE:-0}"
 }
 
@@ -110,46 +110,46 @@ case "${PARAM}" in
 
     EDIT)
     ## First we need to decrypt input file after making a backup
-    echo gpg "${GPG_DEC_OPTIONS}"  
+    echo gpg "${GPG_DEC_OPTIONS}"
     ## Second we need to open file for editing
-    
+
     ## Third we need to save and re-encrypt file after editing
-    
+
     ## Fourth we need to
         printf "%s\n" "Take edit action here..."
-        
+
         ;;
-        
+
     DEC)
         printf "%s\n" "Take decrypt action on file ${SRC_FILE} here..."
-        
-        ## Test if file is pgp and if so, take further action        
+
+        ## Test if file is pgp and if so, take further action
         if [[ "${MIME_TYPE}" = "application/pgp" ]]; then
-                
+
             printf "%s\n" "GOOD: ${SRC_FILE} is a GnuPG Encrypted file."
-                
+
                 printf "%s" "Is this a Binary or an Ascii file ([a]Ascii [b]Binary)?"
-                
+
                 read BIN_OR_ASCII
                 while [[ -z "${BIN_OR_ASCII}" ]]; do
-                    
+
                     case "${BIN_OR_ASCII}" in
-                    
+
                     [Aa])
                         gpg "${GPG_DEC_OPTIONS}" "${SRC_DIR}/${SRC_FILE}" | "${DEF_VIEWER}"
                         ;;
-                    
+
                     [Bb])
                         gpg "${GPG_DEC_OPTIONS}" "${SRC_DIR}/${SRC_FILE}"
                         ;;
-                    
+
                     *) printf "%s\n" "I am not sure what you are trying to do."
                         unset "${BIN_OR_ASCII}"
-                        
+
                         ;;
                     esac
                 done
-                    
+
                     gpg "${GPG_DEC_OPTIONS}" "${SRC_DIR}/${SRC_FILE}" | "${DEF_VIEWER}"
                 else
                     RET_CODE=1
@@ -159,10 +159,10 @@ case "${PARAM}" in
         ;;
 
     ENC)
-        printf "%s\n" "Take encrypt action on file ${SRC_FILE} here..."    
+        printf "%s\n" "Take encrypt action on file ${SRC_FILE} here..."
         ;;
     *)
-        
+
         ;;
 esac
-# gpg --decrypt -r "${DEF_PUBKEY}" 
+# gpg --decrypt -r "${DEF_PUBKEY}"

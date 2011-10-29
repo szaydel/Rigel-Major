@@ -13,7 +13,7 @@ set sd:sd_io_time=20
 
 * * set default SCSI command retry count to 3 from 3 or 5 (default)
 * set sd:sd_retry_count=3
-* set TCP squeue policy to NODRAIN, helping performance for systems with 
+* set TCP squeue policy to NODRAIN, helping performance for systems with
 * relatively few connections
 set ip:tcp_squeue_wput=1
 *****
@@ -33,7 +33,7 @@ set zfs:zfs_arc_meta_limit = <value in bytes or hex>
 
 # echo zfs_txg_synctime_ms/W0t800 | mdb -kw
 
-## Get all tunables with mdb 
+## Get all tunables with mdb
 echo "::zfs_params" | mdb -k
 
 ## Disable ZFS prefetch in ARC and l2arc
@@ -49,7 +49,7 @@ txg_synctime represents expected time to ﬂush a TXG (5 sec)
 txg_timeout is typical frequency of ﬂush (30 sec)
 
 
-## Memory 
+## Memory
 
 ## Each reference to a L2ARC entry requires an entry in ARC (ram)
 # echo ::sizeof arc_buf_hdr_t | mdb -k
@@ -57,7 +57,7 @@ txg_timeout is typical frequency of ﬂush (30 sec)
 ## Each entry in the DDT is a fixed size
 # echo ::sizeof ddt_entry_t | mdb -k
 
-## Get arc_meta_limit 
+## Get arc_meta_limit
 # echo "arc_meta_limit/G" | mdb -k
 
 Set arc_meta_limit dynamically, this example sets it to 4GB

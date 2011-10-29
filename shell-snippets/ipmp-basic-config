@@ -48,4 +48,4 @@ case "$1" in
 		/usr/sbin/route delete -host $target $target
 		 done
                   ;;
-  esac  
+  esac

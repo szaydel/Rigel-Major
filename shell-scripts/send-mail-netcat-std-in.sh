@@ -36,31 +36,31 @@ while getopts hd:f:m:r: ARGS
 
 do
   case "${ARGS}" in
-  
+
     d)
     DEBUG=${OPTARG}
     [[ "${DEBUG}" -ge "1" ]] && echo "Debugging at level ${DEBUG} enabled."
-    ;; 
-  
+    ;;
+
     f)
     INPUT_FILE=${OPTARG}
     [[ "${DEBUG}" -ge "1" ]] && echo "${INPUT_FILE}"
     ;;
-    
+
     m)
     MAILER=${OPTARG}
     [[ "${DEBUG}" -ge "1" ]] && echo "${MAILER}"
     ;;
-    
+
     r)
     DEST_EMAIL=${OPTARG}
     [[ "${DEBUG}" -ge "1" ]] && echo "${DEST_EMAIL}"
     ;;
-    
+
     h|*)
     help_menu
     exit 0
-    ;;  
+    ;;
   esac
 done
 

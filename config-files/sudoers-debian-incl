@@ -1,6 +1,6 @@
 # /etc/sudoers
 ## Version 1.0.0
-## This is a supplemental sudoers configuration file that should be placed in 
+## This is a supplemental sudoers configuration file that should be placed in
 ## /etc/sudoers.d/ directory with perms set to 0440.
 #
 # User alias specification
@@ -18,8 +18,8 @@ Cmnd_Alias	DISK = /sbin/mdadm,/sbin/pv*,/sbin/vg*,/sbin/lv*,/sbin/fdisk, \
 Cmnd_Alias	DEBS = /usr/bin/apt*,/usr/bin/dpkg
 Cmnd_Alias	FS = /sbin/tune2fs,/sbin/mkfs*,/sbin/mkswap \
             /sbin/fsck,/sbin/dumpe2fs,/bin/mount,/bin/umount
-            
-# Cmnd_Alias	APTCONF = 
+
+# Cmnd_Alias	APTCONF =
 #
 # User privilege specification
 # root	ALL=(ALL) ALL

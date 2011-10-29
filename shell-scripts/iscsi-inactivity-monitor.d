@@ -1,4 +1,4 @@
-#!/usr/sbin/dtrace -Cs 
+#!/usr/sbin/dtrace -Cs
 
 /*
  * iscsi-inactivity-monitor.d
@@ -16,8 +16,8 @@
  *
  * Copyright 2010, Nexenta Systems, Inc.  All rights reserved.
  */
- 
-#pragma D option quiet 
+
+#pragma D option quiet
 
 inline int THRESHOLD = 11000000000; /* nanoseconds */
 

@@ -53,12 +53,12 @@ inline int PRINT_TIME = '$opt_time';
 
 #pragma D option quiet
 
-dtrace:::BEGIN 
+dtrace:::BEGIN
 {
 	secs = INTERVAL;
 	counts = COUNT;
 	printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-		"client", "ops", "ops pending", 
+		"client", "ops", "ops pending",
         "read ops", "bytes read", "read min", "read avg", "read max",
         "write ops", "bytes write", "write min", "write avg", "write max",
 		"nop ops", "nop min", "nop avg", "nop max");
@@ -66,12 +66,12 @@ dtrace:::BEGIN
 
 iscsi:::xfer-start,
 iscsi:::nop-receive
-{ 
+{
 	ts[arg1] = timestamp;
 	@op_pending[args[0]->ci_remote] = sum(1);
-} 
+}
 
-iscsi:::xfer-done 
+iscsi:::xfer-done
 /ts[arg1] != 0 && arg8 != 0/
 {
 	t = timestamp - ts[arg1];
@@ -85,7 +85,7 @@ iscsi:::xfer-done
 	ts[arg1] = 0;
 }
 
-iscsi:::xfer-done 
+iscsi:::xfer-done
 /ts[arg1] != 0 && arg8 == 0/
 {
 	t = timestamp - ts[arg1];
@@ -110,7 +110,7 @@ iscsi:::nop-send
 	@avgtime_nop[args[0]->ci_remote] = avg(t);
 	@maxtime_nop[args[0]->ci_remote] = max(t);
 	ts[arg1] = 0;
-} 
+}
 
 profile:::tick-1sec
 {
@@ -122,23 +122,23 @@ profile:::tick-1sec
 {
 	normalize(@avgtime_write, 1000); normalize(@mintime_write, 1000); normalize(@maxtime_write, 1000);
 	normalize(@avgtime_read, 1000); normalize(@mintime_read, 1000); normalize(@maxtime_read, 1000);
-	
+
 	PRINT_TIME == 1 ? printf("%Y\n", walltimestamp) : 1;
 	PRINT_TIME == 2 ? printf("%d\n", walltimestamp/1000) : 1;
 	printa("%s,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d\n",
 		@op_count, @op_pending,
 		@count_read, @bytes_read, @mintime_read, @avgtime_read, @maxtime_read,
-		@count_write, @bytes_write, 
+		@count_write, @bytes_write,
 		@mintime_write, @avgtime_write, @maxtime_write,
 		@count_nop, @mintime_nop, @avgtime_nop, @maxtime_nop);
 
 	trunc(@op_count, 0);
 	trunc(@count_write, 0); trunc(@avgtime_write, 0); trunc(@mintime_write, 0); trunc(@maxtime_write, 0);
-	trunc(@bytes_write, 0); 
+	trunc(@bytes_write, 0);
 	trunc(@count_read, 0); trunc(@avgtime_read, 0); trunc(@mintime_read, 0); trunc(@maxtime_read, 0);
 	trunc(@bytes_read, 0);
 	trunc(@count_nop, 0); trunc(@mintime_nop, 0); trunc(@avgtime_nop, 0); trunc(@maxtime_nop, 0);
-	
+
 	secs = INTERVAL;
 	counts--;
 }

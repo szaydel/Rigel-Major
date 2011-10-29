@@ -63,7 +63,7 @@
  *	Only IOs to report logical blocks that are less than this value.
  * -D REPORT_OVERTIME=N
  *	Only report IOs that have taken longer than this number of nanoseconds.
- *	This only stops the printing of the packets not the collection of 
+ *	This only stops the printing of the packets not the collection of
  *	statistics.
  *	There are some tuning options that take effect only when
  *	REPORT_OVERTIME is set. These are:
@@ -205,7 +205,7 @@
 #define	DEV_INST(pkt) (P_TO_DEVINFO(pkt)->devi_instance)
 
 #ifdef MIN_BLOCK
-#define MIN_TEST && this->lba >= (MIN_BLOCK) 
+#define MIN_TEST && this->lba >= (MIN_BLOCK)
 #else
 #define MIN_TEST
 #endif
@@ -272,7 +272,7 @@ BEGIN
 
 #endif
 
-BEGIN 
+BEGIN
 / $$target != "" /
 {
 	target = $target;
@@ -479,8 +479,8 @@ fbt:scsi:scsi_destroy_pkt:entry
  * is out in the wild it should be used.
  */
 /*
- * If in any of these probes this->pkt is initialized to zero 
- * the knock on effect is none of the other probes for this clause further 
+ * If in any of these probes this->pkt is initialized to zero
+ * the knock on effect is none of the other probes for this clause further
  * down get run.
  *
  * Do not just comment the probes out. Clause local variables are not
@@ -511,7 +511,7 @@ fbt:scsi:scsi_destroy_pkt:entry
 /*
  * FRAMEWORK:- create your entry probe and make this->pkt point to the
  * argument that has the scsi_pkt. eg add one like this:
- * 
+ *
  */
 fbt:*sd:*sd_sense_key_illegal_request:entry
 / !PROBE_SWITCH /
@@ -752,7 +752,7 @@ ENTRY_PROBES
  * speculation if the packet takes too long.
  */
 
-#ifdef REPORT_OVERTIME 
+#ifdef REPORT_OVERTIME
 
 #define SPECULATE speculate(specs[this->scb]);
 

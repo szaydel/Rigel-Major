@@ -20,7 +20,7 @@ loginShell: /bin/bash
 mail: none
 mobile: +33 (0)6 xx xx xx xx
 o: Example
-postalAddress: 
+postalAddress:
 postalCode: 31000
 shadowExpire: -1
 shadowFlag: 0

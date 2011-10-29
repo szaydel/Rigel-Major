@@ -24,22 +24,22 @@ from subprocess import call
 from subprocess import PIPE
 
 stmf_bin = '/usr/sbin/stmfadm'
-## Args should contain a tuple of script name and GUID    
+## Args should contain a tuple of script name and GUID
 args = sys.argv[:]
 
 if len(args) != 2:  ## If length is anything other than 2, we need to complain
     print 'Incorrect Number of Arguments. Try: %s %s' % (args[0],'GUID')
     print 'Example: %s %s %s' % (args[0],'600144F0C2B6C30000004FF8AC190009','\n')
     sys.exit(1)
-    
+
 guid = upper(args[1])   ## GUID for the logical unit
 
 def generic_subp(cmd):
-    
+
     try:
         retcode = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=False)
         stdout,stderr = retcode.communicate()
-        
+
         if retcode.wait() < 0:
             print >>sys.stderr, "Child was terminated by signal", -retcode.wait()
         else:
@@ -47,10 +47,10 @@ def generic_subp(cmd):
             return stdout,stderr
     except OSError, e:
         print >>sys.stderr, "Execution failed:", e
-        return e    
-# stmfadm list-lu -v 600144F0C2B6C30000004DE8FB130003    
+        return e
+# stmfadm list-lu -v 600144F0C2B6C30000004DE8FB130003
 try:
-    stmf_verb_info = Popen([stmf_bin, 'list-lu', '-v', guid], 
+    stmf_verb_info = Popen([stmf_bin, 'list-lu', '-v', guid],
                             stdout=subprocess.PIPE,
                             )
 
@@ -76,10 +76,10 @@ print '%s%s' % ('-' * 80,'\n')
 
 for line in res_stmf_verb_info:
     print line.strip()
-    
+
 # stmfadm list-view --lu-name 600144F0C2B6C30000004DE8FB130003
 
-stmf_view_info = Popen([stmf_bin, 'list-view', '--lu-name', guid], 
+stmf_view_info = Popen([stmf_bin, 'list-view', '--lu-name', guid],
                         stdout=subprocess.PIPE,
                         )
 
@@ -111,5 +111,5 @@ if not tg == None:
     tgt_group = generic_subp([stmf_bin, 'list-tg', '-v', tg])
     for line in tgt_group:
         print line.strip()
-        
+
 sys.exit(0)

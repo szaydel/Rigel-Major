@@ -1,38 +1,38 @@
-#!/usr/sbin/dtrace -Cs 
+#!/usr/sbin/dtrace -Cs
 
-#pragma D option quiet 
-#pragma D option switchrate=10hz 
+#pragma D option quiet
+#pragma D option switchrate=10hz
 
-typedef enum idm_status { 
-        IDM_STATUS_SUCCESS = 0, 
-        IDM_STATUS_FAIL, 
-        IDM_STATUS_NORESOURCES, 
-        IDM_STATUS_REJECT, 
-        IDM_STATUS_IO, 
-        IDM_STATUS_ABORTED, 
-        IDM_STATUS_SUSPENDED, 
-        IDM_STATUS_HEADER_DIGEST, 
-        IDM_STATUS_DATA_DIGEST, 
-        IDM_STATUS_PROTOCOL_ERROR, 
-        IDM_STATUS_LOGIN_FAIL 
-} idm_status_t; 
+typedef enum idm_status {
+        IDM_STATUS_SUCCESS = 0,
+        IDM_STATUS_FAIL,
+        IDM_STATUS_NORESOURCES,
+        IDM_STATUS_REJECT,
+        IDM_STATUS_IO,
+        IDM_STATUS_ABORTED,
+        IDM_STATUS_SUSPENDED,
+        IDM_STATUS_HEADER_DIGEST,
+        IDM_STATUS_DATA_DIGEST,
+        IDM_STATUS_PROTOCOL_ERROR,
+        IDM_STATUS_LOGIN_FAIL
+} idm_status_t;
 
-dtrace:::BEGIN 
-{ 
-   /* 
-	* The following was generated from the SCSI_CMDS_KEY_STRINGS 
+dtrace:::BEGIN
+{
+   /*
+	* The following was generated from the SCSI_CMDS_KEY_STRINGS
 	* definitions in /usr/include/sys/scsi/generic/commands.h using sed.
 	* Additional codes gathered from http://en.wikipedia.org/wiki/SCSI_command
-	*/ 
-	scsi_cmd[0x00] = "test_unit_ready"; 
-	scsi_cmd[0x01] = "rezero/rewind"; 
-	scsi_cmd[0x03] = "request_sense"; 
-	scsi_cmd[0x04] = "format"; 
-	scsi_cmd[0x05] = "read_block_limits"; 
-	scsi_cmd[0x07] = "reassign"; 
-	scsi_cmd[0x08] = "read"; 
-	scsi_cmd[0x0a] = "write"; 
-	scsi_cmd[0x0b] = "seek"; 
+	*/
+	scsi_cmd[0x00] = "test_unit_ready";
+	scsi_cmd[0x01] = "rezero/rewind";
+	scsi_cmd[0x03] = "request_sense";
+	scsi_cmd[0x04] = "format";
+	scsi_cmd[0x05] = "read_block_limits";
+	scsi_cmd[0x07] = "reassign";
+	scsi_cmd[0x08] = "read";
+	scsi_cmd[0x0a] = "write";
+	scsi_cmd[0x0b] = "seek";
 	scsi_cmd[0x0f] = "read_reverse";
 	scsi_cmd[0x10] = "write_file_mark";
 	scsi_cmd[0x11] = "space";
@@ -145,7 +145,7 @@ dtrace:::BEGIN
 	scsi_cmd[0xb2] = "search_data_low(12)";
 	scsi_cmd[0xb3] = "set_limits(12)";
 	scsi_cmd[0xb4] = "read_element_status_attached";
-	scsi_cmd[0xb5] = "security_protocol_out"; 
+	scsi_cmd[0xb5] = "security_protocol_out";
 	scsi_cmd[0xb6] = "send_volume_tag";
 	scsi_cmd[0xb7] = "read_defect_data(12)";
 	scsi_cmd[0xb8] = "read_element_status";
@@ -156,7 +156,7 @@ dtrace:::BEGIN
 	scsi_cmd[0xbd] = "spare_out";
 	scsi_cmd[0xbe] = "volume_set_in";
 	scsi_cmd[0xbf] = "volume_set_out";
-	
+
 	/* Key codes */
 	key_code[0x0] = "no_sense";
 	key_code[0x1] = "soft_error";
@@ -174,51 +174,51 @@ dtrace:::BEGIN
 	key_code[0xd] = "volume_overflow";
 	key_code[0xe] = "miscompare";
 	/* key_code[0xf] is reserved */
-	
+
 	/* kcq codes - of the form key/asc/ascq */
 	/* http://en.wikipedia.org/wiki/Key_Code_Qualifier */
 	kcq_code[0x0,0x0,0x0] = "no error";
 	kcq_code[0x5,0x24,0x0] = "illegal field in CDB";
 	kcq_code[0x6,0x29,0x0] = "POR or device reset occurred";
 	kcq_code[0x6,0x29,0x1] = "POR occurred";
-	
+
 	/* IDM status codes */
-	status[IDM_STATUS_FAIL] = "FAIL"; 
-	status[IDM_STATUS_NORESOURCES] = "NORESOURCES"; 
-	status[IDM_STATUS_REJECT] = "REJECT"; 
-	status[IDM_STATUS_IO] = "IO"; 
-	status[IDM_STATUS_ABORTED] = "ABORTED"; 
-	status[IDM_STATUS_SUSPENDED] = "SUSPENDED"; 
-	status[IDM_STATUS_HEADER_DIGEST] = "HEADER_DIGEST"; 
-	status[IDM_STATUS_DATA_DIGEST] = "DATA_DIGEST"; 
-	status[IDM_STATUS_PROTOCOL_ERROR] = "PROTOCOL_ERROR"; 
-	status[IDM_STATUS_LOGIN_FAIL] = "LOGIN_FAIL"; 
+	status[IDM_STATUS_FAIL] = "FAIL";
+	status[IDM_STATUS_NORESOURCES] = "NORESOURCES";
+	status[IDM_STATUS_REJECT] = "REJECT";
+	status[IDM_STATUS_IO] = "IO";
+	status[IDM_STATUS_ABORTED] = "ABORTED";
+	status[IDM_STATUS_SUSPENDED] = "SUSPENDED";
+	status[IDM_STATUS_HEADER_DIGEST] = "HEADER_DIGEST";
+	status[IDM_STATUS_DATA_DIGEST] = "DATA_DIGEST";
+	status[IDM_STATUS_PROTOCOL_ERROR] = "PROTOCOL_ERROR";
+	status[IDM_STATUS_LOGIN_FAIL] = "LOGIN_FAIL";
 
-	printf("%-20s  %-20s %s\n", "TIME", "CLIENT", "ERROR"); 
-} 
+	printf("%-20s  %-20s %s\n", "TIME", "CLIENT", "ERROR");
+}
 
-fbt::idm_pdu_complete:entry 
-/arg1 != IDM_STATUS_SUCCESS/ 
-{ 
-	this->ic = args[0]->isp_ic; 
-	this->remote = (this->ic->ic_raddr.ss_family == AF_INET) ? 
-		inet_ntoa((ipaddr_t *)&((struct sockaddr_in *)& 
-		this->ic->ic_raddr)->sin_addr) : 
-		inet_ntoa6(&((struct sockaddr_in6 *)& 
-		this->ic->ic_raddr)->sin6_addr); 
+fbt::idm_pdu_complete:entry
+/arg1 != IDM_STATUS_SUCCESS/
+{
+	this->ic = args[0]->isp_ic;
+	this->remote = (this->ic->ic_raddr.ss_family == AF_INET) ?
+		inet_ntoa((ipaddr_t *)&((struct sockaddr_in *)&
+		this->ic->ic_raddr)->sin_addr) :
+		inet_ntoa6(&((struct sockaddr_in6 *)&
+		this->ic->ic_raddr)->sin6_addr);
 
-	this->err = status[arg1] != NULL ? status[arg1] : lltostr(arg1); 
+	this->err = status[arg1] != NULL ? status[arg1] : lltostr(arg1);
 	printf("%-20Y  %-20s %s\n", walltimestamp, this->remote, this->err);
-} 
+}
 
 fbt::stmf_send_scsi_status:entry
 / args[0]->task_mgmt_function == 0 && args[0]->task_sense_data != 0 /
 {
 	/* TODO: get the client address */
 	printf("%-20Y  %-20s ", walltimestamp, "-");
-	this->code = args[0]->task_cdb[0]; 
-	this->cmd = scsi_cmd[this->code] != NULL ? 
-	   scsi_cmd[this->code] : lltostr(this->code); 
+	this->code = args[0]->task_cdb[0];
+	this->cmd = scsi_cmd[this->code] != NULL ?
+	   scsi_cmd[this->code] : lltostr(this->code);
 	printf("CMD=%s, ", this->cmd);
 	this->key_id = (unsigned)args[0]->task_sense_data[2];
 	this->asc_id = (unsigned)args[0]->task_sense_data[12];

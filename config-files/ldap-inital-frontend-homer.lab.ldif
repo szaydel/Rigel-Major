@@ -62,7 +62,7 @@ o: Example
 mobile: +33 (0)6 xx xx xx xx
 homePhone: +33 (0)5 xx xx xx xx
 title: Homer.lab Domain Owner
-postalAddress: 
+postalAddress:
 initials: SZ
 
 dn: cn=deneb,ou=groups,dc=alpha,dc=homer,dc=lab

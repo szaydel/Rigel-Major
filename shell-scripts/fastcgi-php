@@ -8,14 +8,14 @@
 # Required-Start:    $local_fs $network $syslog
 # Required-Stop:     $local_fs $network $syslog
 # Should-Start:      nginx
-# Should-Stop:       
-# X-Start-Before:    
-# X-Stop-After:      
+# Should-Stop:
+# X-Start-Before:
+# X-Stop-After:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # X-Interactive:     true
 # Short-Description: Fast CGI PHP gateway for Nginx WWW server
-# Description:       Script used to spawn a number of php5-cgi processes, 
+# Description:       Script used to spawn a number of php5-cgi processes,
 #                    which are accessed by nginx www server
 ### END INIT INFO
 
@@ -62,13 +62,13 @@ start(){
             start_daemon ${COMMAND_ARGS}
             RETVAL=$?
     fi
-    
+
 	# echo $COMMAND_ARGS
 	# env - $E $COMMAND_ARGS
 }
 
 stop(){
-	echo "[INFO] ... STOPPING PHP-FCGI ..."	
+	echo "[INFO] ... STOPPING PHP-FCGI ..."
 
 	if [ -f "${PIDFILE}" ]; then
 	        killproc -p "${PIDFILE}"
@@ -94,22 +94,22 @@ case "$1" in
             log_daemon_msg "Starting Service" "fastcgi-php"
             start
             ;;
-    
+
     'stop')
             [ "${DEBUG}" -ge 1 ] && set -x
             log_daemon_msg "Stopping Service" "fastcgi-php"
             stop
             ;;
-    
+
     'status')
             status_of_proc -p "${PIDFILE}" "${FCGIPHP_BIN_PATH}" fastcgi-php
             exit $?
             ;;
 
-    reload|force-reload)  
-            log_warning_msg "Online reload not supported"  
+    reload|force-reload)
+            log_warning_msg "Online reload not supported"
             ;;
-    
+
     'restart')
             log_daemon_msg "Restarting Service" "fastcgi-php"
             stop

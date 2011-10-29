@@ -1,12 +1,12 @@
 {
-  "keyboard_shortcut": "", 
-  "name": "Add.todays.Date", 
+  "keyboard_shortcut": "",
+  "name": "Add.todays.Date",
   "value": [
-    "## import time", 
+    "## import time",
     "timenow = time.localtime()!@#_currentPos!@#_anchor"
-  ], 
-  "set_selection": "false", 
-  "version": "1.0.7", 
-  "type": "snippet", 
+  ],
+  "set_selection": "false",
+  "version": "1.0.7",
+  "type": "snippet",
   "indent_relative": "false"
 }

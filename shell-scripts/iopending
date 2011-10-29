@@ -9,7 +9,7 @@
 #
 # $Id: iopending 3 2007-08-01 10:50:08Z brendan $
 #
-# USAGE:	iopending [-c] [-d device] [-f filename] 
+# USAGE:	iopending [-c] [-d device] [-f filename]
 #		          [-m mount_point] [interval [count]]
 #
 #		-c		# clear the screen
@@ -21,14 +21,14 @@
 #		iopending 1  	# 1 second samples
 #		iopending -c	# clear the screen
 #		iopending 5 12	# print 12 x 5 second samples
-# 	
+#
 # FIELDS:
 #		value		number of pending events, 0 == idle
 #		count		number of samples @ 1000 Hz
 #		load		1 min load average
 #		disk_r		total disk read Kbytes for sample
 #		disk_w		total disk write Kbytes for sample
-# 
+#
 # SEE ALSO: iosnoop, iotop
 #
 # IDEA: Dr Rex di Bona (Sydney, Australia)
@@ -61,7 +61,7 @@
 #
 
 ### default variables
-opt_device=0; opt_file=0; opt_mount=0; opt_clear=0; 
+opt_device=0; opt_file=0; opt_mount=0; opt_clear=0;
 opt_def=1; filter=0; device=.; filename=.; mount=.
 interval=5; count=-1
 
@@ -76,11 +76,11 @@ do
 	h|?)	cat <<-END >&2
 		USAGE: iopending [-c] [-d device] [-f filename]
 		                 [-m mount_point] [interval [count]]
- 
+
 		                -c              # clear the screen
-		                -d device       # instance name to snoop 
+		                -d device       # instance name to snoop
 		                -f filename     # snoop this file only
-		                -m mount_point  # this FS only 
+		                -m mount_point  # this FS only
 		   eg,
 		        iopending         # default output, 5 second samples
 		        iopending 1       # 1 second samples
@@ -132,13 +132,13 @@ fi
  inline string CLEAR 	= "'$clearstr'";
 
  inline int MAX_PENDING = 32;	/* max pending value */
- 
+
  #pragma D option quiet
 
  /*
   * Print header
   */
- dtrace:::BEGIN 
+ dtrace:::BEGIN
  {
         /* starting values */
         counts = COUNTER;
@@ -154,8 +154,8 @@ fi
   * Check event is being traced
   */
  io:genunix::start,
- io:genunix::done 
- { 
+ io:genunix::done
+ {
 	/* default is to trace unless filtering, */
 	this->ok = FILTER ? 0 : 1;
 

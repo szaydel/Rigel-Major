@@ -22,7 +22,7 @@ INFOLOG=${LOGSDIR}/info-${MYDATE}-${RUN_AS}.log
 DEBUG=1
 
 # Functions for error control
-alert () 
+alert ()
 {
 # usage: alert <$?> <object>
 if [ "$1" -ne 0 ]; then
@@ -45,11 +45,11 @@ pgrep "${MYNAME}" | grep -v "${MYPID}" &> /dev/null; RET_CODE=$?
     if [[ "${RET_CODE}" = "0" ]]; then
             return 1
         else
-            return 0    
+            return 0
     fi
 }
 
-## If another instance of this script already running 
+## If another instance of this script already running
 check_for_another_instance || exit 1
 
 ###############################################################################

@@ -77,16 +77,16 @@ inline int PRINT_TIME = '$opt_time';
 
 #pragma D option quiet
 
-dtrace:::BEGIN 
+dtrace:::BEGIN
 {
 	secs = INTERVAL;
 	counts = COUNT;
 	printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-		"client", "ops", 
+		"client", "ops",
         "read ops", "bytes read", "read min", "read avg", "read max",
         "write ops", "async write ops", "sync write ops", "bytes write",
 		"write min", "write avg", "write max",
-		"commit ops", "commit min", "commit avg", "commit max", 
+		"commit ops", "commit min", "commit avg", "commit max",
         "pathconf ops", "pathconf min", "pathconf avg", "pathconf max",
         "fsinfo ops", "fsinfo min", "fsinfo avg", "fsinfo max",
         "fsstat ops", "fsstat min", "fsstat avg", "fsstat max",
@@ -218,7 +218,7 @@ nfsv3:nfssrv::op-write-start
 /'$TRACK_write' && args[2]->stable/
 {
 	@count_sync_write[args[0]->ci_remote] = count();
-}	
+}
 nfsv3:nfssrv::op-write-start
 /'$TRACK_write' && !args[2]->stable/
 {
@@ -481,13 +481,13 @@ profile:::tick-1sec
 	normalize(@avgtime_setattr, 1000); normalize(@mintime_setattr, 1000); normalize(@maxtime_setattr, 1000);
 	normalize(@avgtime_getattr, 1000); normalize(@mintime_getattr, 1000); normalize(@maxtime_getattr, 1000);
 	normalize(@avgtime_null, 1000); normalize(@mintime_null, 1000); normalize(@maxtime_null, 1000);
-	
+
 	PRINT_TIME == 1 ? printf("%Y\n", walltimestamp) : 1;
 	PRINT_TIME == 2 ? printf("%d\n", walltimestamp/1000) : 1;
 	printa("%s,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d,%@d\n",
 		@op_count,
 		@count_read, @bytes_read, @mintime_read, @avgtime_read, @maxtime_read,
-		@count_write, @count_async_write, @count_sync_write, @bytes_write, 
+		@count_write, @count_async_write, @count_sync_write, @bytes_write,
 		@mintime_write, @avgtime_write, @maxtime_write,
 		@count_commit, @mintime_commit, @avgtime_commit, @maxtime_commit,
 		@count_pathconf, @mintime_pathconf, @avgtime_pathconf, @maxtime_pathconf,
@@ -535,7 +535,7 @@ profile:::tick-1sec
 	trunc(@count_setattr, 0); trunc(@avgtime_setattr, 0); trunc(@mintime_setattr, 0); trunc(@maxtime_setattr, 0);
 	trunc(@count_getattr, 0); trunc(@avgtime_getattr, 0); trunc(@mintime_getattr, 0); trunc(@maxtime_getattr, 0);
 	trunc(@count_null, 0); trunc(@avgtime_null, 0); trunc(@mintime_null, 0); trunc(@maxtime_null, 0);
-	
+
 	secs = INTERVAL;
 	counts--;
 }

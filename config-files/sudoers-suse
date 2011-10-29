@@ -35,7 +35,7 @@ Defaults env_reset
 # Change env_reset to !env_reset in previous line to keep all environment variables
 # Following list will no longer be necessary after this change
 
-# Prevent Shell escape with 
+# Prevent Shell escape with
 # Defaults!PAGERS        noexec
 
 Defaults env_keep = "LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS XDG_SESSION_COOKIE"

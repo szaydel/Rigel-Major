@@ -638,7 +638,7 @@ find /tmp -type f -exec awk '{ while (match($0, /value=[0-9]+/)) { s = substr($0
 ## Manipulating random numbers
 let R=$RANDOM%10; echo $R # For a number between 0 and 9
 
-let R=$RANDOM%100; echo $R # For a number between 0 and 99 
+let R=$RANDOM%100; echo $R # For a number between 0 and 99
 
 let R=$RANDOM%100+1; echo $R # For a number between 1 and 100
 

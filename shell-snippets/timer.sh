@@ -5,7 +5,7 @@
 #: Version     : 0.1.1
 #: Description : Check for daily scripts in user's ~/bin and execute
 #: Options     : None
-#: Path to file: 
+#: Path to file:
 #: Name			: timer.sh
 
 host=$(hostname)

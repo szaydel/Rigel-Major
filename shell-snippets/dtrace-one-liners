@@ -9,7 +9,7 @@ dtrace -n 'nfsv3:::op-write-start { self->t = timestamp; } nfsv3:::op-write-done
 ## Watch ARC
 dtrace -n 'sdt:::arc-delete,sdt:::arc-evict,sdt:::arc-hit,sdt:::arc-miss { @[probefunc] = count(); }'
 
-## Top system calls against ZFS storage, with 
+## Top system calls against ZFS storage, with
 dtrace -n 'syscall::read:entry /fds[arg0].fi_fs == "zfs"/ { @[execname] = count(); }'
 
 ## Monitor state of log device being offlined
