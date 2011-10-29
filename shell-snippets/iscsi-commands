@@ -24,7 +24,7 @@
 
 ## Deleting an interface from the config
 # iscsiadm --mode iface --interface iscsi-0 -o delete
-# iscsiadm --mode iface --interface iscsi-1 -o delete 
+# iscsiadm --mode iface --interface iscsi-1 -o delete
 
 
 ## Logging in

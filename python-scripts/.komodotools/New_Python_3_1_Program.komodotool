@@ -1,12 +1,12 @@
 {
-  "keyboard_shortcut": "", 
-  "name": "New.Python.3.1.Program", 
+  "keyboard_shortcut": "",
+  "name": "New.Python.3.1.Program",
   "value": [
-    "#!/usr/bin/python3.1", 
+    "#!/usr/bin/python3.1",
     "!@#_currentPos!@#_anchor"
-  ], 
-  "set_selection": "false", 
-  "version": "1.0.7", 
-  "type": "snippet", 
+  ],
+  "set_selection": "false",
+  "version": "1.0.7",
+  "type": "snippet",
   "indent_relative": "false"
 }

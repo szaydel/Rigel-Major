@@ -34,7 +34,7 @@ MYAPP_ID=""
   do
     case $ARGS in
       l) if [ -d $LOGDIR ] ; then
-           cd $LOGDIR 
+           cd $LOGDIR
            /bin/ls
          fi
       ;;
@@ -49,7 +49,7 @@ MYAPP_ID=""
          fi
       ;;
       b) if [ -d $BINDIR ] ; then
-           cd $BINDIR 
+           cd $BINDIR
          fi
       ;;
       m) if [ -d $LOGDIR ] ; then
@@ -67,7 +67,7 @@ MYAPP_ID=""
       ;;
       h) echo -e $Usage
       ;;
-      *) echo -e $Usage 
+      *) echo -e $Usage
          #return
       ;;
      esac

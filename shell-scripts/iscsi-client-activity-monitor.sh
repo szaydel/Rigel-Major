@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 # iscsi-client-activity-monitor.sh
-# 
+#
 #
 # Copyright 2010 Nexenta Systems, Inc. All rights reserved.
 
@@ -20,17 +20,17 @@ END
 while getopts ht:T name
 do
 	case $name in
-		
+
 		h) show_usage
 		   exit 0
 		;;
-		
+
 		t) opt_threshold="${OPTARG}"
-		
+
 		;;
-		
+
 		?|*) show_usage
-		     exit 1 
+		     exit 1
 		;;
 
 	esac
@@ -40,7 +40,7 @@ shift $(( $OPTIND - 1 ))
 
 # process remaining parameters
 if [[ "$1" > 0 ]]; then
-	if [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then 
+	if [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
 		CLIENT="$1"
 	else
 		echo "error: client-IP-address is not an IPv4 address"
@@ -61,7 +61,7 @@ fi
 
 # options are known, now run dtrace
 dtrace -n '
-#pragma D option quiet 
+#pragma D option quiet
 
 inline int THRESHOLD = '$opt_threshold'; /* nanoseconds */
 

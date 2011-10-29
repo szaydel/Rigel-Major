@@ -1,7 +1,7 @@
 #!/bin/bash
 #===============================================================================
 #          FILE:  wrapper.sh
-#         USAGE:  ./wrapper.sh scriptname [cmd-line-args] 
+#         USAGE:  ./wrapper.sh scriptname [cmd-line-args]
 #   DESCRIPTION:  Wraps the execution of a programm or script.
 #                 Use with xterm: xterm -e wrapper.sh scriptname cmd-line-args
 #                 This script is used by the Vim plugin bash-support.vim

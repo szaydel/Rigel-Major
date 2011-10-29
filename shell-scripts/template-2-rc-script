@@ -9,11 +9,11 @@
 #
 ### BEGIN INIT INFO
 # Provides:          htcache
-# Required-Start:    
-# Required-Stop:     
-# Should-Start:      
+# Required-Start:
+# Required-Stop:
+# Should-Start:
 # Default-Start:     2 3 4 5
-# Default-Stop:      
+# Default-Stop:
 # Short-Description: a Python HTTP/FTP proxy
 # Description:       htcache is a python HTTP/FTP proxy with caching and filtering
 ### END INIT INFO
@@ -21,7 +21,7 @@
 set -e # check all commands
 
 DAEMON=/usr/bin/htcache
-LOG=/var/log/htcache.log 
+LOG=/var/log/htcache.log
 PID_FILE=/var/run/htcache.pid
 #CACHE=/var/cache/http/
 CACHE=/var/cache/www/
@@ -79,14 +79,14 @@ case "$1" in
 	htcache_start
     ;;
   stop)
-  	#log_daemon_msg "Stopping HTTP proxy" "htcache"  
+  	#log_daemon_msg "Stopping HTTP proxy" "htcache"
   	#start-stop-daemon --stop --quiet --oknodo --pidfile $PID_FILE
 	#log_end_msg $?
 	#rm -f $PID_FILE
     #htcache_stop
     ;;
-  reload|force-reload)  
-  	#log_warning_msg "Online reload not supported"  
+  reload|force-reload)
+  	#log_warning_msg "Online reload not supported"
 	;;
   restart)
 	#log_daemon_msg "Restarting HTTP proxy" "htcache"
@@ -95,7 +95,7 @@ case "$1" in
     ;;
 #  status)
 #  	status_of_proc -p PID_FILE "$DAEMON" htcache
-#  	exit $? 
+#  	exit $?
 #	;;
   *)
     echo "Usage: /etc/init.d/htcache {start|stop|restart}"

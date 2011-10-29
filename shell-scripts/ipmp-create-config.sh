@@ -18,7 +18,7 @@
 # information: Portions Copyright [yyyy] [name of copyright owner]
 #
 # CDDL HEADER END
-# 
+#
 # Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
@@ -66,11 +66,11 @@ VERS=1.0.5
 ################################################################################
 ### Revision Notes: ############################################################
 ################################################################################
-# 2011/07/15 :  Modified ipmp MTU configuration, to only set MTU once on the 
+# 2011/07/15 :  Modified ipmp MTU configuration, to only set MTU once on the
 # 				entire group, as that should propagate through the entire set of
 #				aliases on the ipmp interface.
 # 2011/07/15 :  Revised wording on input of number of additional data interfaces
-# 2011/07/22 :  Enhancement 1 - Match ipmp_group_name to 
+# 2011/07/22 :  Enhancement 1 - Match ipmp_group_name to
 # 				/etc/hostname.ipmp_group_name, instead of using hostname.ipmp0
 #				Need to make IPMP Probe-based failure optional, and link-based
 #				the default option, instead of probe-based being default.
@@ -138,7 +138,7 @@ return "${RET_CODE}"
 cleanup_old_confs ()
 {
 ## To make sure that we are not appending anything to old configs
-## we should do a cleanup of old files if we find them.	
+## we should do a cleanup of old files if we find them.
 ## Create array based on values passed into the function
 local IF_LIST=( "$@" )
 local yes_no=""
@@ -158,13 +158,13 @@ for IF in "${IF_LIST[@]}"
 					newline
 
 					case "${yes_no}" in
-						Y|y) 
+						Y|y)
 							linesep
 							printf "%s\n" ">>> Removing file: ${FILE} <<<"
 							${RM} -f "${FILE}"
 							linesep
 							;;
-						N|n) 
+						N|n)
 							printf "%s\n" ">>> Exiting Wizard, due to existing config files <<<"
 							local RET_CODE=1
 							break
@@ -228,7 +228,7 @@ printf "%s\n%s" "[*] Subnet Mask for Test IPs (Default is ${TEST_IP_SUBNET_M})" 
 local VALIDATE_TEST_IP_SUBNET_M=$?
 
 if [[ ! -z "${N_TEST_IP_SUBNET_M}" && "${VALIDATE_TEST_IP_SUBNET_M}" -ne 0 ]]; then
-	while [[ "${VALIDATE_TEST_IP_SUBNET_M}" -ne 0 ]] 
+	while [[ "${VALIDATE_TEST_IP_SUBNET_M}" -ne 0 ]]
 		do
 			N_TEST_IP_SUBNET_M=""
 			printf "%s\n%s" "Your Subnet Mask Appears to be invalid." "New Mask: "; read N_TEST_IP_SUBNET_M
@@ -248,7 +248,7 @@ printf "%s\n%s" "[*] Subnet Mask for Data IPs (Default is ${DATA_IP_SUBNET_M})" 
 local VALIDATE_DATA_IP_SUBNET_M=$?
 
 if [[ ! -z "${N_DATA_IP_SUBNET_M}" && "${VALIDATE_DATA_IP_SUBNET_M}" -ne 0 ]]; then
-	while [[ "${VALIDATE_DATA_IP_SUBNET_M}" -ne 0 ]] 
+	while [[ "${VALIDATE_DATA_IP_SUBNET_M}" -ne 0 ]]
 		do
 			N_DATA_IP_SUBNET_M=""
 			printf "%s\n%s" "Your Subnet Mask Appears to be invalid." "New Mask: "; read N_DATA_IP_SUBNET_M
@@ -324,7 +324,7 @@ do
 		return 1
 	fi
 done
-return 0	
+return 0
 }
 
 ipmp_interfaces_array ()
@@ -350,7 +350,7 @@ while [[ -z "${IPMP_IF_ARRAY[@]}" ]]
 	## We need to make sure that each interface entry actually corresponds
 	## to existing physical interface
 	for IF in "${IPMP_IF_ARRAY[@]}"
-		do 
+		do
 			## Need to be sure we are not checking for physical interfaces, rather logical
 			if [[ $( ${DLADM} show-link "${IF}" 2>/dev/null ) ]]; then
 			# if [[ $( ${DLADM} show-phys "${IF}" 2>/dev/null ) ]]; then
@@ -389,7 +389,7 @@ newline
 	while [[ -z "${PROBE_BASED}" ]]
 		do
 			case "${yes_no}" in
-				Y|y) 
+				Y|y)
 				printf "%s\n" \
 "
 ********************************************************************************
@@ -410,7 +410,7 @@ newline
 
 					PROBE_BASED=Y
 					;;
-				N|n|*) 
+				N|n|*)
 					printf "%s\n" "Probe-based failure detection will not be enabled!"
 					PROBE_BASED=N
 					;;
@@ -438,7 +438,7 @@ for IF in ${IPMP_IF_ARRAY[@]}
 
 		## echo "${#IPMP_IF_ARRAY[@]} ${IF}" ## For testing purposes
 		while [[ -z "${TEST_IP}" ]]
-			do 
+			do
 				newline
 				printf "%s\n%s" "Please enter Test IP Address to be used for Interface ${IF}" "Interfaces (i.e. 10.10.10.1): "; read TEST_IP
 				newline
@@ -461,10 +461,10 @@ for IF in ${IPMP_IF_ARRAY[@]}
 					printf "%s\n" "It appears that you did not enter a valid test address, do you still want Probe-based failure detection?"
 					printf "%s" "Answer [Y|N]: "; read yes_no
 					case "${yes_no}" in
-						Y|y) 
+						Y|y)
 							local TEST_IP=""
 							;;
-						N|n) 
+						N|n)
 							local TEST_IP="0.0.0.0"
 							;;
 					esac
@@ -486,7 +486,7 @@ while [[ -z "${IPMP_PRI_DATA_ADDR}" ]]
 	do
 		printf "%s\n%s" "Please enter Primary Data IP Address (i.e. 10.10.10.1)" ">>> "; read IPMP_PRI_DATA_ADDR
 		newline
-		
+
 		## We first validate that we indeed have a properly formed IP Address
 		test_ip_address_is_valid "${IPMP_PRI_DATA_ADDR}"; local VALIDATE_IP=$?
 		if [[ "${VALIDATE_IP}" -eq 1 ]]; then

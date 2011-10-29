@@ -46,11 +46,11 @@ printf "%s\n" "$*" ## >> "${INFOLOG}"
 }
 
 # Functions for error control
-alert () 
+alert ()
 {
 # usage: alert <$?> <object>
     if [ "$1" -ne 0 ]; then
-       printf "%s\n" "WARNING: $2 did not complete successfully." >&2 
+       printf "%s\n" "WARNING: $2 did not complete successfully." >&2
        ${LOGGER_CMD} cron.warning "WARNING: $2 did not complete successfully."
        return $1
     else
@@ -72,11 +72,11 @@ pgrep "${MYNAME}" | grep -v "${MYPID}" &> /dev/null; RET_CODE=$?
     if [[ "${RET_CODE}" = "0" ]]; then
             return 1
         else
-            return 0    
+            return 0
     fi
 }
 
-## If another instance of this script already running 
+## If another instance of this script already running
 check_for_another_instance || exit 1
 
 ###############################################################################
@@ -93,7 +93,7 @@ write_log "${DIV}"
 
 ## Need to write log file with what is being removed
 
-for A in "${kern_array[*]}"; 
+for A in "${kern_array[*]}";
     do dpkg -l \
     | cut -d " " -f3 \
     | egrep --regexp="${A}" \
@@ -101,7 +101,7 @@ for A in "${kern_array[*]}";
     RET_CODE=$?
     done
 
-[[ "${DEBUG}" -eq "1" ]] && write_log "Return code from previous command: ${RET_CODE}"    
+[[ "${DEBUG}" -eq "1" ]] && write_log "Return code from previous command: ${RET_CODE}"
 write_log "${DIV}"
 
 ## Create an entry in the system log

@@ -2,7 +2,7 @@
 ################################################################################
 ##: Title       : Untangle Gateway/Router Configuration Backup Script
 ##: Date Rel    : 05/04/2011
-##: Date Upd    : n/a 
+##: Date Upd    : n/a
 ##: Author      : "Sam Zaydel" <szaydel@gmail.com>
 ##: Version     : 1.0.0
 ##: Release     : First Release
@@ -13,7 +13,7 @@
 ################################################################################
 ## Script written to support scheduled backups of untangle router
 ## Output will be a temporary file which will then be moved via rsync to
-## backup server 
+## backup server
 ##
 ##
 ################################################################################
@@ -58,12 +58,12 @@ printf "%s\n" "$*" ## >> "${INFOLOG}"
 }
 
 # Functions for error control
-alert () 
+alert ()
 {
 RET_CODE="$1"
 # usage: alert <$?> <object>
     if [ "${RET_CODE}" -ne 0 ]; then
-       printf "%s\n" "[WARNING] $2 did not complete successfully." >&2 
+       printf "%s\n" "[WARNING] $2 did not complete successfully." >&2
        ${LOGGER_CMD} cron.warning "WARNING: $2 did not complete successfully."
        return "${RET_CODE}"
     else
@@ -87,11 +87,11 @@ ${PGRP_CMD} "${MYNAME}" | ${GREP_CMD} "${MYPID}" &> /dev/null; RET_CODE=$?
     if [[ "${RET_CODE}" = "0" ]]; then
             return 1
         else
-            return 0    
+            return 0
     fi
 }
 
-## If another instance of this script already running 
+## If another instance of this script already running
 check_for_another_instance || exit 1
 
 ################################################################################
@@ -120,7 +120,7 @@ RSYNC_RET_CODE=$?
 ${RSYNC_CMD} -l "${DEST}${FILE_NAME}"
 
 [[ "${DEBUG}" -eq "1" ]] && write_log \
-"Return code from previous command: ${RET_CODE}"    
+"Return code from previous command: ${RET_CODE}"
 write_log "${DIV}"
 
 ## Create an entry in the system log

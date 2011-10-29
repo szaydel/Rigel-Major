@@ -21,7 +21,7 @@ done
 dtrace -qn '
 inline int OPT_blocksize = '$opt_blocksize';
 
-dtrace:::BEGIN 
+dtrace:::BEGIN
 {
     printf("tracing... press [ctrl]+C when done\n");
 }
@@ -33,17 +33,17 @@ nfsv4:::op-write-start
     this->ts=timestamp;
     this->align=args[2]->offset % OPT_blocksize;
     /* todo: option for offset normalization */
-    /* this->align=this->align > 2048 ? this->align=4096 - this->align 
+    /* this->align=this->align > 2048 ? this->align=4096 - this->align
         : this->align;
     */
-} 
+}
 
 /* direction of I/O */
 nfsv3:::op-read-start,
 nfsv4:::op-read-start
 {
     this->rw="read";
-} 
+}
 nfsv3:::op-write-start,
 nfsv4:::op-write-start
 {
@@ -60,19 +60,19 @@ nfsv4:::op-read-start,
 nfsv4:::op-write-start
 {
     this->rw="4";
-} 
+}
 
 nfsv3:::op-read-done,
 nfsv3:::op-write-done,
 nfsv4:::op-read-done,
 nfsv4:::op-write-done
-/this->ts/ 
+/this->ts/
 {
     @t[this->rw,this->vers,this->align]=avg((timestamp - this->ts)/1000);
     @c[this->rw,this->vers,this->align]=count();this->ts=0
 }
 
-dtrace:::END 
+dtrace:::END
 {
     printf("NFS alignment analysis for blocksize=%d\n", OPT_blocksize);
     printf("Sample end time %Y\n", walltimestamp);

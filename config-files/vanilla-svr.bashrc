@@ -18,16 +18,16 @@ fi
 #-----------------------------------------------------------------------------
 # shopt options
 #-----------------------------------------------------------------------------
-# If set, minor errors in the spelling of a directory component in a cd 
+# If set, minor errors in the spelling of a directory component in a cd
 # command will be corrected.
-shopt -s cdspell 
+shopt -s cdspell
 
 # If set, Bash checks the window size after each command and, if
 # necessary, updates the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
-# If set, and Readline is being used, Bash will not attempt to search the 
-# PATH for possible completions when completion is attempted on 
+# If set, and Readline is being used, Bash will not attempt to search the
+# PATH for possible completions when completion is attempted on
 # an empty line.
 shopt -s no_empty_cmd_completion
 
@@ -64,7 +64,7 @@ else
 fi
 export TERM
 
-# Change the window title of X terminals 
+# Change the window title of X terminals
 case ${TERM} in
     xterm*|rxvt*|Eterm|aterm|kterm|gnome*|interix)
         PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/$HOME/~}\007"'
@@ -242,7 +242,7 @@ set_prompts() {
 # Define prompt based on whether I am local or connected via ssh
 
         PS1='$(show_time) $(prompt_color)'"\h${COLOR_NONE}:${BRIGHT_BLUE}\w${GT_RESET}"' $(show_exit_status)'"${GT_RESET}\n$(prompt_symbol) "
-   
+
         PS2="${BRIGHT_BLUE}>${DEFAULT} "
         PS3=$PS2
         PS4="${BRIGHT_RED}+${DEFAULT} "
@@ -264,7 +264,7 @@ unset -f set_prompts
 #-----------------------------------------------------------------------------
 alias refresh='. ~/.bashrc'
 alias s='sudo'
-# if [[ $(_upper_to_lower uname -o) =~ solaris ]]; then 
+# if [[ $(_upper_to_lower uname -o) =~ solaris ]]; then
 
 #  fi
 
@@ -278,7 +278,7 @@ if [ -f ~/.bash_aliases ]; then
 fi
 
 # Enable programmable bash completion
-if [[ -f ~/.bash_completion ]]; then 
+if [[ -f ~/.bash_completion ]]; then
     .  ~/.bash_completion
 elif [[ -f /etc/bash/bash_completion ]]; then
     . /etc/bash/bash_completion

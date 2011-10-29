@@ -32,7 +32,7 @@ server-vma-1	IN TXT		"VMware ESX Virtual Administration Appliance"
 server04	IN A		192.168.1.10
 printerc01	IN A		192.168.1.11
 printerc01	IN TXT		"Brother Color Printer"
-;		IN A		192.168.1.12	
+;		IN A		192.168.1.12
 ;		IN A		192.168.1.13
 ;		IN A		192.168.1.14
 athens-wap	IN A		192.168.1.15

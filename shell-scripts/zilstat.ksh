@@ -22,7 +22,7 @@
 #
 # File:   zilstat.ksh
 # Author: Richard.Elling@RichardElling.com
-# Online information: 
+# Online information:
 #   http://www.RichardElling.com/Home/scripts-and-programs-1/zilstat-intro
 #
 # This dtrace program will help identify the ZIL activity by sampling

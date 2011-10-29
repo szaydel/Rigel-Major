@@ -6,7 +6,7 @@
 [ -z "$PS1" ] && return
 
 ## Nexenta ssh Connectivity and colors ##
- 
+
     if [[ ! -z "${SSH_CLIENT}" ]]; then
         export TERM=xterm-color
     fi

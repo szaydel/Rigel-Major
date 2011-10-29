@@ -1,13 +1,13 @@
 {
-  "keyboard_shortcut": "", 
-  "name": "Append.to.File", 
+  "keyboard_shortcut": "",
+  "name": "Append.to.File",
   "value": [
-    "with open('/tmp/filename','at') as f:", 
-    "    f.write('Write something here')", 
+    "with open('/tmp/filename','at') as f:",
+    "    f.write('Write something here')",
     "    f.close()!@#_currentPos!@#_anchor"
-  ], 
-  "set_selection": "false", 
-  "version": "1.0.7", 
-  "type": "snippet", 
+  ],
+  "set_selection": "false",
+  "version": "1.0.7",
+  "type": "snippet",
   "indent_relative": "false"
 }

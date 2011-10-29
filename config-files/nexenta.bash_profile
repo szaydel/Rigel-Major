@@ -1,4 +1,4 @@
-  echo 
+  echo
   echo '                            * * *'
   echo '  CAUTION: This appliance is not a general purpose operating system:'
   echo '  managing the appliance via Unix shell is NOT recommended. Please use'
@@ -7,9 +7,9 @@
   echo '  Using Unix shell without authorization of your support provider may not'
   echo '  be supported and MAY VOID your license agreement. To display the'
   echo '  agreement, please use the following NMC command:'
-  echo 
+  echo
   echo '  show appliance license agreement'
-  echo 
+  echo
 
 ## Source local bashrc file
 if [ -f ~/.bashrc ]; then

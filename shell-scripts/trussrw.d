@@ -1,5 +1,5 @@
 /*
-* Run script with dtrace -qs	
+* Run script with dtrace -qs
 */
 dtrace:::BEGIN
 	{

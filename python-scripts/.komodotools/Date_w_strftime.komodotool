@@ -1,13 +1,13 @@
 {
-  "keyboard_shortcut": "", 
-  "name": "Date.w.strftime", 
+  "keyboard_shortcut": "",
+  "name": "Date.w.strftime",
   "value": [
-    "## today's date '20110112,183351'", 
-    "timenow = datetime.datetime.now().strftime(\"%Y%m%d,%H%M%S\")", 
+    "## today's date '20110112,183351'",
+    "timenow = datetime.datetime.now().strftime(\"%Y%m%d,%H%M%S\")",
     "!@#_currentPos!@#_anchor"
-  ], 
-  "set_selection": "false", 
-  "version": "1.0.7", 
-  "type": "snippet", 
+  ],
+  "set_selection": "false",
+  "version": "1.0.7",
+  "type": "snippet",
   "indent_relative": "false"
 }

@@ -7,7 +7,7 @@
 #
 # $Id: iotop 8 2007-08-06 05:55:26Z brendan $
 #
-# USAGE:	iotop [-C] [-D|-o|-P] [-j|-Z] [-d device] [-f filename] 
+# USAGE:	iotop [-C] [-D|-o|-P] [-j|-Z] [-d device] [-f filename]
 #		      [-m mount_point] [-t top] [interval [count]]
 #
 #		iotop   	# default output, 5 second intervals
@@ -30,7 +30,7 @@
 #		iotop -Z 	# print zone IDs
 #		iotop -t 20 	# print top 20 lines only
 #		iotop -C 5 12	# print 12 x 5 second samples
-# 	
+#
 # FIELDS:
 #		UID		user ID
 #		PID		process ID
@@ -49,15 +49,15 @@
 #		load		1 min load average
 #		disk_r		total disk read Kbytes for sample
 #		disk_w		total disk write Kbytes for sample
-# 
+#
 # NOTE:
 # * There are two different delta times reported. -D prints the
 #   elapsed time from the disk request (strategy) to the disk completion
-#   (iodone); -o prints the time for the disk to complete that event 
+#   (iodone); -o prints the time for the disk to complete that event
 #   since it's last event (time between iodones), or, the time to the
-#   strategy if the disk had been idle. 
+#   strategy if the disk had been idle.
 # * The %I/O value can exceed 100%. It represents how busy a process is
-#   making the disks, in terms of a single disk. A value of 200% could 
+#   making the disks, in terms of a single disk. A value of 200% could
 #   mean 2 disks are busy at 100%, or 4 disks at 50%...
 #
 # SEE ALSO: iosnoop
@@ -83,7 +83,7 @@
 #
 # CDDL HEADER END
 #
-# KNOWN BUGS: 
+# KNOWN BUGS:
 # - This can print errors while running on servers with Veritas volumes.
 #
 # Author: Brendan Gregg  [Sydney, Australia]
@@ -119,16 +119,16 @@ do
 	h|?)	cat <<-END >&2
 		USAGE: iotop [-C] [-D|-o|-P] [-j|-Z] [-d device] [-f filename]
 		             [-m mount_point] [-t top] [interval [count]]
- 
+
 		                -C      # don't clear the screen
 		                -D      # print delta times, elapsed, us
 		                -j      # print project ID
 		                -o      # print disk delta times, us
 		                -P      # print %I/O (disk delta times)
 		                -Z      # print zone ID
-		                -d device       # instance name to snoop 
+		                -d device       # instance name to snoop
 		                -f filename     # snoop this file only
-		                -m mount_point  # this FS only 
+		                -m mount_point  # this FS only
 		                -t top  	# print top number only
 		   eg,
 		        iotop         # default output, 5 second samples
@@ -195,7 +195,7 @@ fi
  inline string FILENAME = "'$filename'";
  inline string MOUNT 	= "'$mount'";
  inline string CLEAR 	= "'$clearstr'";
- 
+
  #pragma D option quiet
 
  /* boost the following if you get "dynamic variable drops" */
@@ -204,7 +204,7 @@ fi
  /*
   * Print header
   */
- dtrace:::BEGIN 
+ dtrace:::BEGIN
  {
 	last_event[""] = 0;
 
@@ -221,8 +221,8 @@ fi
   * Check event is being traced
   */
  io:genunix::start,
- io:genunix::done 
- { 
+ io:genunix::done
+ {
 	/* default is to trace unless filtering, */
 	this->ok = FILTER ? 0 : 1;
 
@@ -314,7 +314,7 @@ fi
 	OPT_bytes   ? this->value = args[0]->b_bcount    : 1;
 	OPT_elapsed ? this->value = this->elapsed / 1000 : 1;
 	OPT_dtime   ? this->value = this->dtime / 1000   : 1;
-	
+
 	/*
 	 * Save details
 	 */
@@ -390,7 +390,7 @@ fi
 	OPT_percent ? normalize(@out, INTERVAL * 10000) : 1;
 
 	/* print data */
-	! OPT_percent ? 
+	! OPT_percent ?
 	    printa("%5d %6d %6d %-16s %-7s %3d %3d %1s %16@d\n", @out) :
 	    printa("%5d %6d %6d %-16s %-7s %3d %3d %1s %6@d\n", @out);
 	printf("\n");

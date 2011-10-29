@@ -42,7 +42,7 @@
 # iozone -Ra -g 30G -i 0 -i 2 -i 6 -i 5 -i 8 -n 32 -O -q 8 -f /path/to/file
 
 ## Run with min/max blocksize of 4K, 0=write/rewrite, 1=read/re-read, 2=random-read/write
-## Output #'s in operations per sec., min. 1MB filesize, 
+## Output #'s in operations per sec., min. 1MB filesize,
 # iozone -g (Total Phys Mem + 1GB) -i 0 -i 1 -i 2 -RaO -n 1m -q 4k -y 4k -z  -f /path/to/file
 
 ## Get list of SRV records from MS DNS
@@ -84,7 +84,7 @@ Also, if we identify which process is growing (via "prstat -s size"), we can loo
 
 
 # echo ::spa | mdb -k
-ADDR                 STATE NAME                                                
+ADDR                 STATE NAME
 ffffff00c6788b00    ACTIVE lab9_pool_a
 ffffff00c6788080    ACTIVE lab9_pool_b
 ffffff00c6789580    ACTIVE syspool

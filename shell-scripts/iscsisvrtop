@@ -71,7 +71,7 @@ do
 	j)	opt_json=1 ;;
 	t)	opt_top=1; top=$OPTARG ;;
 	h|?)	cat <<END >&2
-USAGE: iscsisvrtop [-b blocksize] [-Cj] [-c client_IP] [-t top] 
+USAGE: iscsisvrtop [-b blocksize] [-Cj] [-c client_IP] [-t top]
                    [interval [count]]
         -b blocksize   # alignment blocksize (default=4096)
         -c client_IP   # trace for this client only
@@ -133,7 +133,7 @@ inline string CLEAR 	= "'$clearstr'";
 /*
  * Print header
  */
-dtrace:::BEGIN 
+dtrace:::BEGIN
 {
 	/* starting values */
 	counts = COUNTER;
@@ -150,16 +150,16 @@ dtrace:::BEGIN
 iscsi:::xfer-start,
 iscsi:::nop-receive
 /OPT_client == 0 || CLIENT == args[0]->ci_remote/
-{ 
+{
 	@count_iops[args[0]->ci_remote] = count();
 	OPT_client == 0 ? @count_iops["all"] = count() : 1;
 	ts[arg1] = timestamp;
 }
 
-/* 
- * read operations 
+/*
+ * read operations
  */
-iscsi:::xfer-done 
+iscsi:::xfer-done
 /ts[arg1] != 0 && arg8 != 0/
 {
 	t = timestamp - ts[arg1];
@@ -178,7 +178,7 @@ iscsi:::xfer-done
 /*
  * write operations
  */
-iscsi:::xfer-done 
+iscsi:::xfer-done
 /ts[arg1] != 0 && arg8 == 0/
 {
 	t = timestamp - ts[arg1];
@@ -191,7 +191,7 @@ iscsi:::xfer-done
 	@avg_bytes_write[args[0]->ci_remote] = avg(args[2]->xfer_len);
 	OPT_client == 0 ? @avg_bytes_write["all"] = avg(args[2]->xfer_len) : 1;
 	total_bytes_write += args[2]->xfer_len;
-    @avg_aligned[args[0]->ci_remote] = 
+    @avg_aligned[args[0]->ci_remote] =
         avg((args[2]->xfer_loffset % OPT_blocksize) ? 0 : 100);
 	ts[arg1] = 0;
 }
@@ -208,7 +208,7 @@ iscsi:::nop-send
 	@avgtime_nop[args[0]->ci_remote] = avg(t);
 	OPT_client == 0 ? @avgtime_nop["all"] = avg(t) : 1;
 	ts[arg1] = 0;
-} 
+}
 
 /*
  * timer
@@ -223,7 +223,7 @@ profile:::tick-1sec
  */
 profile:::tick-1sec
 /secs == 0/
-{	
+{
 	/* fetch 1 min load average */
 	self->load1a  = `hp_avenrun[0] / 65536;
 	self->load1b  = ((`hp_avenrun[0] % 65536) * 100) / 65536;
@@ -238,13 +238,13 @@ profile:::tick-1sec
 	normalize(@count_read, INTERVAL);
 	normalize(@count_write, INTERVAL);
 	normalize(@count_nop, INTERVAL);
-	
+
 	/* normalize to KB per second */
 	normalize(@bytes_read, 1024 * INTERVAL);
 	normalize(@avg_bytes_read, 1024 * INTERVAL);
 	normalize(@bytes_write, 1024 * INTERVAL);
 	normalize(@avg_bytes_write, 1024 * INTERVAL);
-	
+
 	/* normalize average to microseconds */
 	normalize(@avgtime_read, 1000);
 	normalize(@avgtime_write, 1000);
@@ -252,15 +252,15 @@ profile:::tick-1sec
 
 	/* print status */
 	OPT_clear && !OPT_json ? printf("%s", CLEAR) : 1;
-	
+
 	OPT_json ?
 		printf("{ \"time\": \"%Y\", \"timestamp\": %d, \"interval\": %d, \"load\": %d.%02d, \"read_KB\": %d, \"write_KB\": %d, \n \"sample\": [",
-			walltimestamp, walltimestamp, INTERVAL, 
-			self->load1a, self->load1b, 
+			walltimestamp, walltimestamp, INTERVAL,
+			self->load1a, self->load1b,
 			total_bytes_read, total_bytes_write)
 	:
 		printf("%Y load: %d.%02d read_KB: %d write_KB: %d\n",
-			walltimestamp, self->load1a, self->load1b, 
+			walltimestamp, self->load1a, self->load1b,
 			total_bytes_read, total_bytes_write);
 
 	/* print headers */
@@ -286,7 +286,7 @@ profile:::tick-1sec
 	OPT_json ? printf("]}\n") : 1;
 
 	/* clear data */
-	trunc(@count_iops); trunc(@count_read); trunc(@count_write); 
+	trunc(@count_iops); trunc(@count_read); trunc(@count_write);
     trunc(@count_nop); trunc(@bytes_read); trunc(@bytes_write);
 	trunc(@avg_bytes_read); trunc(@avg_bytes_write);
 	trunc(@avgtime_read); trunc(@avgtime_write); trunc(@avgtime_nop);
@@ -298,7 +298,7 @@ profile:::tick-1sec
 }
 
 /*
- * end of program 
+ * end of program
  */
 profile:::tick-1sec
 /counts == 0/
@@ -311,7 +311,7 @@ profile:::tick-1sec
  */
 dtrace:::END
 {
-	trunc(@count_iops); trunc(@count_read); trunc(@count_write); 
+	trunc(@count_iops); trunc(@count_read); trunc(@count_write);
     trunc(@count_nop); trunc(@bytes_read); trunc(@bytes_write);
 	trunc(@avg_bytes_read); trunc(@avg_bytes_write);
 	trunc(@avgtime_read); trunc(@avgtime_write); trunc(@avgtime_nop);

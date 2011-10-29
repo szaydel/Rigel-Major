@@ -6,9 +6,9 @@
 
 encryptfile()
 {
-if [ -z "$1" ] 
-	then 
-echo 'Usage: encryptfile filename...';  
+if [ -z "$1" ]
+	then
+echo 'Usage: encryptfile filename...';
 	else
 openssl aes-256-cbc -a -salt -in $1 -out "$1.enc"
 fi
@@ -16,9 +16,9 @@ fi
 
 decryptfile()
 {
-if [ -z "$1" ] 
+if [ -z "$1" ]
         then
-echo 'Usage: decryptfile filename...';        
+echo 'Usage: decryptfile filename...';
         else
 echo 'Enter filename after decryption...'
 read f
@@ -39,7 +39,7 @@ if [ -z $1 ]; then
 		printf "%s\nShredding and removing file ${filename} ...\n"
 		shred --iterations=7 --remove ${filename}
 		[ $? = 0 ] && printf "%s\nFile ${filename} has been securely removed.\n"
-		return 0		
+		return 0
 		done
 fi
 }

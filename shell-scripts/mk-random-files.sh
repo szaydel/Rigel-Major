@@ -1,11 +1,11 @@
 #!/bin/bash
 
 files_count="10"
-counter="1" 
+counter="1"
 SKIP="0"
 #SKIP=$(echo "${RANDOM}" | cut -b1-2)
 while [[ $counter -le $files_count ]]
- 
+
 do
     echo "Creating file no $counter"
     COUNT=$(echo "${RANDOM}" | cut -b1-3)

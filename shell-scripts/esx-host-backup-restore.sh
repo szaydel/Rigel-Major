@@ -22,6 +22,6 @@ case "${task}" in
 -r)
     ;;
 *) exit 1
-    
+
     ;;
 esac

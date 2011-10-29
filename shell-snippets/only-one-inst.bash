@@ -9,7 +9,7 @@ pgrep "${MYNAME}" | grep -v "${MYPID}" &> /dev/null; RET_CODE=$?
             return 1
         else
             printf "%s\n" "We are OK."
-            return 0    
+            return 0
     fi
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# nicstat - print network traffic, Kbyte/s read and written. 
+# nicstat - print network traffic, Kbyte/s read and written.
 #           Solaris 8+, Perl (Sun::Solaris::Kstat).
 #
 # "netstat -i" only gives a packet count, this program gives Kbytes.
@@ -45,7 +45,7 @@
 # - Loopback interfaces may only provide packet counts (if anything), and so
 #   bytes and %util will always be zero. Newer versions of Solaris (newer than
 #   Solaris 10 6/06) may provide loopback byte stats.
-# - Saturation is determined by counting read and write errors caused by the 
+# - Saturation is determined by counting read and write errors caused by the
 #   interface running at saturation. This approach is not ideal, and the value
 #   reported is often lower than it should be (eg, 0.0). Reading the rKB/s and
 #   wKB/s fields may be more useful.
@@ -108,7 +108,7 @@ if (defined $ARGV[0]) {
 }
 else {
     $interval = 1;
-    $loop_max = 1; 
+    $loop_max = 1;
 }
 
 # check for -i,
@@ -202,11 +202,11 @@ while (1) {
 
         # skip zero lines if asked
         next if $SKIPZERO and ($rbps + $wbps) == 0;
-        
+
         # % utilisation
         my $util;
         if ($speed > 0) {
-            # the following has a mysterious "800", it is 100 
+            # the following has a mysterious "800", it is 100
             # for the % conversion, and 8 for bytes2bits.
             $util = ($rbps + $wbps) * 800 / $speed;
             $util = 100 if $util > 100;
@@ -349,7 +349,7 @@ sub fetch_net_data {
             else {
                 # if we can't fetch the speed, print the
                 # %Util as 0.0 . To do this we,
-                $speed = 2 ** 48; 
+                $speed = 2 ** 48;
             }
 
             ### Determine saturation value
@@ -365,7 +365,7 @@ sub fetch_net_data {
             $time = $$Names{snaptime};
 
             ### store data
-            push @NetworkData, "$name:$rbytes:$wbytes:" . 
+            push @NetworkData, "$name:$rbytes:$wbytes:" .
              "$rpackets:$wpackets:$speed:$sat:$time";
         }
     }

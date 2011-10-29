@@ -1,14 +1,14 @@
 #!/usr/bin/sh
 #
 # iosnoop - A program to print disk I/O events as they happen, with useful
-#           details such as UID, PID, filename, command, etc. 
+#           details such as UID, PID, filename, command, etc.
 #           Written using DTrace (Solaris 10 3/05).
 #
 # This is measuring disk events that have made it past system caches.
 #
 # $Id: iosnoop 8 2007-08-06 05:55:26Z brendan $
 #
-# USAGE: 	iosnoop [-a|-A|-DeghiNostv] [-d device] [-f filename] 
+# USAGE: 	iosnoop [-a|-A|-DeghiNostv] [-d device] [-f filename]
 #			[-m mount_point] [-n name] [-p PID]
 #
 #		iosnoop		# default output
@@ -20,7 +20,7 @@
 #		-g		# print command arguments
 #		-i		# print device instance
 #		-N		# print major and minor numbers
-#		-o		# print disk delta time, us 
+#		-o		# print disk delta time, us
 #		-s		# print start time, us
 #		-t 		# print completion time, us
 #		-v		# print completion time, string
@@ -33,7 +33,7 @@
 #		iosnoop -v	# human readable timestamps
 #		iosnoop -N	# print major and minor numbers
 #		iosnoop -m /	# snoop events on the root filesystem only
-# 	
+#
 # FIELDS:
 #		UID		user ID
 #		PID		process ID
@@ -52,13 +52,13 @@
 #		D		direction, Read or Write
 #		MOUNT		mount point
 #		FILE		filename (basename) for io operation
-# 
+#
 # NOTE:
 # - There are two different delta times reported. -D prints the
 #   elapsed time from the disk request (strategy) to the disk completion
-#   (iodone); -o prints the time for the disk to complete that event 
-#   since it's last event (time between iodones), or, the time to the 
-#   strategy if the disk had been idle. 
+#   (iodone); -o prints the time for the disk to complete that event
+#   since it's last event (time between iodones), or, the time to the
+#   strategy if the disk had been idle.
 # - When filtering on PID or process name, be aware that poor disk event
 #   times may be due to events that have been filtered away, for example
 #   another process that may be seeking the disk heads elsewhere.
@@ -102,7 +102,7 @@
 #
 
 ### default variables
-opt_dump=0; opt_device=0; opt_delta=0; opt_devname=0; opt_file=0; opt_args=0; 
+opt_dump=0; opt_device=0; opt_delta=0; opt_devname=0; opt_file=0; opt_args=0;
 opt_mount=0; opt_start=0 opt_end=0; opt_endstr=0; opt_ins=0; opt_nums=0
 opt_dtime=0; filter=0; device=.; filename=.; mount=.; pname=.; pid=0
 opt_name=0; opt_pid=0
@@ -142,11 +142,11 @@ do
 		                -s      # print start time, us
 		                -t      # print completion time, us
 		                -v      # print completion time, string
-		                -d device       # instance name to snoop 
+		                -d device       # instance name to snoop
 		                -f filename     # snoop this file only
-		                -m mount_point  # this FS only 
-		                -n name         # this process name only 
-		                -p PID          # this PID only 
+		                -m mount_point  # this FS only
+		                -n name         # this process name only
+		                -p PID          # this PID only
 		   eg,
 		        iosnoop -v      # human readable timestamps
 		        iosnoop -N      # print major and minor numbers
@@ -158,7 +158,7 @@ done
 
 ### option logic
 if [ $opt_dump -eq 1 ]; then
-	opt_delta=0; opt_devname=0; opt_args=2; opt_start=0; 
+	opt_delta=0; opt_devname=0; opt_args=2; opt_start=0;
 	opt_end=0; opt_endstr=0; opt_nums=0; opt_ins=0; opt_dtime=0
 fi
 if [ $opt_device -eq 1 -o $opt_file -eq 1 -o $opt_mount -eq 1 -o \
@@ -195,14 +195,14 @@ fi
  inline string FILENAME = "'$filename'";
  inline string MOUNT 	= "'$mount'";
  inline string NAME 	= "'$pname'";
- 
+
  #pragma D option quiet
  #pragma D option switchrate=10hz
 
  /*
   * Print header
   */
- dtrace:::BEGIN 
+ dtrace:::BEGIN
  {
 	last_event[""] = 0;
 
@@ -217,7 +217,7 @@ fi
  	OPT_dtime   ? printf("%-10s ","DTIME")   : 1;
 
 	/* print main headers */
-	OPT_dump ? 
+	OPT_dump ?
 	    printf("%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
  	    "TIME", "STIME", "DELTA", "DEVICE", "INS", "MAJ", "MIN", "UID",
 	    "PID", "PPID", "D", "BLOCK", "SIZE", "MOUNT", "FILE", "PATH",
@@ -231,7 +231,7 @@ fi
   * Check event is being traced
   */
  io:genunix::start
- { 
+ {
 	/* default is to trace unless filtering, */
 	self->ok = FILTER ? 0 : 1;
 
@@ -297,7 +297,7 @@ fi
  	this->suid = start_uid[this->dev, this->blk];
  	this->spid = start_pid[this->dev, this->blk];
  	this->sppid = start_ppid[this->dev, this->blk];
- 	self->sargs = (int)start_args[this->dev, this->blk] == 0 ? 
+ 	self->sargs = (int)start_args[this->dev, this->blk] == 0 ?
  	    "" : start_args[this->dev, this->blk];
  	self->scomm = start_comm[this->dev, this->blk];
  	this->stime = start_time[this->dev, this->blk];
@@ -331,12 +331,12 @@ fi
  	OPT_dtime   ? printf("%-10d ", this->dtime/1000) : 1;
 
 	/* print main fields */
-	OPT_dump ? 
+	OPT_dump ?
  	    printf("%d %d %d %s %d %d %d %d %d %d %s %d %d %s %s %s %s %S\n",
  	    this->etime/1000, this->stime/1000, this->delta/1000,
  	    args[1]->dev_statname, args[1]->dev_instance, args[1]->dev_major,
-	    args[1]->dev_minor, this->suid, this->spid, this->sppid, 
-	    args[0]->b_flags & B_READ ? "R" : "W", 
+	    args[1]->dev_minor, this->suid, this->spid, this->sppid,
+	    args[0]->b_flags & B_READ ? "R" : "W",
 	    args[0]->b_blkno, args[0]->b_bcount, args[2]->fi_mount,
 	    args[2]->fi_name, args[2]->fi_pathname, self->scomm, self->sargs) :
  	    printf("%5d %5d %1s %8d %6d ",
