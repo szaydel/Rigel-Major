@@ -8,11 +8,13 @@ time_stamp=$(date '+%a, %d %b %Y %H:%M:%S %z')
 host_n=$(hostname)
 get_usr=$(/usr/bin/getent passwd "${UID}")
 
-## Your default mailserver goes here
+## Your default mailserver goes here, replace `mail-server-here`
+## with name or IP address of the mail server
 mail_svr=mail-server-here
 ## Port for your mailserver goes here
 port=25
 
+## Below, based on OS we define variable for location of netcat
 case "${myos}" in
 "Solaris")
     printf "%s\n" "#######################[ Running on Solaris ]###################################"
