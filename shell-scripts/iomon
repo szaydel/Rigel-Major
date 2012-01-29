@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+flag=/root/stop.iomon
+cmd="iostat -xncz -Td 1 1"
+pause=10
+log=/tmp/iostat-$(hostname).log
+
+while [[ ! -f ${flag} ]]; do 
+    ${cmd} >> ${log}
+    sleep ${pause}
+    done
+
+exit 0
