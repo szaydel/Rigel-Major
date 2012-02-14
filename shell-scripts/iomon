@@ -1,12 +1,45 @@
 #!/usr/bin/bash
 flag=/root/stop.iomon
-cmd="iostat -xncz -Td 1 1"
-pause=10
+iostat_cmd=/usr/bin/iostat
+pause="$1"
+count="$2"
+## We will divide frequency by total seconds in 24hrs to get
+## number of times to repeat in order to run 24 hrs, overwrite
+## this behavior with second command line argument, which will replace
+## calculation based on 24hr clock
+seconds=86400
+sleep_cmd=/usr/bin/sleep
 log=/tmp/iostat-$(hostname).log
 
+if [[ -f ${flag} ]]; then
+    printf "%s\n" "Removing old flag that was seemingly left over."
+fi
+
+function cleanup () {
+    rm -f ${flag}
+    return 0
+}
+
+if [[ -z ${count} ]]; then
+    count=$(( ${seconds} / ${pause} ))
+fi
+
+if [[ -z ${pause} ]]; then
+    printf "[INFO] %s\n[INFO] %s\n" "There was no value supplied for pause." "Example: run $0 30 to pause for 30 seconds at each iteration."
+    exit 1
+fi
+
+function runme() {
+    printf "[SETTINGS] Pause: %s sec. Repeat: %s time(s)\n" "${pause}" "${count}"
+    run="${iostat_cmd} -DenrxzTd ${pause} ${count}"
+    ${run} >> ${log}
+    touch ${flag}
+    return 0
+}
+
 while [[ ! -f ${flag} ]]; do 
-    ${cmd} >> ${log}
-    sleep ${pause}
+    runme
     done
 
-exit 0
+## Exit the script
+cleanup
