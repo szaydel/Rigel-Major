@@ -1,5 +1,6 @@
 #!/usr/bin/bash
-flag=/root/stop.iomon
+home_dir=$(/usr/bin/gawk 'BEGIN {FS=":"} {print $6}' /etc/passwd|grep $(whoami))
+flag="${home_dir}/stop.iomon"
 iostat_cmd=/usr/bin/iostat
 pause="$1"
 count="$2"
@@ -9,7 +10,7 @@ count="$2"
 ## calculation based on 24hr clock
 seconds=86400
 sleep_cmd=/usr/bin/sleep
-log=/tmp/iostat-$(hostname).log
+log=/tmp/iostat-$(hostname)-$(date +%Y%m%d).log
 
 if [[ -f ${flag} ]]; then
     printf "%s\n" "Removing old flag that was seemingly left over."
