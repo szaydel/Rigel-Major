@@ -26,7 +26,7 @@ host_n=$(hostname)
 get_usr=$(/usr/bin/getent passwd "${UID}")
 
 ## Your default mailserver goes here
-mail_svr=server03.internal.dom
+default_mail_svr=someservername
 ## Port for your mailserver goes here
 port=25
 
@@ -64,12 +64,20 @@ do
   esac
 done
 
+## Make sure that we do not end-up with no mail server defined
 if [ -z "${MAILER}" ]; then
-    printf "%s\n" "[CRITICAL] Cannot Continue, mailer is not Supplied."
-    exit 1
+    if [ ! -z "${default_mail_svr}" ]; then 
+        MAILER="${default_mail_svr}"
+    else
+        printf "%s\n" "[CRITICAL] Cannot Continue, mailer is not Supplied."
+        exit 1
+    fi
+## Do we have any input data and if not, let's not go any further
 elif [ -z "${INPUT_FILE}" ]; then
     printf "%s\n" "[CRITICAL] Cannot Continue, input data is not Supplied."
     exit 1
+
+## If we do not know where to send this email, we need to warn
 elif [ -z "${DEST_EMAIL}" ]; then
     printf "%s\n" "[CRITICAL] Cannot Continue, destination is not Supplied."
     exit 1
@@ -100,7 +108,7 @@ esac
 
 FROM_ADDR="admin@${host_n}.${domain}"
 ## Combine everything together and pipe the heredoc through netcat
-${nc_cmd} ${mail_svr} ${port}<<EOF
+${nc_cmd} ${MAILER} ${port}<<EOF
 
 HELO ${host_n}
 MAIL FROM:<${FROM_ADDR}>
