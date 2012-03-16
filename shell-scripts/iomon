@@ -1,45 +1,53 @@
 #!/usr/bin/bash
-home_dir=$(/usr/bin/gawk 'BEGIN {FS=":"} {print $6}' /etc/passwd|grep $(whoami))
-flag="${home_dir}/stop.iomon"
+grep_cmd=/usr/bin/grep
 iostat_cmd=/usr/bin/iostat
+sleep_cmd=/usr/bin/sleep
+log=/tmp/iostat-$(hostname)-$(date +%Y%m%d).log
+home_dir=$(/usr/bin/gawk 'BEGIN {FS=":"} {print $6}' /etc/passwd|${grep_cmd} $(whoami))
+flag="${home_dir}/stop.iomon"
 pause="$1"
 count="$2"
+
 ## We will divide frequency by total seconds in 24hrs to get
 ## number of times to repeat in order to run 24 hrs, overwrite
 ## this behavior with second command line argument, which will replace
 ## calculation based on 24hr clock
 seconds=86400
-sleep_cmd=/usr/bin/sleep
-log=/tmp/iostat-$(hostname)-$(date +%Y%m%d).log
 
-if [[ -f ${flag} ]]; then
-    printf "%s\n" "Removing old flag that was seemingly left over."
-fi
-
-function cleanup () {
+cleanup () {
     rm -f ${flag}
     return 0
 }
 
-if [[ -z ${count} ]]; then
-    count=$(( ${seconds} / ${pause} ))
+if [[ -f ${flag} ]]; then
+    printf "%s\n" "Removing old flag that was seemingly left over."
+    cleanup
 fi
+
+## Trapping signals and cleaning up
+pid=
+trap 'printf "%s\n" "Signal trapped. Do cleanup."; [[ $pid ]] && kill $pid' 1 2 3 15
 
 if [[ -z ${pause} ]]; then
     printf "[INFO] %s\n[INFO] %s\n" "There was no value supplied for pause." "Example: run $0 30 to pause for 30 seconds at each iteration."
     exit 1
 fi
 
+if [[ -z ${count} ]]; then
+    count=$(( ${seconds} / ${pause} ))
+fi
+
 function runme() {
     printf "[SETTINGS] Pause: %s sec. Repeat: %s time(s)\n" "${pause}" "${count}"
     run="${iostat_cmd} -DenrxzTd ${pause} ${count}"
-    ${run} >> ${log}
+    ${run}
     touch ${flag}
     return 0
 }
 
+
 while [[ ! -f ${flag} ]]; do 
-    runme
+    runme >> ${log}
     done
 
 ## Exit the script
