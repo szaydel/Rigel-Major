@@ -35,11 +35,14 @@
 # have to be far more careful about what disks we are writing to.
 # Needed to add a trap to make sure that we are not running dd's out of
 # control after leaving the script.
-
+################################################################################
+### Step 1 : Define Global variables for use in the script #####################
+################################################################################
 scriptname=$0 # First argument is shell command (as in C)
 total_args=$#  # Number of args, not counting $0
 
-## Force a command line argument, if none supplied we drop out.
+## If no command line arguments are provided, we bail, have to have one.
+##
 if [ "${total_args}" -eq 0 ]; then
     printf "[%s] %s\n" "${scriptname}" "could not start due to a missing required argument."
     printf "%s\n" "Error: Please enter minimum number of minutes to run the test."
@@ -50,7 +53,7 @@ debug=1  ## Debug flag is enabled while testing to prevent anything stupid
 flag=~/stopdd.flag  ## This flag may be useful if we need to abort prematurely
 date_cmd=/usr/bin/date
 dd_cmd=/usr/bin/dd
-##awk_cmd=/usr/bin/awk
+awk_cmd=/usr/bin/awk
 ##sed_cmd=/usr/bin/sed
 ##sort_cmd=/usr/bin/sort
 rm_cmd=/usr/bin/rm
@@ -60,6 +63,7 @@ xargs_cmd=/usr/bin/xargs
 basename_cmd=/usr/bin/basename
 devfs_cmd=/usr/sbin/devfsadm
 pkill_cmd=/usr/bin/pkill
+tr_cmd=/usr/bin/tr
 zpool_cmd=/usr/sbin/zpool
 is_syspool=''   ## Variable is used in the case statement to validate syspool
 rd_counter=0
@@ -67,10 +71,23 @@ wr_counter=0
 minutes=${1}
 seconds=$(( ${minutes} * 60 ))
 
+################################################################################
+### Revision Notes: ############################################################
+################################################################################
+# 03-16-2012 added a more functional failure capture and reporting
+# xxxxxxxxxx return codes added to read and write functions
+# xxxxxxxxxx adjusted trap to make more functional
+# xxxxxxxxxx checking number of disks in the array, and if less than one bail
+# xxxxxxxxxx added a function to print convinient parting status
+
+################################################################################
+### Step 1a : Build Functions called later throughout the script ###############
+################################################################################
+
 function linesep ()
 {
 ## Print a line separator 80-characters long
-printf "%80s\n" | ${TR} ' ' '='
+printf "%80s\n" | ${tr_cmd} ' ' '='
 }
 
 function newline ()
@@ -81,6 +98,17 @@ printf "%s\n"
 function cleanup () {
     ${rm_cmd} -f ${flag}
     return 0
+}
+
+## If something goes wrong, we should be running this function
+## and returning a meaningful error message along with a line number
+## in the script where we called die()
+##
+function die()
+{
+echo >&2 -e "\n[ERROR] $@\n"; cleanup; 
+exit_script
+exit 1
 }
 
 function validate_syspool () {
@@ -111,20 +139,24 @@ function validate_syspool () {
         done
 }
 
+################################################################################
+### Step 1b : Build variables and arrays used later in the script ##############
+################################################################################
+
 ## We do not want any rogue dd's going on, so need to trap them and cleanup.
 ##
 trap 'printf "\n%s\n" "[WARN] Signal trapped. Cleaning-up."; \
-touch ${flag}; ${pkill_cmd} dd; pkill ${scriptname}; echo Last Return Code: $?' 1 2 3 15
+touch ${flag}; ${pkill_cmd} dd; ${pkill_cmd} ${scriptname}; \
+echo Last Return Code: $?' 1 2 3 15
 
 ## Just so we have some sense of what is being cleaned-up, we want to collect
 ## device links that are being removed.
 ##
 dev_cleanup_log=/tmp/devfsadm-$(hostname)-$(${date_cmd} +%s).log
 
-
 ## This is our syspool array and should only contain syspool disks
 ##
-syspool=( $(zpool status syspool|awk '/c[0-9]+t[0-9]+d[0-9]+/ {print $1}') )
+syspool=( $(${zpool_cmd} status syspool|${awk_cmd} '/c[0-9]+t[0-9]+d[0-9]+/ {print $1}') )
 
 ## only basenames are included in the array `/dev/rdsk` is stripped to reduce
 ## size of non-unique argument components in the array.
@@ -144,7 +176,9 @@ syspool=( $(zpool status syspool|awk '/c[0-9]+t[0-9]+d[0-9]+/ {print $1}') )
         done
         echo "[DEBUG] After Array change: ${arr_disks[@]}"
 
-        arr_disk_len=${#arr_disks[@]}       ## This many disk entries in the array
+        ## This many disk entries in the array, if less than one, we die.
+        arr_disk_len=${#arr_disks[@]}
+        [[ ${arr_disk_len} -lt 1 ]] && die "[Line ${LINENO}] No disks were detected, cannot continue."
 
     ## This is run if the debug flag is not set, basically production
     else
@@ -155,16 +189,22 @@ syspool=( $(zpool status syspool|awk '/c[0-9]+t[0-9]+d[0-9]+/ {print $1}') )
             arr_disks=( ${arr_disks[@]//${disk}*/} )
         done
 
-        arr_disk_len=${#arr_disks[@]}       ## This many disk entries in the array
+        ## This many disk entries in the array, if less than one, we die.
+        arr_disk_len=${#arr_disks[@]}
+        [[ ${arr_disk_len} -lt 1 ]] && die "[Line ${LINENO}] No disks were detected, cannot continue."
     fi
 
 ## We validate that in fact the disks that we think are in syspool
 ## are indeed in the syspool, if not matched, we exit.
 ##
-validate_syspool || exit $?
+validate_syspool || die "[Line ${LINENO}] Unable to validate drives in syspool."
 
 ## If we fail above, there is no sense in defining any more functions below.
 ## Purely for performance reasons we are not creating the below functions.
+
+################################################################################
+### Step 1c : Build functions that will do brunt of the work  ##################
+################################################################################
 
 ## Lets clean-up the device links to make sure that we are not reading
 ## stale links and observing errors from `dd`.
@@ -183,19 +223,19 @@ function run_read_test() {
 
     if [[ ${debug} -eq 1 ]]; then
         ## If in debug mode, lets make for a much smaller test
-        local dd_args="bs=128k iflag=sync count=100"
+        local dd_args="bs=128k iflag=sync count=1000"
     else
         local dd_args="bs=128k iflag=sync"
     fi
     ## local dd_args="bs=128k oflag=sync"
     ## Choosing this option over the second option commented out below
     ## to avoid using `tr` unnecessarily, but leaving in as a option.
-    printf "[INFO] Test [%s] Started. Function %s entered.\n[INFO] Arguments to [ dd ] are: %s\n\n" "${rrt_count}" "${fn}" "${dd_args}"
-    for disk in "${arr_disks[@]}"; do echo ${disk}; done | xargs -n1 -i -t -P${arr_disk_len} ${dd_cmd} if=/dev/rdsk/{} of=/dev/null ${dd_args}
-    printf "### Test [%s] Stopped. Leaving function %s. ###\n\n" "${rrt_count}" "${fn}"
-    ##opt 2
-    # echo "${myarr[@]}"|tr ' ' '\n' | xargs -n1 -i -t -P10 echo dd if=/dev/rdsk/{} of=/dev/null bs=1k count=4
-    return 0
+    printf "[INFO] Test [%s] Started. Function %s entered.\n[INFO] Arguments to [dd] are: %s\n" "${rrt_count}" "${fn}" "${dd_args}"
+    for disk in "${arr_disks[@]}"; do echo ${disk}; done | xargs -n1 -i -t -P${arr_disk_len} ${dd_cmd} if=/dev/rdsk/{} of=/dev/null ${dd_args};
+    
+    local ret_code=$?   ## Return code for previous command, may not always work.
+    printf "[INFO] Test [%s] Stopped. Leaving function %s.\n\n" "${rrt_count}" "${fn}"
+    return ${ret_code}
 }
 
 function run_write_test() {
@@ -204,20 +244,36 @@ function run_write_test() {
 
     if [[ ${debug} -eq 1 ]]; then
         ## If in debug mode, lets make for a much smaller test
-        local dd_args="bs=128k oflag=sync count=100"
+        local dd_args="bs=128k oflag=sync count=1000"
     else
         local dd_args="bs=128k oflag=sync"
     fi
     ## local dd_args="bs=128k oflag=sync"
     ## Choosing this option over the second option commented out below
     ## to avoid using `tr` unnecessarily, but leaving in as a option.
-    printf "[INFO] Test [%s] Started. Function %s entered.\n[INFO] Arguments to [ dd ] are: %s\n\n" "${wwt_count}" "${fn}" "${dd_args}"
-    for disk in "${arr_disks[@]}"; do echo ${disk}; done | xargs -n1 -i -t -P${arr_disk_len} ${dd_cmd} if=/dev/urandom of=/dev/rdsk/{} ${dd_args}
-    printf "### Test [%s] Stopped. Leaving function %s. ###\n\n" "${wwt_count}" "${fn}"
-    ##opt 2
-    # echo "${myarr[@]}"|tr ' ' '\n' | xargs -n1 -i -t -P10 echo dd if=/dev/rdsk/{} of=/dev/null bs=1k count=4
+    printf "[INFO] Test [%s] Started. Function %s entered.\n[INFO] Arguments to [dd] are: %s\n" "${wwt_count}" "${fn}" "${dd_args}"
+    for disk in "${arr_disks[@]}"; do echo ${disk}; done | xargs -n1 -i -t -P${arr_disk_len} ${dd_cmd} if=/dev/urandom of=/dev/rdsk/{} ${dd_args};
+
+    local ret_code=$?   ## Return code for previous command, may not always work.
+    printf "[INFO] Test [%s] Stopped. Leaving function %s.\n\n" "${wwt_count}" "${fn}"
+    return ${ret_code}
+}
+
+function exit_script() 
+{
+    linesep
+    if [[ -f ${flag} ]]; then
+        printf "[INFO] Flag file %s indicting premature termination was detected." "${flag}" 
+    fi
+    ## Got this far, means we are done and time to exit
+    printf "[INFO] Script ${scriptname} finished.\n[INFO] Time Elapsed: %s seconds.\n" "$(($(${date_cmd} +%s) - ${start_t}))"
+    printf "[INFO] Number of Read tests %d done, Number of Write tests %d done.\n" "${rd_counter}" "${wr_counter}"
+    linesep
     return 0
 }
+################################################################################
+### Step 2 : Main body of the script running functions above ###################
+################################################################################
 
 ## If there is still an old flag in place that was used to stop
 ## the test prematurely we need to clean it up first.
@@ -230,7 +286,7 @@ fi
 ## Let's clean-up stale device links and exit before anything else happens
 ## if for some reason we get anything other than `0` as return from function.
 ##
-clean_dev_links || exit 1
+clean_dev_links || die "[Line ${LINENO}] Unable to correctly remove stale Device links."
 
 ## Set our start time here. We need to know when we started to make
 ## the rest of the math work.
@@ -243,23 +299,16 @@ start_t=$(${date_cmd} +%s)
 ##
 while [[ $(( ${start_t} + ${seconds} )) > $(${date_cmd} +%s) && ! -f ${flag} ]]; do
 
-    while [[ ! -f ${flag} ]]; do
+    if [[ ! -f ${flag} ]]; then
         rd_counter=$(( rd_counter + 1 ))
-        run_read_test ${rd_counter} 
-    done
+        run_read_test ${rd_counter} || die "[Line ${LINENO}] Test failed, possibly due to a trap or missing device."
+    fi
 
-    while [[ ! -f ${flag} ]]; do    
+    if [[ ! -f ${flag} ]]; then    
         wr_counter=$(( wr_counter + 1 ))
-        run_write_test ${wr_counter}
-    done
+        run_write_test ${wr_counter} || die "[Line ${LINENO}] Test failed, possibly due to a trap or missing device."
+    fi
 done
 
-if [[ -f ${flag} ]]; then
-    printf "[INFO] Flag file %s indicting premature termination was detected." "${flag}" 
-fi
-
-## Got this far, means we are done and time to exit
-printf "\n[INFO] Script ${scriptname} finished.\n[INFO] Time Elapsed: %s Number of Read tests: %s\n" " $(( $(${date_cmd} +%s) - ${start_t} ))" "${rd_counter}"
-
 ## Will need to add some exit criteria later, for the moment this will do.
-exit 0
+exit_script && exit $?
