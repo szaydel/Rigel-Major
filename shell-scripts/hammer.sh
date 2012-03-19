@@ -59,6 +59,7 @@ awk_cmd=/usr/bin/awk
 rm_cmd=/usr/bin/rm
 grep_cmd=/usr/bin/grep
 egrep_cmd=/usr/bin/egrep
+hddisco_cmd=/usr/bin/hddisco
 xargs_cmd=/usr/bin/xargs
 basename_cmd=/usr/bin/basename
 devfs_cmd=/usr/sbin/devfsadm
@@ -68,6 +69,8 @@ zpool_cmd=/usr/sbin/zpool
 is_syspool=''   ## Variable is used in the case statement to validate syspool
 rd_counter=0
 wr_counter=0
+min_devsize=1500301910016
+min_devsize=10737418240
 minutes=${1}
 seconds=$(( ${minutes} * 60 ))
 
@@ -79,7 +82,10 @@ seconds=$(( ${minutes} * 60 ))
 # xxxxxxxxxx adjusted trap to make more functional
 # xxxxxxxxxx checking number of disks in the array, and if less than one bail
 # xxxxxxxxxx added a function to print convinient parting status
-
+# 03-18-2012 made the array of disks section more compact by reducing duplicate
+# xxxxxxxxxx code between debug and non-debug modes
+# xxxxxxxxxx added function to validate disk size, testing for >10GB disks in
+# xxxxxxxxxx debug mode, and >1TB disks in production mode
 ################################################################################
 ### Step 1a : Build Functions called later throughout the script ###############
 ################################################################################
@@ -97,6 +103,19 @@ printf "%s\n"
 
 function cleanup () {
     ${rm_cmd} -f ${flag}
+    return 0
+}
+
+function exit_script() 
+{
+    linesep
+    if [[ -f ${flag} ]]; then
+        printf "[INFO] Flag file %s indicting premature termination was detected." "${flag}" 
+    fi
+    ## Got this far, means we are done and time to exit
+    printf "[INFO] Script ${scriptname} finished.\n[INFO] Time Elapsed: %d seconds.\n" "$(( $(${date_cmd} +%s) - ${start_t} ))"
+    printf "[INFO] Number of Read tests %d done, Number of Write tests %d done.\n" "${rd_counter}" "${wr_counter}"
+    linesep
     return 0
 }
 
@@ -139,6 +158,32 @@ function validate_syspool () {
         done
 }
 
+## Taking AG's suggestion of testing against disk size instead of looking
+## to exclude based on partial WWN of well-known solid state disks.
+##
+function check_devsize () 
+
+{
+    local devid=${1}
+    local dev_size=''
+    ## If we are in debug mode, using smaller device size, because we are
+    ## testing on virtual hardware with much, much smaller disks
+    ##
+    [[ ${debug} -eq 1 ]] && min_devsize=10737418240
+
+    ## Here we obtain the size of the device ala hddisco,
+    ## which, if broken, will result in this script failing.
+    ##
+    dev_size=$( ${hddisco_cmd} -d ${devid}|${awk_cmd} '/^size / {print $2}' )
+
+    if [[ ${dev_size} -lt ${min_devsize} ]]; then
+        [[ ${debug} -eq 1 ]] \
+        && printf "[DEBUG] Device: %s does not qualify, smaller than %d bytes.\n" "${devid}" "${min_devsize}"
+        return 1
+    else
+        return 0
+    fi
+}
 ################################################################################
 ### Step 1b : Build variables and arrays used later in the script ##############
 ################################################################################
@@ -161,38 +206,45 @@ syspool=( $(${zpool_cmd} status syspool|${awk_cmd} '/c[0-9]+t[0-9]+d[0-9]+/ {pri
 ## only basenames are included in the array `/dev/rdsk` is stripped to reduce
 ## size of non-unique argument components in the array.
 ##
-    ## This is run if the debug flag is set and we are testing the functionality
-    if [[ ${debug} -eq 1 ]]; then
-        ## Please, add at least one disk from syspool to this array to make
-        ## sure that in fact we are correctly excluding the disk(s).
-        ## In the example below first disk in list is a syspool disk.
-        ##
-        arr_disks=( c1t0d0s0 c1t10d0s0 c1t11d0s0 )
 
-        echo "[DEBUG] Before Array change: ${arr_disks[@]}"
-        ## We adjust the final array to not include any disks in syspool
-        for disk in "${syspool[@]}"; do 
-            arr_disks=( ${arr_disks[@]//${disk}*/} )
-        done
-        echo "[DEBUG] After Array change: ${arr_disks[@]}"
+## Here, we start out with a raw array of devices, but end-up building
+## `array_disks` array after checking each device in this against minimum
+## device size. If the device is smaller than minimum acceptable size,
+## we are assuming it is not a normal disk and do not continue further.
 
-        ## This many disk entries in the array, if less than one, we die.
-        arr_disk_len=${#arr_disks[@]}
-        [[ ${arr_disk_len} -lt 1 ]] && die "[Line ${LINENO}] No disks were detected, cannot continue."
+## This is run if the debug flag is set and we are testing the functionality
+## Please, add at least one disk from syspool to this array to make
+## sure that in fact we are correctly excluding the disk(s).
+## In the example below first disk in list is a syspool disk.
+##
+if [[ ${debug} -eq 1 ]]; then
+    arr_disks_raw=( c1t0d0s0 c1t10d0s0 c1t11d0s0 )
+else
+    arr_disks_raw=( $(ls /dev/rdsk/*s0|${xargs_cmd} -n1 ${basename_cmd}) )
+fi
 
-    ## This is run if the debug flag is not set, basically production
-    else
-        arr_disks=( $(ls /dev/rdsk/*s0|${xargs_cmd} -n1 ${basename_cmd}) )
-
-        ## We adjust the final array to not include any disks in syspool
-        for disk in "${syspool[@]}"; do 
-            arr_disks=( ${arr_disks[@]//${disk}*/} )
-        done
-
-        ## This many disk entries in the array, if less than one, we die.
-        arr_disk_len=${#arr_disks[@]}
-        [[ ${arr_disk_len} -lt 1 ]] && die "[Line ${LINENO}] No disks were detected, cannot continue."
+for dev in ${arr_disks_raw[@]}; do
+    check_devsize ${dev//s0/}
+    if [[ $? -eq 0 ]]; then
+        arr_disks+=( ${dev} )
     fi
+    done
+
+echo "[DEBUG] Before Array change: ${arr_disks[@]}"
+## We adjust the final array to not include any disks in syspool
+for disk in "${syspool[@]}"; do 
+    arr_disks=( ${arr_disks[@]//${disk}*/} )
+done
+echo "[DEBUG] After Array change: ${arr_disks[@]}"
+
+## This many disk entries in the array, if less than one, we die.
+arr_disk_len=${#arr_disks[@]}
+[[ ${arr_disk_len} -lt 1 ]] && die "[Line ${LINENO}] No disks were detected, cannot continue."
+
+## Set our start time here. We need to know when we started to make
+## the rest of the math work.
+##
+start_t=$(${date_cmd} +%s)
 
 ## We validate that in fact the disks that we think are in syspool
 ## are indeed in the syspool, if not matched, we exit.
@@ -259,18 +311,6 @@ function run_write_test() {
     return ${ret_code}
 }
 
-function exit_script() 
-{
-    linesep
-    if [[ -f ${flag} ]]; then
-        printf "[INFO] Flag file %s indicting premature termination was detected." "${flag}" 
-    fi
-    ## Got this far, means we are done and time to exit
-    printf "[INFO] Script ${scriptname} finished.\n[INFO] Time Elapsed: %s seconds.\n" "$(($(${date_cmd} +%s) - ${start_t}))"
-    printf "[INFO] Number of Read tests %d done, Number of Write tests %d done.\n" "${rd_counter}" "${wr_counter}"
-    linesep
-    return 0
-}
 ################################################################################
 ### Step 2 : Main body of the script running functions above ###################
 ################################################################################
@@ -288,8 +328,10 @@ fi
 ##
 clean_dev_links || die "[Line ${LINENO}] Unable to correctly remove stale Device links."
 
-## Set our start time here. We need to know when we started to make
-## the rest of the math work.
+## We cheat here, and reset the start time. The first time we set it to make
+## sure that early exit due to possibly incorrect syspool disks, etc. would
+## return correct run time of the script. If we got this far, we reset the start
+## time to reflect accurate run time of `actual` tests.
 ##
 start_t=$(${date_cmd} +%s)
 
