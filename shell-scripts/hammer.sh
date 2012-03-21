@@ -140,7 +140,8 @@ function validate_syspool () {
     while [ -z "${is_syspool}" ]
         do
             newline
-            printf "%s\n%s\n" "[CRIT] Please confirm that these disks are your syspool." "${syspool[@]}"
+            printf "%s\n" "[CRIT] Please confirm that these disks are your syspool."
+            printf "%s    >>> %s <<<\n" "Are these your syspool drives?" "${syspool[@]}"
             newline
             printf "%s" "Continue, or stop? [Y|N] "; read is_syspool
             newline
