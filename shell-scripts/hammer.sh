@@ -86,6 +86,7 @@ seconds=$(( ${minutes} * 60 ))
 # xxxxxxxxxx code between debug and non-debug modes
 # xxxxxxxxxx added function to validate disk size, testing for >10GB disks in
 # xxxxxxxxxx debug mode, and >1TB disks in production mode
+# 03-20-2012 syspool detection is using a better regex pattern
 ################################################################################
 ### Step 1a : Build Functions called later throughout the script ###############
 ################################################################################
@@ -188,6 +189,11 @@ function check_devsize ()
 ### Step 1b : Build variables and arrays used later in the script ##############
 ################################################################################
 
+## Set our start time here. We need to know when we started to make
+## the rest of the math work.
+##
+start_t=$(${date_cmd} +%s)
+
 ## We do not want any rogue dd's going on, so need to trap them and cleanup.
 ##
 trap 'printf "\n%s\n" "[WARN] Signal trapped. Cleaning-up."; \
@@ -201,7 +207,11 @@ dev_cleanup_log=/tmp/devfsadm-$(hostname)-$(${date_cmd} +%s).log
 
 ## This is our syspool array and should only contain syspool disks
 ##
-syspool=( $(${zpool_cmd} status syspool|${awk_cmd} '/c[0-9]+t[0-9]+d[0-9]+/ {print $1}') )
+syspool=( $(${zpool_cmd} status syspool|${awk_cmd} '/c[[:digit:]]t[[:alnum:]]+d[[:alnum:]]+s0/ {print $1}') )
+
+## If for whatever reason we cannot determine syspool, we should bail now
+##
+[[ ${#syspool[@]} -lt 1 ]] && die "[Line ${LINENO}] Unable to detect syspool, cannot continue."
 
 ## only basenames are included in the array `/dev/rdsk` is stripped to reduce
 ## size of non-unique argument components in the array.
@@ -240,11 +250,6 @@ echo "[DEBUG] After Array change: ${arr_disks[@]}"
 ## This many disk entries in the array, if less than one, we die.
 arr_disk_len=${#arr_disks[@]}
 [[ ${arr_disk_len} -lt 1 ]] && die "[Line ${LINENO}] No disks were detected, cannot continue."
-
-## Set our start time here. We need to know when we started to make
-## the rest of the math work.
-##
-start_t=$(${date_cmd} +%s)
 
 ## We validate that in fact the disks that we think are in syspool
 ## are indeed in the syspool, if not matched, we exit.
