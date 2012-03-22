@@ -160,7 +160,7 @@ iscsi:::nop-receive
  * read operations 
  */
 iscsi:::xfer-done 
-/ts[arg1] != 0 && arg8 != 0/
+/ts[arg1] != 0 && args[2]->xfer_type == 0 /
 {
 	t = timestamp - ts[arg1];
 	@count_read[args[0]->ci_remote] = count();
@@ -179,7 +179,7 @@ iscsi:::xfer-done
  * write operations
  */
 iscsi:::xfer-done 
-/ts[arg1] != 0 && arg8 == 0/
+/ts[arg1] != 0 && args[2]->xfer_type != 0 /
 {
 	t = timestamp - ts[arg1];
 	@count_write[args[0]->ci_remote] = count();
