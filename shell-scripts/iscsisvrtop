@@ -46,7 +46,10 @@
 #
 # Revision:
 #   1.4	8-Jul-2011
-#
+#	1.4.1 22-Mar-2012 by Sam Zaydel : Aaron K. identified a bug where writes
+#	were seemingly being reported as reads instead. It appears that changing
+#	predicate in iscsi:::xfer-done stanzas to use args[2]->xfer_type instead
+#	of arg8 resolves this problem.
 ##############################
 # --- Process Arguments ---
 #
@@ -160,6 +163,7 @@ iscsi:::nop-receive
  * read operations 
  */
 iscsi:::xfer-done 
+/* Modified predicate below to check against xfer_type 0 or non-0 value */
 /ts[arg1] != 0 && args[2]->xfer_type == 0 /
 {
 	t = timestamp - ts[arg1];
@@ -179,6 +183,7 @@ iscsi:::xfer-done
  * write operations
  */
 iscsi:::xfer-done 
+/* Modified predicate below to check against xfer_type 0 or non-0 value */
 /ts[arg1] != 0 && args[2]->xfer_type != 0 /
 {
 	t = timestamp - ts[arg1];
