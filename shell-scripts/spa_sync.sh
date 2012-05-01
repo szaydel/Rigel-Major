@@ -37,8 +37,8 @@ dtrace:::BEGIN
  /line <= 0 /
  {
 	/* print header */
-	printf("%-20s %-16s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s\n", "Timestamp", "Pool",
-		"lat_ms", "t_MB", "r_MB", "w_MB", "t_I/O", "r_I/O", "w_I/O", "throttle");
+	printf("%-20s %-16s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-8s %-8s %-6s\n", "Timestamp", "Pool",
+		"lat_ms", "t_MB", "r_MB", "w_MB", "t_I/O", "r_I/O", "w_I/O", "r_avg(b)", "w_avg(b)", "throttle");
 	line = LINES;
  }
 
@@ -50,6 +50,7 @@ fbt::spa_sync:entry
 	in_spa_sync = 1;
 	self->start = timestamp;
 	self->spa = args[0];
+	/* Name of the pool */
 	self->poolname = stringof(self->spa->spa_name);
 }
 
@@ -64,7 +65,8 @@ io:::start
 /(args[0]->b_flags & B_READ) && in_spa_sync && self->poolname != exclude/
 {
 	@readio = count();
-	@rbytes = sum(args[0]->b_bcount);
+	/* Aggregate read bytes collecting a sum of bytes and average IO size */
+	@rbytes = sum(args[0]->b_bcount); @avgrbytes = avg(args[0]->b_bcount);
 
 }
 
@@ -72,7 +74,8 @@ io:::start
 /!(args[0]->b_flags & B_READ) && in_spa_sync && self->poolname != exclude/
 {
 	@writeio = count();
-	@wbytes = sum(args[0]->b_bcount);
+	/* Aggregate write bytes collecting a sum of bytes and average IO size */
+	@wbytes = sum(args[0]->b_bcount); @avgwbytes = avg(args[0]->b_bcount);
 
 }
 
@@ -97,7 +100,7 @@ fbt::spa_sync:return
 
 	printf("%-20Y %-16s %-6d ", walltimestamp,
 	stringof(self->spa->spa_name), this->ms);
-	printa("%-6@d %-6@d %-6@d %-6@d %-6@d %-6@d %-6@d\n", @bytes, @rbytes, @wbytes, @io, @readio, @writeio, @thr);
+	printa("%-6@d %-6@d %-6@d %-6@d %-6@d %-6@d %-8@d %-8@d %-6@d\n", @bytes, @rbytes, @wbytes, @io, @readio, @writeio, @avgrbytes, @avgwbytes, @thr);
 }
 
 fbt::spa_sync:return
