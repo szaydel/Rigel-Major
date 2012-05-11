@@ -51,7 +51,10 @@ def send_msg(message, dest):
         for i in message:
             if debug:
                 print >>sys.stderr, 'sending "%s"' % i
-            sock.sendall(i)
+            if not debug:
+                sock.sendall(i)
+            else:
+                pass
     finally:
         counter+=1
         print >>sys.stderr, 'Event Count: %s' % counter
@@ -124,9 +127,9 @@ def sliceit(x):
 
     result = (int(timestamp),name_of_rd,stat_dict)
 
-    if debug:
-        print 'Length of `result` tuple is %d, Length of stat_dict is %d' \
-        % int(len(result)), int(len(stat_dict))
+#    if debug:
+#        print 'Length of `result` tuple is %d, Length of stat_dict is %d' \
+#        % (int(len(result)), int(len(stat_dict)))
     return result
 
 if __name__ == '__main__':
@@ -149,83 +152,63 @@ if __name__ == '__main__':
     carbsrv = '10.10.100.11'
     carbport = 2003
     target_machine = (carbsrv, carbport)
-    delay = 10  # secs
+    delay = 2  # secs
     node = platform.node().replace('.', '-')
     pattern = re.compile(r'^Run')      # RegEx obj matching header row in results
     message = []
-    if debug: limit = 2
-    else: limit = 10
-
     msgc = 0
+    if debug: limit = 2     # This is just to speed up testing
+    else: limit = 100
 
     while True:
-#        stdin = readln(pattern)    # Expect either line from stdin or `False`
+
         datain = readfromfile(input_file,pattern)
 
         for line in datain:
             line = line.rstrip('\n').split()    # list from string
-            print line
+#            print line
             res = sliceit(line)      # res is a tuple
-            print line
+#            print line
 #            timestamp = int(time.time())
 
             # Taking in a tuple of three elements from sliceit() and
             # building a list of lines
-            lines = [ 'system.%s.io.vdbench.%s %s %d' %
-                     (node,i[0], i[1], res[0]) for i in res[2].items() ]
 
-            # This is not an ideal way to go. In this case a dictionary
-            # is much more appropriate. Above, new lines structure is being
-            # built out of a 3 element tuple returned by the sliceit() function.
             ### Structure of the resulting tuple is as follows: ###
             # [integer=>timestamp, string=>name_of_run_definition, dictionary =>stats ]
 
+            lines = [ 'system.%s.io.vdbench.%s %s %d' %
+                     (node,i[0], i[1], res[0]) for i in res[2].items() ]
 
-#            lines = [
-#            'system.%s.io.vdbench.%s.xfersize %s %d' % (node, res[1], res[2], res[0]),
-#            'system.%s.io.vdbench.%s.total_mb_sec %s %d' % (node, res[1], res[3], res[0]),
-#            'system.%s.io.vdbench.%s.reads_per_sec %s %d' % (node, res[1], res[4], res[0]),
-#            'system.%s.io.vdbench.%s.read_latency %s %d' % (node, res[1], res[5], res[0]),
-#            'system.%s.io.vdbench.%s.writes_per_sec %s %d' % (node, res[1], res[6], res[0]),
-#            'system.%s.io.vdbench.%s.write_latency %s %d' % (node, res[1], res[7], res[0]),
-#            'system.%s.io.vdbench.%s.read_mb_sec %s %d' % (node, res[1], res[8], res[0]),
-#            'system.%s.io.vdbench.%s.write_mb_sec %s %d' % (node, res[1], res[9], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_io_rate %s %d' % (node, res[1], res[10], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_latency %s %d' % (node, res[1], res[11], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_wait %s %d' % (node, res[1], res[12], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_svct %s %d' % (node, res[1], res[13], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_avwait %s %d' % (node, res[1], res[14], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_svact %s %d' % (node, res[1], res[15], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_cpu_used %s %d' % (node, res[1], res[16], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_cpu_user %s %d' % (node, res[1], res[17], res[0]),
-#            'system.%s.io.vdbench.%s.kstat_cpu_kernel %s %d' % (node, res[1], res[18], res[0]),
-#            ]
+#        if debug:
+#            sys.exit(0)     # At the moment we are exiting prematurely, for testing.
+
+            ''' We are trying to reduce the amount of TCP connections by
+            aggregating messages collected into a list, and then looping over
+            the list, delivering messages with one open/close event '''
+            message.append('\n'.join(lines) + '\n')
+
             if debug:
-                print lines
+                print '%s' % message
 
-        if debug:
-            sys.exit(0)     # At the moment we are exiting prematurely, for testing.
+            if not debug:
+#                send_msg(message,target_machine)
+                msgc += 1       # Increment counter by `1` with addition of each new line
+                if msgc == limit:   # Once we reached number of messages to collect, we push
+                    try:
+                        res = send_msg(message, target_machine)
+                    except IOError:
+                        retry = 0       # Limit number of retries to 3
+                        while retry < 3:
+                            res = send_msg(message, target_machine)
+                            if res:
+                                break
+                            retry += 1
 
-        ''' We are trying to reduce the amount of TCP connections by
-        aggregating messages collected into a list, and then looping over
-        the list, delivering messages with one open/close event '''
-        message.append('\n'.join(lines) + '\n')
-        msgc += 1       # Increment counter by `1` with addition of each new line
-        if msgc == limit:   # Once we reached number of messages to collect, we push
-            try:
-                res = send_msg(message, target_machine)
-            except IOError:
-                retry = 0       # Limit number of retries to 3
-                while retry < 3:
-                    res = send_msg(message, target_machine)
-                    if res:
-                        break
-                    retry += 1
+                        if not res and retry == 3:
+                            sys.exit(1)
 
-                if not res and retry == 3:
-                    sys.exit(1)
-
-            finally:
-                message = []        # Empty our list after sending
-                msgc = 0      # Reset msgc after
-        time.sleep(delay)
+                    finally:
+                        message = []        # Empty our list after sending
+                        msgc = 0      # Reset msgc after
+                time.sleep(delay)
