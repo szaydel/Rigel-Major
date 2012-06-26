@@ -1,0 +1,32 @@
+#!/bin/bash
+kadmin -p admin/admin -q "ktadd -k keytab.lab3 host/server-lab2.homer.lab@HOMER.LAB"
+
+## Begin TLS configuration with OpenDJ
+##==> Process to configure TLS and generate self-signed key for use with OpenDJ
+## Generate self-signed SSL certificate
+/usr/java/jre1.6.0_31/bin/keytool -genkey -alias server-cert -keyalg rsa -dname "cn=server-lab2.homer.lab, ou=Certificates, o=Homer.Lab, c=US" -validity 3652 -keystore /opt/OpenDJ-2.4.5/config/homer_lab.keystore -storepass password -keypass password
+/usr/java/jre1.6.0_31/bin/keytool -selfcert -alias server-cert -keystore /opt/OpenDJ-2.4.5/config/homer_lab.keystore -storepass password
+
+## Exporting certificate for use on clients `keystore password is "password"`
+/usr/java/jre1.6.0_31/bin/keytool -keystore /opt/OpenDJ-2.4.5/config/homer_lab.keystore -export -alias server-cert -storepass password -rfc -file ~/TLS_server-lab2_cert.pem
+
+## Review/Validate the exported PEM file
+/usr/java/jre1.6.0_31/bin/keytool -printcert -v -file ~/TLS_server-lab2_cert.pem
+
+## Assumed base path is `/opt/OpenDJ-2.4.5` for next two commands, due to relative path in the commands
+##==> This command may generate an error, if the file is missing, it is not critical
+/opt/OpenDJ-2.4.5/bin/dsconfig set-key-manager-provider-prop --hostname server-lab2.homer.lab --port 4444 --bindDN "cn=labadm" --bindPassword homer --provider-name JKS --set enabled:true --set key-store-pin:password --remove key-store-pin-file:config/keystore.pin --trustAll --no-prompt
+
+/opt/OpenDJ-2.4.5/bin/dsconfig set-trust-manager-provider-prop --hostname server-lab2.homer.lab --port 4444 --bindDN "cn=labadm" --bindPassword homer --provider-name JKS --set enabled:true --set trust-store-file:config/homer_lab.keystore --set trust-store-pin:password --trustAll --no-prompt
+
+## Finally we enable StartTLS on the server
+/opt/OpenDJ-2.4.5/bin/dsconfig set-connection-handler-prop --hostname server-lab2.homer.lab --port 4444 --bindDN "cn=Directory Manager" --bindPassword password --handler-name "LDAP Connection Handler" --set allow-start-tls:true --set key-manager-provider:JKS --set trust-manager-provider:JKS --trustAll --no-prompt
+
+## Enable listening on 1636 with SSL
+/opt/OpenDJ-2.4.5/bin/dsconfig set-connection-handler-prop --hostname server-lab2.homer.lab --port 4444 --bindDN "cn=labadm" --bindPassword homer --handler-name "LDAPS Connection Handler" --set listen-port:1636 --set enabled:true --set use-ssl:true --trustAll --no-prompt
+
+## Validate SSL connectionivity on localhost
+openssl s_client -connect localhost:1636 -showcerts
+
+## Modify contents of directory from bash, with admin user: `labadm` and password `homer`.
+/opt/OpenDJ-2.4.5/bin/ldapmodify -h 10.10.100.20 -p 389 -D cn=labadm -w homer -f /tmp/ldifinput.ldif

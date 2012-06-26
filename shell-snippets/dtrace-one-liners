@@ -9,11 +9,100 @@ dtrace -n 'nfsv3:::op-write-start { self->t = timestamp; } nfsv3:::op-write-done
 ## Watch ARC
 dtrace -n 'sdt:::arc-delete,sdt:::arc-evict,sdt:::arc-hit,sdt:::arc-miss { @[probefunc] = count(); }'
 
+## Distribution of blocksizes for blocks added to ARC
+dtrace -n 'fbt:zfs:arc_buf_add_ref:entry {@t = quantize(args[0]->b_hdr->b_size); }'
+
+## Data vs. Metadata hits and misses in ARC
+dtrace -n 'sdt:zfs::arc-hit,sdt:zfs::arc-miss { @b["bytes"] = quantize(((arc_buf_hdr_t *)arg0)->b_size); } sdt:zfs::arc-hit,sdt:zfs::arc-miss { @t["type"] = quantize(((arc_buf_hdr_t *)arg0)->b_type); }'
+
+## Same as above, with formatted output and a tick-1sec probe
+dtrace -qn 'sdt:zfs::arc-hit,sdt:zfs::arc-miss { @b["bytes"] = quantize(((arc_buf_hdr_t *)arg0)->b_size); } sdt:zfs::arc-hit,sdt:zfs::arc-miss { @t["type"] = quantize(((arc_buf_hdr_t *)arg0)->b_type);} tick-1sec {printa("\n   Bytes: %@d\n", @b); printa("\n   Type(0->data, 1->metadata): %@d\n", @t); clear(@b); clear(@t); }'
+
 ## Top system calls against ZFS storage, with 
 dtrace -n 'syscall::read:entry /fds[arg0].fi_fs == "zfs"/ { @[execname] = count(); }'
+
+## Which files on a ZFS filesystem are we touching, and is it read or write
+dtrace -qn 'syscall::read:entry,syscall::write:entry /fds[arg0].fi_fs == "zfs"/ { @[probefunc, fds[arg0].fi_pathname] = count(); printf("%Y  %s  %s\n", walltimestamp, stringof(probefunc), stringof(fds[arg0].fi_pathname)); } END { trunc(@,10); }'
 
 ## Monitor state of log device being offlined
 dtrace -n 'spa_offline_log:return {printf("spa_offline_log returns %d\n", args[1])}'
 
 ## Monitor device being evacuated from a vdev
 dtrace -n 'spa_vdev_remove_evacuate:return {printf("spa_offline_log returns %d\n", args[1])}'
+
+## Top ZFS-related functions on the kernel
+dtrace -n 'fbt:zfs::entry { @[probefunc] = count(); }'
+dtrace -n 'fbt:zfs::entry { @func[probefunc] = count(); } tick-1sec { printf("\n%Y:\n", walltimestamp); trunc(@func,3); printa(@func); } { @func[probefunc] = count(); }'
+dtrace -n '::zfs::entry { @a[probefunc, stack()] = count(); } END {trunc(@a,7);}'
+
+## Top 20 stack of ZFS-related functions
+dtrace -n 'fbt:zfs::entry { @func[probefunc, execname, stack()] = count(); } END {trunc(@func, 20); }'
+
+## Allocated memory
+dtrace -n 'fbt::kmem_cache_alloc:entry { @[args[0]->cache_name] = sum(args[0]->cache_bufsize); }'
+
+## Profile system
+dtrace -n 'profile:::profile-1001 /arg0/ { @[stack()] = count(); }'
+
+dtrace -n 'profile-1001 { @[stack()] = count(); } END {trunc(@,5); }'
+
+## Check for arc shrink events
+dtrace -n 'fbt::arc_shrink:* { @[probefunc, stack()] = count(); }'
+
+## See what files are being opened
+dtrace -n 'syscall::open:entry { trace(copyinstr(arg0)); }'
+
+## See stack for mutex_enter events
+dtrace -n 'mutex_enter:* { @st[stack()] = count(); } END {trunc(@st, 2); exit(0); }'
+
+## Check for whether there is write throttling
+dtrace -n '::txg_delay:entry {@st[stack()] =count(); printf("%Y\n", walltimestamp)} END{ trunc(@st); exit(0)}'
+dtrace -n '::txg_delay:entry {printf("%s\n", stringof(args[0]->dp_spa->spa_name)); }'
+
+## Observe zfs spa_sync events for pool name <poolname>
+dtrace -n 'fbt:zfs:spa_sync:entry /stringof(args[0]->spa_name) == "<poolname>"/ { printf("%Y",walltimestamp); }'
+
+## Observe ARC shrink events
+dtrace -n '::arc_shrink:entry {@st[probefunc] =count(); printf("%Y\n", walltimestamp)} END{ trunc(@st); exit(0)}'
+dtrace -n '::arc_shrink:entry {@st[probefunc, stack()] =count(); printf("%Y\n", walltimestamp)} END{ printa(@st); exit(0)}'
+
+dtrace -n 'fbt:zfs:arc_reclaim_needed:return /args[1]/ { printf("%Y   return=%d\n", walltimestamp, args[1]); } fbt:zfs:arc_shrink:entry {printf("%Y\n", walltimestamp);
+
+## Run these two together on two screens
+dtrace -n 'fbt:zfs:arc_reclaim_needed:return /args[1]/ { printf("%Y :: return=%d\n", walltimestamp, args[1]); } fbt:zfs:arc_shrink:return {@[probefunc, args[0] ] = count(); printf("%Y :: return=%d\n", walltimestamp,args[0]);}'
+li=$(printf "%40s\n" " "|tr " " "x"); while :; do echo $li; date "+%c"; echo $li; echo ::arc|mdb -k|egrep '^p |^c |^size|arc_meta'; echo $li; sleep 5; done
+
+## Observe arc_adapt events
+dtrace -n 'fbt::arc_adapt:entry { self->bytes = args[0]; @[stack(),args[0],args[1]->arcs_size] = count(); } fbt::arc_adapt:entry /self->bytes != 0/ {printf("%Y Adjust by %d Kb", walltimestamp, self->bytes/1024); self->bytes = 0; } END{trunc(@,5); }'
+
+dtrace -n 'fbt::arc_adapt:entry { self->size = args[1]->arcs_size; self->bytes = args[0]; @[execname,stack(),args[0],args[1]->arcs_size] = count(); } fbt::arc_adapt:entry /self->bytes != 0/ {@s = quantize(self->bytes); } END {trunc(@,4); }'
+
+## Observe dedup
+dtrace -n 'ddt*:entry,zio_ddt*:entry /probefunc != "ddt_stat_add" && probefunc != "ddt_histogram_add" && probefunc != "ddt_prefetch"/ {@[stack(),probename,probefunc] = count(); trunc(@, 5); }'
+
+## NFSv4 Related info
+
+dtrace -n '::rfs4_db*:entry {@nm[probename, probefunc] = count(); @st[stack()] = count(); } END { trunc(@nm,5); trunc(@st,5); exit(0); }'
+
+## MPxIO path selection
+dtrace -n 'fbt::mdi_select_path:return { @[probefunc, args[1]] = count(); }'
+
+## Observe dedup performance
+dtrace -c 'zdb <command>' -n 'zfs:io_ddt_read_start:entry / $target == pid / { @[probefunc] = count();}'
+
+## Snoop for TUR and Mode Sense SCSI commands
+dtrace -n 'fbt:sd:sd_send_scsi_TEST_UNIT_READY:entry { stack(); }  fbt:sd:sd_send_scsi_MODE_SENSE:entry { stack(); }'
+
+## NFS Dup queues check
+dtrace -n 'tick-1s { printf("%Y %d %d\n", walltimestamp, rpcmod`ndupreqs, rpcmod`cotsndupreqs); }'
+
+dtrace -n fbt:::entry'{self->vt=vtimestamp;}' -n fbt:::return'/self->vt/{@[probefunc]=sum(vtimestamp-self->vt);self->vt=0;}' -n tick-10s'{printa(@);exit(0);}'
+
+## NFS GETATTR information
+dtrace -n 'nfsv3:nfssrv:rfs3_getattr:op-getattr-start { @[probefunc,args[0]->ci_remote,args[0]->ci_protocol,args[1]->noi_curpath] = count(); }'
+
+dtrace -n 'nfsv3:nfssrv:rfs3_getattr:op-getattr-done { @[probefunc,args[0]->ci_remote,args[0]->ci_protocol,args[1]->noi_curpath,args[2]->status] = count(); }'
+
+## Observe top 10 function calls and source commands, including name and PID
+## that triggered these function calls
+dtrace -qn 'syscall:::entry /execname != "dtrace"/ {@num[pid, execname, probefunc] = count(); } tick-1sec {trunc(@num, 10); printa("%d\t%s\t%s\t%@d\n", @num); clear(@num); }'

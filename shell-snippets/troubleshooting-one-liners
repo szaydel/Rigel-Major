@@ -1,4 +1,8 @@
-# fmdump -eV -t2day | gzip -9 -c > /tmp/fmdump-$(hostname)-$(date +%Y%m%d).gz
+# fmdump -eV -t2day | gzip -9 -c > /tmp/fmdump-eV-t2day-$(hostname)-$(date +%Y%m%d).gz
+# fmdump -e -t2day | gzip -9 -c > /tmp/fmdump-e-t2day-$(hostname)-$(date +%Y%m%d).gz
+nmc@:> option expert_mode=1
+nmc@:> !fmdump -eV -t2day | gzip -9 -c > /tmp/fmdump-eV-t2day-$(hostname)-$(date +%Y%m%d).gz
+nmc@:> !fmdump -e -t2day | gzip -9 -c > /tmp/fmdump-e-t2day-$(hostname)-$(date +%Y%m%d).gz
 
 ### Most immediate issues
 # fmdump -v -u <Event-ID>
@@ -16,17 +20,24 @@
 
 ## Collect NZA and other logs
 
+# cd /var/svc/log/ && tar czf /tmp/nza-svcs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./*nm[csv]* | xargs -0 ls --)
+# cd /var/adm/ && tar czf /tmp/messages-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./messages* | xargs -0 ls --)
 # cd /var/log/ && tar czf /tmp/nza-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./nm* | xargs -0 ls --)
-# cd /var/log/ && tar czf /tmp/nza-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./nm* | xargs -0 ls --)
-# cd /var/svc/log/ && tar czf /tmp/auto-sync-svc-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./*zfs-auto* | xargs -0 ls --)
+# cd /var/svc/log/ && tar czf /tmp/auto-XX-svc-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./*zfs-auto* | xargs -0 ls --)
 # cd /var/log/rr/ && tar czf /tmp/rr-logs-$(hostname)-$(date +%Y%m%d).tgz $(printf '%s\0' ./rr* | xargs -0 ls --)
 
+## Gather multipathing information
 
+# printf -v "line" '%*s' "80"; while read -r i; do mpathadm show LU $i; echo ${line// /=}; done < <(mpathadm list LU|grep s2$) >> /tmp/mpathadm-LUs$(hostname).info
 
 ## State of services
 # for i in $(svcs -oFMRI|egrep nm[csv]); do echo "Start ++++ $i ++++"; svcs -l $i; echo "Stop ++++ $i ++++"; done
 
 # cd /var/adm && tar czvf /tmp/<case-number-##>-messages-$(hostname).tar.gz $(find . -name "messages*" -print)
+
+## Methods to force system to crash and/or reboot
+# echo "rootdir/W 0x1" | mdb -kw
+# uadmin 5 0
 
 ### Get IRQ info
 # echo '::interrupts -d' | mdb -k
@@ -73,6 +84,10 @@ for a in $(dladm show-link -p -o LINK | sed -e 's/[0-9]$//g' | uniq); do kstat -
 
 # prstat -s size
 
+## Walking through MDB
+> ::pgrep nameofprocess
+> ffffff073cafa058::walk thread | ::findstack
+
 
 Also, if we identify which process is growing (via "prstat -s size"), we can look inside it using "pmap PID".
 
@@ -107,3 +122,79 @@ echo ffffff0d285ed080::spa_vdevs|mdb -k
 echo "::spa -c" | mdb -k
 dtrace -n 'spa_offline_log:return {printf("spa_offline_log returns %d\n", args[1])}'
 dtrace -n 'spa_vdev_remove_evacuate:return {printf("spa_offline_log returns %d\n", args[1])}'
+
+
+## ESXi vSphere troubleshooting VaaI issues
+# esxcli system settings advanced set --int-value 0 --option /VMFS3/EnableBlockDelete
+# esxcli system settings advanced set --int-value 0 --option /VMFS3/HardwareAcceleratedLocking
+# esxcli system settings advanced set --int-value 0 --option /DataMover/HardwareAcceleratedInit
+# esxcli system settings advanced set --int-value 0 --option /DataMover/HardwareAcceleratedMove
+
+# esxcli system settings advanced list -o /DataMover/HardwareAcceleratedMove
+# esxcli system settings advanced list -o /DataMover/HardwareAcceleratedInit
+# esxcli system settings advanced list -o /VMFS3/HardwareAcceleratedLocking
+
+
+## Disabling dynamic DNS updates
+# sharectl set -p ddns_enable=false smb
+...or
+# svccfg -s svc:/network/smb/server setprop "smbd/ddns_enable = false"
+
+## Enable TCP Wrappers on rpcbind
+# svccfg -s network/rpc/bind setprop config/enable_tcpwrappers=boolean: true
+# svccfg -s network/rpc/bind listprop config/enable_tcpwrappers 
+
+## STMF View gathering
+# for ea in $(stmfadm list-lu|sed -e 's/^.*: //g'); do printf "%s\n%s %s\n" "====" "LUN_GUID:" "$ea"; stmfadm list-view -l $ea|grep -v '^V'; done
+# for i in $(stmfadm list-lu |sed -e's/^.* //g'); do echo "LUN: $i"; stmfadm list-lu -v $i|grep Writeback; done
+
+
+
+## Enable ALUA / stmfproxy
+svc:> import stmfproxy.xml
+svc:> select system/stmfproxy
+svc:/system/stmfproxy> setprop manifestfiles/usr_demo_comstar_stmfproxy_xml = astring: /usr/demo/comstar/stmfproxy.xml
+
+## Node 1
+svc:/system/stmfproxy>setprop config/proxy_host = astring: "clus-a-node-1"
+
+## Node 2
+svc:/system/stmfproxy>setprop config/proxy_host = astring: "clus-a-node-1"
+
+## Fibre channel unconfigure devices
+# cfgadm -o force_update -c unconfigure <c#::wwn>
+
+## Fibre channel configure the adapter
+# cfgadm -o show_FCP_dev -al
+# cfgadm -al -o show_SCSI_LUN <controller_id>
+# cfgadm -al -o show_FCP_dev <controller_id>
+# cfgadm -o force_update -c configure c3::50060e801530fb39
+
+# cfgadm -al -o show_SCSI_LUN | egrep -i 'unusable|failing'
+## Force lip to make failing status change to unusable
+# luxadm -e forcelip /devices/pci@1d,700000/SUNW,qlc@1,1/fp@0,0:devctl
+
+## Get reservation and refreservation info
+zfs get -r -o name,value reservation,refreservation poolname|awk '$2 != "none" && $2 != "-" {print $0}'
+
+## Get information about ZFS datasets
+zfs list -Ho name -r poolname/path/to/dataset
+zfs list -t filesystem,snapshot,volume -ospace
+
+## Monitor arc_meta_used
+while :; do echo ::arc|mdb -k|grep arc_meta_used; sleep 15; done
+
+li=$(printf "%40s\n" " "|tr " " "x"); while :; do echo $li; date "+%c"; echo $li; echo ::arc|mdb -k|egrep '^p |^c |^size|arc_meta'; echo $li; sleep 5; done
+
+## Log arc_meta usage
+for i in {0..10}; do echo $(date +"%c"); echo ::arc|mdb -k|grep arc_meta; sleep 20; done >> /tmp/arc-usage-$(hostname).log
+
+## Importing pool
+zpool import -o readonly -N <poolname>
+
+zdb -e -t uberblock_id -U -e <poolname>
+
+zdb -U /path/to/cache/file -C -e <poolname>
+
+## entry for sd.conf to deal with power issues on Hard Drives
+sd-config-list="SEAGATE ST100FM0002","power-condition:false";

@@ -71,6 +71,9 @@ my_list = [('a', 1), ('b', 2)]
 dict(my_list)
 {'a': 1, 'b': 2}
 
+## For each item in list map that item to lambda function
+map((lambda x: x.upper() if not x == x.upper() else x), ['a','b'])
+
 ## Dictionary from tuples
 t = ((1, 'a'),(2, 'b'))
 dict((y, x) for x, y in t)
@@ -314,3 +317,74 @@ def myfunc(start):
     return nested
 a = myfunc(0)
 a('somename')
+
+## Recursive function
+def mysum(L):
+    if not L: return 0
+    print L
+    return L.pop() + mysum(L)
+
+## Adding custom attributes to functions
+
+def repeat(w,count):    # Generic function : repeating words
+    return w * count
+repeat.run_count = 0
+
+def gen_call(func, *args):
+    a = func(*args)
+    try:
+        ## If exists 'run_count', increment by 1
+        func.__getattribute__('run_count')
+        func.run_count += 1
+        print '%s %d' % ('Count:', func.run_count)
+        ## If not exists 'run_count', create, set to 1
+    except AttributeError:
+        func.run_count = 1
+        pass
+    return a
+
+## Nested function and maintaining state from enclosing function
+def myf():
+    counter = 1
+    def makemap(li1,li2):
+        print makemap.counter
+        makemap.counter += 1
+        x = map(lambda x,y: x**y, li1,li2)
+        print 'Results:', x
+    makemap.counter = counter
+    return makemap
+
+## Dictionary with lambda functions embedded in the values
+x = 4
+y = 20
+
+myD = {
+    'already':(lambda: x + y if x > y else False),
+    'got':(lambda: x + y if x < y else False),
+    'one':(lambda: y - x if y > 2*x else False)
+}
+
+for k in myD:
+    print myD[k]()
+
+## Using map and zip to create tuples and then add the values together
+map((lambda x: x[0] + x[1] ),zip([1,2,3,4,5],[6,7,8,9,10]))
+
+
+## Two methods of generating a list while stripping '\n'
+li = ['apple\n','orange\n','banana\n','lettuce\n','wheat\n']
+a = map(lambda x: x.rstrip('\n'), \
+    filter(lambda x: x if x[0] in 'alw' else False, li))
+b = map(lambda x: x.rstrip('\n'), \
+    [x for x in li if x[0] in 'alw' ])
+
+## Home-made version of map and generator used to return results one at a time
+def mymap(func, *seqs):
+    return (func(*args) for args in zip(*seqs))
+
+g1 = mymap((lambda x: x * x), [1,2,3,4])
+while g1:
+    try:
+        print g1.next()
+    except StopIteration:
+        break

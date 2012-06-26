@@ -26,8 +26,23 @@
 # iscsiadm --mode iface --interface iscsi-0 -o delete
 # iscsiadm --mode iface --interface iscsi-1 -o delete 
 
+## Manually adding iSCSI Targets, bound to specific interfaces
+# iscsiadm -m node --op new -T iqn.2011-12.dom.homer:01:lab-centos-servers-00001 -p 10.10.8.90,3260,2 -I sw-iscsi-0
+# iscsiadm -m node --op new -T iqn.2011-12.dom.homer:02:lab-centos-servers-00001 -p 10.10.9.90,3260,2 -I sw-iscsi-1
 
 ## Logging in
 # iscsiadm --mode node --targetname iqn.2011-03.dom.internal:01:filer-nex-lab1 --portal 192.168.1.221:3260,2 -I iscsi-0 --login
 
 # iscsiadm --mode node --targetname iqn.2011-03.dom.internal:01:filer-nex-lab1 --portal 192.168.1.221:3260,2 --interface=iscsi-0 --login
+
+## Set Automatic startup for specific targets
+# iscsiadm -m node -T iqn.2011-12.dom.homer:01:lab-centos-servers-00001 -p 10.10.8.90:3260,2 -I sw-iscsi-0 --op update -n node.startup -v automatic
+
+# iscsiadm -m node -T iqn.2011-12.dom.homer:02:lab-centos-servers-00001 -p 10.10.9.90:3260,2 -I sw-iscsi-1 --op update -n node.startup -v automatic
+
+## Getting info
+# iscsiadm --mode session -P3
+
+## Information about relationship of block devices to iSCSI sessions
+
+# ls /sys/class/iscsi_session/session[[:digit:]]/device/target*/[[:digit:]]:[[:digit:]]:[[:digit:]]:[[:digit:]]*/block

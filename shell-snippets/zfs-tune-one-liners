@@ -28,6 +28,10 @@ set zfs:zfs_nocacheflush = 1
 ## ARC meta limit tuning in /etc/system file
 set zfs:zfs_arc_meta_limit = <value in bytes or hex>
 
+## Increase L2ARC write b/w set to 100MB/s
+sec zfs:l2arc_write_max = 104857600
+sec zfs:l2arc_write_max = 0x6400000
+
 ## Real-time set txg_timeout to 5 seconds
 # echo zfs_txg_timeout/W0t5 | mdb -kw
 
@@ -46,8 +50,7 @@ echo l2arc_noprefetch/W0t1 | mdb -kw
 # for a in zfs_txg_synctime_ms zfs_txg_timeout zfs_vdev_max_pending zfs_nocacheflush; do echo $a/D | mdb -k|grep [0-9] ; done
 
 txg_synctime represents expected time to ﬂush a TXG (5 sec)
-txg_timeout is typical frequency of ﬂush (30 sec)
-
+txg_timeout represents max seconds worth of delta per txg
 
 ## Memory 
 
@@ -63,14 +66,104 @@ txg_timeout is typical frequency of ﬂush (30 sec)
 Set arc_meta_limit dynamically, this example sets it to 4GB
 # echo "arc_meta_limit/Z 0x4000000" | mdb -kw
 
+Set to 48GB
+# echo "arc_meta_limit/Z 0xc00000000" | mdb -kw
+
+# echo "zfs_arc_max/Z 0x1800000000" | mdb -kw 
+
+## Enable no write_throttle
+# echo zfs_no_write_throttle/W0t1|mdb -kw
+
 ## Kernel memory statistical breakdown
  echo ::kmastat | mdb -k
 
- set zfs:arc_meta_limit = 0x1000000000
-echo "arc_meta_limit/Z 0x1000000000" | mdb -kw
+set zfs:arc_meta_limit = 0x1000000000
+
+* Nexenta Support Recommended Parameters
+* Disable ZFS Prefectch, based on poor hit rate against prefetched data
+* 
+set zfs:zfs_prefetch_disable = 0x1
+
+* Nexenta Support Recommended Parameters
+* Tuning arc_meta_limit, adjusting for large l2arc with headers 
+* requiring additional space in ARC - setting limit to 24GB
+
+set zfs:arc_meta_limit = 0x600000000
+echo "arc_meta_limit/Z 0x600000000" | mdb -kw
+* Set to 48GB
+set zfs:arc_meta_limit = 0xC00000000
+echo "arc_meta_limit/Z 0xC00000000" | mdb -kw
+
+## Adjust ARC shrink shift
+echo "arc_shrink_shift/W0t9"|mdb -kw
 
 ## Information about vdevs
 
 ## Output similar to zdb -l
 echo "::spa -c" | mdb -k
 
+## Check swap
+"echo swapfs_minfree/D" | mdb -k
+
+Centaur ZFS Tunables (/etc/system):
+         set zfs:zfs_arc_shrink_shift = 11
+         set zfs:zfs_arc_p_min_shift = 9
+         set zfs:zfs_arc_meta_limit = 70000000000
+         set zfs:zfs_txg_timeout = 1
+         set zfs:zfs_txg_synctime_ms = 1000
+         ** set zfs:zfs_no_write_throttle=1
+
+"echo ::zfs_dbgmsg -v | mdb -k"
+
+set zfs:zfs_prefetch_disable = 0x1
+set zfs:zfs_arc_meta_limit = 8589934592
+
+
+********************************************************************************
+* Adjustments to scsi device driver defaults ***********************************
+********************************************************************************
+* Shorter timeout should allow us to fail in about 15 seconds, instead of
+* the default 60s * 5 = 300s, which is far too long for any SAS/SATA disk
+*
+* set default SCSI command timeout to 5 seconds from 60 seconds (default)
+* Setting applied on `date` per advise from Nexenta Support
+set sd:sd_io_time = 5
+
+* set default SCSI command retry count to 3 from 3 or 5 (default)
+* Setting applied on `date` per advise from Nexenta Support
+set sd:sd_retry_count = 3
+
+
+# echo zfs_txg_synctime_ms/W0t2500 | mdb -kw; echo zfs_txg_timeout/W0t30 | mdb -kw
+
+## Improving resilver performance
+sys_zfs_resilver_delay  set to 1 from default of 2
+sys_zfs_resilver_min_time : 2000 set from default of 3000
+sys_zfs_vdev_max_pending=1 
+
+
+## Default 3.0.5 standard
+set zfs:zfs_txg_timeout = 30
+set zfs:zfs_txg_synctime_ms = 5000
+** set zfs:zfs_no_write_throttle=1
+
+## Improve ZFS performance for pools above 80% full
+echo "metaslab_df_free_pct/W 4" | mdb -kw
+echo "set zfs:metaslab_df_free_pct=4" >> /etc/system
+
+## Dupe queues for NFS tune to 8192
+echo "cotsmaxdupreqs/W 0x2000" | mdb -kw
+echo "maxdupreqs/W 0x2000" | mdb -kw
+
+set rpcmod:maxdupreqs=8192 >> /etc/system
+set rpcmod:cotsmaxdupreqs=8192 >> /etc/system
+
+## Set write limit to 128MB, to reduce the size of possible flushes
+set zfs:zfs_write_limit_override = 0x8000000 
+
+Disable IDE module from loading with OS via /etc/system
+exclude: pci-ide
+
+## Enable cache on vdevs to improve metadata operations such as those from
+## running commands like `zfs list -t snapshot`
+echo zfs_vdev_cache_size/W0x1000000 | mdb -kw

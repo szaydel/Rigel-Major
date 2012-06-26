@@ -2,4 +2,13 @@
 # echo ::memstat | mdb -k
 
 
-symbio2b$
+## List processes
+::ps
+ffffff0159c19a88::ps
+::ptree
+
+## Stack for all threads
+::walk thread|::findstack -v
+
+## Stack for a specific thread
+::pgrep sshd|::walk thread|::findstack -v

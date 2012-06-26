@@ -27,7 +27,10 @@ foo="/tmp/";  shopt -s nullglob; dirs=("$foo"*/); if ((${#dirs[@]})); then echo 
 
 
 ## Use awk to print all but the first column
-$ awk '{$1=""; print}'
+awk '{$1=""; print}'
+
+## If value in column 2 is greater than 1, print line
+awk '($2 >= 1){print $0}' 
 
 ## Use awk to join lines together
 cat filename | awk '{ if ( ( NR % 3 ) == 0 ) { printf("%s\n",$0) } else { printf("%s ",$0) } }'
@@ -317,6 +320,9 @@ perl -i'.bak' -pe 's/old/new/g' <filename>
 ## Find and sort files larger than 10MB from current dir as root
 find ./ -size +10M -type f -print0 | xargs -0 ls -Ssh1 --color
 
+## Find and chmod matching files
+find -name "nameoffile" -exec sh -c 'chmod u+x {}' \;
+
 ## On solaris used for Alom control
 /usr/platform/`uname -i`/sbin/scadm help
 
@@ -540,6 +546,11 @@ for i in "${!A[@]}"; do echo "$i" "${A[$i]}"; done
 2 three
 3 four
 
+## check whether a value is in an array
+## Usage: inarray "$value" "${array[@]}"
+
+inarray() { local n=$1 h; shift; for h; do [[ $n = "$h" ]] && return; done; return 1; } 
+
 ## Take in list of 2 columns IP_add + hostname and rewrite in /etc/hosts format adding -dr-ilo suffix
 for a in ${arr_a[@]}; do b=$(grep $a dr-ilos.list | cut -d " " -f2) \
 a=$(echo $a | sed -e "s/$/-dr-ilo/g"); \
@@ -550,6 +561,9 @@ awk '$3 ~ /^6$/' input-filename
 
 ## Rewrite email address list form Exchange
 cat emails.t| sed -e "s/\; /\n/g" | awk '{print $3}' | tr '<|>' ' '| sed -e "s/ //g" | tr '[:upper:]' '[:lower:]'
+
+## Substitutions and substring manipulation
+v1=foobar v2=foo; echo "${v1#$v2}"
 
 ## Working with paths using bash variables
 echo `basename $PWD`        # Basename of current working directory.
@@ -647,3 +661,149 @@ max=875 min=236; echo "$(( RANDOM % (max - min) + min + 1 ))"
 
 # Read-in file and split on ',' adding each to 'array'
 while IFS=, read -rd val; do array+=("$val"); done < filename
+
+## Get list of holds for all zfs snapshots on system
+while read -r s; do printf "%s %s %s\n" "**" "$s" "**"; \
+zfs holds $s; done < <(zfs list -t snapshot -H -oname)
+
+## Function useful for passing list of scripts for execution
+run() { local sh=$1; shift; "$HOME/bin/$sh.sh" "$@"; }
+
+## Test if files in current dir are older than newly created marker file
+temp=$(mktemp); trap 'rm -f "$temp"' EXIT; touch -t "$(date -d "$1" +%Y%m%d%H%M)" "$temp"; for f in ./*; do [[ $f -ot "$temp" ]] && printf '%s\n' "$f"; done
+
+## Same as above using find
+temp=$(mktemp); find . -maxdepth 1 ! -newer "$temp"
+
+## Strip away quotes from var
+var=${var%\"} var=${var#\"}
+
+## Counters, first from 10 to 1, second from 1 to 10
+for ((i=10; i>=1; i--)); do echo $i; done
+for ((i=1; i<=10; i++)); do echo $i; done
+
+## Split contents of file into separate arrays
+## Contents look like:
+## foo=a,b,c,d
+## bar=x,y,z
+while IFS='=' read -r var val; do echo $var; case $var in foo) IFS=, read -ra array1 <<<"$val";; bar) IFS=, read -ra array2 <<<"$val";; esac; done < file.1
+
+## Loop over host list and push files with rsync
+while read -r host; do rsync -a "$host:/path/to/files" /local/path/; done < hostlist.txt
+
+## Replicate data with rsync running as server daemon on the SAN
+rsync -vrtLogp --progress /media/nss/TEST/* nobody@131.111.3.20::datapool_test
+
+## Extract only numbers from a variable
+line=bob123tom456; read -ra numbers <<< "${line//[!0-9]/ }"; printf '<%s>' "${numbers[@]}"
+
+
+## Assign ACL on OI
+/usr/bin/chmod A+user:labadm:read_data/write_data/append_data/read_xattr/write_xattr/read_attributes/write_attributes/read_acl/write_acl/write_owner/synchronize:allow /volumes/lab5_pool_a/tier-tgt-01
+/usr/bin/chmod A+group:deneb:read_data/write_data/append_data/read_xattr/write_xattr/read_attributes/write_attributes/read_acl/write_acl/write_owner/synchronize:allow /volumes/lab5_pool_a/tier-tgt-01
+
+## Return success if only one of two values is not null
+## to test: if xor_empty '' 's'; then echo good; else echo bad; fi
+xor_empty() { local a b; [[ $1 ]]; a=$?; [[ $2 ]]; b=$?; ((a ^ b)); }
+
+## Another version of above
+[[ ($foo || $bar) && ! ($foo && $bar) ]]
+
+## Testing and re-writing path to make it absolute
+f=./foo; [[ $f = /* ]] || echo "$PWD/${f#./}"
+
+## Conditional if based on two parameters
+p=20; t=80; if (( $p !=20 && $t <= 80)); then echo Good; fi
+
+## Insert date function
+get_date() { date +"%b-%d-%y %H:%M:%S - "; }; exec 3>logfile; echo "$(get_date) whatever" >&3; more_stuff; echo "$(get_date) another logging" >&3; exec 3>&-
+
+## Copy or move files, shortcut
+cp /path/to/file.txt{,bak}
+cp -p /path/to/file{,$(date +%Y%m%d)}
+
+## Print 80 iterations of '.'
+x=$(printf "%80s\n" " "|tr ' ' '.'); len=${#x}; for ((i=0; i<len; i++)); do printf '%s' "${x:i:1}"; sleep 1; done
+
+## Build an array of all alpha-numerics and slice it
+array=({a..z} {0..9}); echo "${array[@]:10:1}"
+
+## Awk, replace space with something else, will work for any character
+echo 'string string' |awk '/^str/ {gsub(/[[:blank:]]+/, "_", $0); print $0}'
+
+## Print line if beginning and end are matcing ^string_a and string_b
+echo `some command` | awk '$1 ~ /^string_a/ && $NF ~ /string_b/ {print $0}'
+
+## Process info for zpool cmd
+prstat -Lm -p $(pgrep zpool|xargs |tr ' ' ',') 1
+
+## Get info about disks with hard errors
+iostat -En $(iostat -en|egrep c0t|awk '$2 > 0 {print $NF}')
+
+## Get info about any disks with errors
+iostat -En $(iostat -en|egrep c[[:digit:]]+t|awk '$1 > 0 || $2 >0 || $3 > 0 {print $NF}')
+
+## iostat of devices in pool
+iostat -xncz $(zpool status mypool|grep c[[:digit:]]|sed -e 's/^. *//g'|cut -d' ' -f1) 1
+
+## Shorter version of above
+iostat -xncz $(zpool status mypool|awk '/c[[:digit:]]+t/ {print $1}') 1
+
+## Same as above, but single line, no '\n' chars
+printf "%s " $(zpool status tank|awk '/c[[:digit:]]+t/ {print $1}')
+
+## Test disks with 4k reads
+blk=4k; cnt=10000; while :; do for i in $(zpool status pool1|awk '/c[[:digit:]]+t/ {print $1}'); do printf "=== %s === at $blk and count $cnt  \n" "$i"; dd if=/dev/rdsk/${i}s0 of=/dev/null bs=4k count=1000; sleep 1; done; done
+
+## hddisco for each disk in the pool
+zpool status mypool|awk '/c[[:digit:]]+t/ {print $1}'|xargs -n1 hddisco -ld
+
+## In parallel run 10 dd's for disks listed via 'ls'
+ls /dev/rdsk/c1t*s0 | xargs -n1 -i -t -P10 dd if={} of=/dev/null bs=1k count=4
+
+## List of all devices with c[0-9]t in poolname
+zpool status poolname|grep c[0-9]t|sed -e 's/^\t  *//g'|cut -d' ' -f1
+
+## Testing write performance in a loop
+while :; do for ((i=10; i>=1; i--)); do dd if=./dummy.f bs=64k | cat >> ./dummy.f1; done; sleep 5; done
+
+while [[ $(ls -l ./dummy.f1|cut -d' ' -f5 ) -lt 10737418240 ]]; do for ((i=10; i>=1; i--)); do dd if=./dummy.f bs=64k | cat >> ./dummy.f1; done; sleep 1; ls -l ./dummy.f1; done
+
+## Testing read performance in a loop, looging to result file
+while read -r devn; do printf "Device Name: ^^^ %s ^^^\n" $devn; for sz in 4K 32K 64K 128K 512K 1M; do for ((i=3; i>=1; i--)); do printf "Size: %s Device: %s\n" "$sz" "$devn"; dd if=/dev/rdsk/${devn}s0 of=/dev/null bs=$sz count=1000; done; done; done </tmp/pool.o
+
+## run two dd's in parallel
+while :; do printf "%s\n" "c8t5E83A9700000350Cd0s0" "c8t5E83A97000003530d0s0"|xargs -n2 -I {} dd if=/dev/rdsk/{} of=/dev/null bs=64k count=1000; sleep 1; done
+
+## Another loop for a dd read test
+while :; do for i in c8t5E83A9700000350Cd0 c8t5E83A97000003530d0; do printf "### %s ###" "${i}"; dd if=/dev/rdsk/${i} of=/dev/null bs=64k count=100; done; sleep 1; done
+
+## Destroying multiple ZFS snapshots
+zfs list -t snapshot -r -H -oname lab9_pool_a/consist_grp_app_hydra|xargs -n1 -P3 -I {} zfs destroy {}
+
+## Add extras.ubuntu.com public key
+sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 16126D3A3E5C1192 ## Oneric Pubkey
+
+## bwping test bandwidth
+val1=$(( 1*(10**6) )); /opt/tools/bwping/sbin/bwping -b $val1 -s1024 -v $(( $val1 *1000 )) -r5 server-lab6.homer.lab
+stampit() { dt=$(date "+%c"); inp="$@"; res=$(${inp}); printf "[%s] %s\n" "${dt}" "${res}"; return 0 }
+
+## Check if system is going to be paging
+printf "%s MB\n"  $(( ($(kstat -p unix:0:system_pages:freemem|awk '{print $NF}') - $(kstat -p unix:0:system_pages:lotsfree|awk '{print $NF}'))*4096/1048576))
+
+## 100% busy and 100% waiting disks from iostat log `iostat -DenrxzTd`
+grep c[[:digit:]] /path/to/iostat.log |awk 'BEGIN {FS=","} $9 == /100/ && $10 == /100/ {print $NF}'|sort -u
+
+
+## Socat test client <==> server
+socat -d -d -u TCP4-LISTEN:3333,reuseaddr,rcvbuf=,sndbuf=,fork /dev/null  <== server
+client socat -d -d -u /dev/zero TCP4:server:3333,rcvbuf=,sndbuf=  <== client
+
+## Adding static routes for ipmp
+route -p add -net 10.8.0.39 10.8.0.39 -static
+
+## Select a random numbered line from /etc/passwd
+for i in /etc/passwd; do len=$(wc -l $i|cut -d' ' -f1); sed -n -e "$[RANDOM%${len}+1],2 p" $i; done
+for i in /etc/passwd; do head -$((${RANDOM} % $(wc -l <$i) + 1)) $i|tail -1; done
+len=$(wc -l</etc/passwd); awk -v var=$len 'BEGIN{FS="\n"; srand(); num=int(rand() * var) } NR==num'</etc/passwd
+awk -v len=$(wc -l</etc/passwd) 'BEGIN{FS="\n"; srand(); num=int(rand() * len) } NR==num'</etc/passwd
