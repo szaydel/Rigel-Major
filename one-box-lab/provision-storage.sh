@@ -130,11 +130,12 @@ function cleanup_zfs_destination() {
 
 	local dataset_name="$1"
 	local snapshot_name="$2"
+	local snapshot_name_on_dest=${dataset_name}/${source_dataset_name}@${snapshot_name}
 
 	if [[ "${debug}" -gt "1" ]]; then
 
 		echo /usr/sbin/zfs list -t snapshot "${dataset_name}@${snapshot_name}"
-		echo /usr/sbin/zfs destroy -r "${dataset_name}/${source_dataset_name}@${snapshot_name}"
+		echo /usr/sbin/zfs destroy -r "${snapshot_name_on_dest}"
 		RET_CODE=0
 	
 	## If there is already a snapshot available at the destination, 
@@ -143,8 +144,6 @@ function cleanup_zfs_destination() {
 
 	else
 		[[ "${debug}" -gt "0" ]] && set -x
-
-		local snapshot_name_on_dest=${dataset_name}/${source_dataset_name}@${snapshot_name}
 
 		/usr/sbin/zfs list -t snapshot "${snapshot_name_on_dest}"
 
@@ -165,6 +164,16 @@ function cleanup_zfs_destination() {
 	return "${RET_CODE}"
 }
 
+# function cleanup_zfs_destination_on_restore() {
+
+# 	local dataset_name="$1"
+# 	local snapshot_name="$2"
+# 	local target_dataset_name=${source_from##*\/}
+
+# 	[[ "${debug}" -gt "0" ]] && set -x	
+
+# 	echo /usr/sbin/zfs destroy -r "${target_name}/${source_dataset_name}"
+# }
 
 function create_zfs_snapshot() {
 	##
@@ -302,7 +311,7 @@ function mount_zfs_after_restore() {
 
 		local dataset_to_share=$1
 
-		/usr/sbin/zfs set sharenfs="anon=-1,sec=sys,rw=*,root=*" "${dataset_to_share}"
+		/usr/sbin/zfs set sharenfs="anon=-1,sec=sys,rw=*,root=@10.0.0.0/8" "${dataset_to_share}"
 		RET_CODE=$?
 	}
 	
@@ -338,6 +347,7 @@ fi
 
 if [[ "${operation}" == "restore" ]]; then
 
+	#cleanup_zfs_destination "${target_to}" "${lab_name}"; RET_CODE=$?
 	restore_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
 	mount_zfs_after_restore "${target_to}"
 	exit $?
