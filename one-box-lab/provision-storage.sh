@@ -244,7 +244,6 @@ function send_zfs_snapshot() {
 
 # function check_if_dataset_exists_on_dest() {
 
-	
 # }
 
 function restore_zfs_snapshot() {
@@ -297,12 +296,27 @@ function restore_zfs_snapshot() {
 
 function mount_zfs_after_restore() {
 
-	# local snapshot_name_on_source=${dataset_name}/${source_dataset_name}@${snapshot_name}
+	## Enable NFS share on the dataset being restored
+	##
+	function enable_nfs_share() {
 
+		local dataset_to_share=$1
+
+		/usr/sbin/zfs set sharenfs="anon=-1,sec=sys,rw=*,root=*" "${dataset_to_share}"
+		RET_CODE=$?
+	}
+	
 	local target_name="$1"
 	local source_dataset_name=${source_from##*\/}
 
+	[[ "${debug}" -gt "0" ]] && set -x	
+
 	/usr/sbin/zfs mount "${target_name}/${source_dataset_name}"
+	enable_nfs_share "${target_name}/${source_dataset_name}"
+	
+	[[ "${debug}" -gt "0" ]] && set +x
+
+	return "${RET_CODE}"
 }
 
 
