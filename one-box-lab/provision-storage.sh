@@ -3,7 +3,7 @@
 ## Set some default variables here, likely will not use them all
 ## right now
 progname=$(basename $0)
-version=0.1.0
+version=0.1.2
 debug=1
 cannot_continue=""
 
@@ -43,7 +43,7 @@ while getopts "bd:rh?l:vs:t:T:" opt; do
             exit 0
         ;;
 
-        v)  verbose=1
+        v)  debug=1
         ;;
 
         l) ## Name of the lab environment, will be used as snapshot name
@@ -84,15 +84,26 @@ shift $((OPTIND-1))
 
 function destroy_dataset() {
 
+	## Given a single argument that looks like a dataset path
+	## we will destroy it.
+	##
 	local dataset_name=$1
 	
-	[[ "${debug}" -gt "0" ]] && set -x
+	if [[ "${debug}" -gt "1" ]]; then
 
-	printf "[INFO] %s\n" "Removing dataset ${dataset_name}"
-	/usr/sbin/zfs destroy -r "${dataset_name}"
-	RET_CODE=$?
+		echo /usr/sbin/zfs destroy -r "${dataset_name}"
+		RET_CODE=0
 
-	[[ "${debug}" -gt "0" ]] && set +x
+	else
+
+		[[ "${debug}" -gt "0" ]] && set -x
+
+		printf "[INFO] %s\n" "Removing dataset ${dataset_name}"
+		/usr/sbin/zfs destroy -r "${dataset_name}"
+		RET_CODE=$?
+
+		[[ "${debug}" -gt "0" ]] && set +x
+	fi
 
 	return "${RET_CODE}"
 }
@@ -111,7 +122,7 @@ function cleanup_zfs_destination() {
 	if [[ "${debug}" -gt "1" ]]; then
 
 		echo /usr/sbin/zfs list -t snapshot "${dataset_name}@${snapshot_name}"
-		echo /usr/sbin/zfs destroy -r "${snapshot_name_on_dest}"
+		echo destroy_dataset "${snapshot_name_on_dest}"
 		RET_CODE=0
 	
 	## If there is already a snapshot available at the destination, 
@@ -127,7 +138,8 @@ function cleanup_zfs_destination() {
 		
 			printf "[INFO] %s\n" "Snapshot ${snapshot_name_on_dest} exists, removing."
 
-			/usr/sbin/zfs destroy -r "${snapshot_name_on_dest}"
+			# /usr/sbin/zfs destroy -r "${snapshot_name_on_dest}"
+			destroy_dataset "${snapshot_name_on_dest}"
 			RET_CODE=$?
 		else
 			## There is nothing to do if snapshot on destination does not exist
@@ -365,20 +377,29 @@ fi
 
 if [[ "${operation}" == "backup" ]]; then
 
+	## Remove dataset on the destination, this is dangerous
+	##
 	cleanup_zfs_destination "${target_to}" "${lab_name}"; RET_CODE=$?
 
 	[[ "${RET_CODE}" -eq "1" ]] && (printf "[ERROR] %s\n" "Something happened during clean-up."; exit 1)
 
 	## Create snapshot on <poolname>/<datasetname>
+	##
 	create_zfs_snapshot "${source_from}" "${lab_name}"
 
 	## Send snapshot to another dataset for safe keeping
+	##
 	send_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
 	exit $?
 fi
 
 if [[ "${operation}" == "restore" ]]; then
 
+	## At the moment this is commented out, because destroy is a separate option,
+	## and not part of the whole restore operation. However, we probably want to
+	## make it part of the restore operation, to make it more fluid and require
+	## rewer steps from start to finish.
+	##
 	#cleanup_zfs_destination_on_restore "${target_to}" "${lab_name}"; RET_CODE=$?
 	restore_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
 	mount_zfs_after_restore "${target_to}"
