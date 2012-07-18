@@ -1,15 +1,14 @@
 #!/bin/bash
 
+## Set some default variables here, likely will not use them all
+## right now
 progname=$(basename $0)
-version='1.2'
+version=0.1.0
 debug=1
 cannot_continue=""
 
 ZFS_CMD=/usr/sbin/zfs
 
-#!/bin/sh
-
-# A POSIX variable
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
 # Initialize our own variables:
@@ -18,12 +17,12 @@ verbose=0
 
 function show_help () {
 	usage="Usage:
-	${progname} [-h] -s <pool/dataset> -t <pool/dataset> [-b -c  ] -- program to calculate the answer to life, the universe and everything
+	${progname} [-h] [-c -r -T <pool/dataset> ] -s <pool/dataset> -t <pool/dataset> -- program to calculate the answer to life, the universe and everything
 
 	where:
     	-h    Show this help text
     	-b    Perform a backup operation of dataset
-    	-c    Perform a restore operation from backup
+    	-r    Perform a restore operation from backup
     	-s    Source dataset from which we are cloning or backing-up
     	-t    Target dataset to which we are cloning or backing-up
     	-T    Test if lab environment already present, supply dataset name, i.e. poolname/dataset
@@ -32,7 +31,7 @@ function show_help () {
 	echo "${usage}" >&2
 }
 
-while getopts "bch?l:vs:t:T:" opt; do
+while getopts "brh?l:vs:t:T:" opt; do
 
     case "$opt" in
         h|\?)
@@ -51,8 +50,8 @@ while getopts "bch?l:vs:t:T:" opt; do
 			operation=backup
 		;;
 
-		c) ## Restore from archive
-			operation=clone
+		r) ## Restore from archive
+			operation=restore
 		;;
 
         s)	source_from="${OPTARG}"
@@ -243,6 +242,72 @@ function send_zfs_snapshot() {
 	return "${RET_CODE}"	
 }
 
+function check_if_dataset_exists_on_dest() {
+
+	
+}
+
+function restore_zfs_snapshot() {
+
+	function send_operation() {
+		/usr/sbin/zfs send -R "${source_pool_name}/${source_dataset_name}@${snapshot_name}" | zfs recv -Feuv "${target_name}"
+		return $?
+	}
+
+	local dataset_name="$1"
+	local snapshot_name="$2"
+	local target_name="$3"
+
+	if [[ "${debug}" -gt "1" ]]; then
+
+		echo "/usr/sbin/zfs send -r "${dataset_name}@${snapshot_name}" | zfs recv -Feuv "${target_name}" "
+	else
+		[[ "${debug}" -gt "0" ]] && set -x
+		
+		## We need to make sure that we successfully sent our snapshot
+		send_operation; recv_succeeded=$?
+		[[ "${debug}" -gt "0" ]] && set +x
+	fi
+
+	## If the Send operation was successful, we need to do the following:
+	## 1) List snapshot, to confirm that it was in fact created
+	## 2) Remove snapshot from the source
+
+	if [[ "${recv_succeeded}" -eq "0" ]]; then
+		RET_CODE=0
+	else
+		printf "[ERROR] %s\n" "Failure sending snapshot to ${target_name}"
+		RET_CODE=1
+	fi
+		
+		printf "%s\n" "Cleaning-up snapshot ${dataset_name}@${snapshot_name}"
+
+		# [[ "${debug}" -gt "0" ]] && set -x
+		# /usr/sbin/zfs destroy -r "${dataset_name}@${snapshot_name}"
+
+		## Do not enable below during testing. At some point we will want to
+		## remove the actual dataset on the source.
+		##
+		## /usr/sbin/zfs destroy -r "${dataset_name}"
+
+
+	[[ "${debug}" -gt "0" ]] && set +x
+	return "${RET_CODE}"	
+}
+
+function mount_zfs_after_restore() {
+
+	# local snapshot_name_on_source=${dataset_name}/${source_dataset_name}@${snapshot_name}
+
+	local target_name="$1"
+	local source_dataset_name=${source_from##*\/}
+
+	/usr/sbin/zfs mount "${target_name}/${source_dataset_name}"
+}
+
+
+## Main body of the script ##
+
 if [[ "${operation}" == "backup" ]]; then
 
 	cleanup_zfs_destination "${target_to}" "${lab_name}"; RET_CODE=$?
@@ -254,10 +319,13 @@ if [[ "${operation}" == "backup" ]]; then
 
 	## Send snapshot to another dataset for safe keeping
 	send_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
+	exit $?
 fi
 
 if [[ "${operation}" == "restore" ]]; then
 
-	send_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
+	restore_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
+	mount_zfs_after_restore "${target_to}"
+	exit $?
 fi
 
