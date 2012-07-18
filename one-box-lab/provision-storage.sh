@@ -242,10 +242,10 @@ function send_zfs_snapshot() {
 	return "${RET_CODE}"	
 }
 
-function check_if_dataset_exists_on_dest() {
+# function check_if_dataset_exists_on_dest() {
 
 	
-}
+# }
 
 function restore_zfs_snapshot() {
 
