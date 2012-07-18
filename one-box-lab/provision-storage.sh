@@ -17,11 +17,15 @@ verbose=0
 
 function show_help () {
 	usage="Usage:
-	${progname} [-h] [-c -r -T <pool/dataset> ] -s <pool/dataset> -t <pool/dataset> -- program to calculate the answer to life, the universe and everything
+	${progname} [-h] [-b -r] -s <pool/dataset> -t <pool/dataset> -- program to calculate the answer to life, the universe and everything
+		
+		[-T <pool/dataset>]
+		[-d <pool/dataset>]
 
 	where:
     	-h    Show this help text
     	-b    Perform a backup operation of dataset
+    	-d    Destroy a given dataset, i.e. poolname/dataset
     	-r    Perform a restore operation from backup
     	-s    Source dataset from which we are cloning or backing-up
     	-t    Target dataset to which we are cloning or backing-up
@@ -31,7 +35,7 @@ function show_help () {
 	echo "${usage}" >&2
 }
 
-while getopts "brh?l:vs:t:T:" opt; do
+while getopts "bd:rh?l:vs:t:T:" opt; do
 
     case "$opt" in
         h|\?)
@@ -48,6 +52,11 @@ while getopts "brh?l:vs:t:T:" opt; do
         
         b) ## Backup to archive
 			operation=backup
+		;;
+
+		d) ## Destroy a given dataset
+			operation=destroy
+			target_to="${OPTARG}"
 		;;
 
 		r) ## Restore from archive
@@ -73,53 +82,20 @@ shift $((OPTIND-1))
 
 [ "$1" = "--" ] && shift
 
-## echo "operation='${operation}' source_from='${source_from}' target_to='${target_to}' verbose=$verbose, output_file='$output_file', Leftovers: $@"
+function destroy_dataset() {
 
-
-## Quick sanity checks to make sure we have required elements
-##
-
-
-if [[ ! -z "${test_if_exist}" ]]; then
+	local dataset_name=$1
 	
-	if [[  $(zfs list -H -oname "${test_if_exist}" ) ]]; then
-		RET_CODE=0
-	else
-		RET_CODE=1
-	fi
-	
-	exit "${RET_CODE}"
-fi
+	[[ "${debug}" -gt "0" ]] && set -x
 
-if [[ -z "${source_from}" ]]; then 
-	printf "[ERROR] %s\n" "Source was not given; however, it is required!";
-	cannot_continue=1
-fi
+	printf "[INFO] %s\n" "Removing dataset ${dataset_name}"
+	/usr/sbin/zfs destroy -r "${dataset_name}"
+	RET_CODE=$?
 
+	[[ "${debug}" -gt "0" ]] && set +x
 
-if [[ -z "${target_to}" ]] ; then
-	printf "[ERROR] %s\n" "Target was not given; however, it is required!";
-	cannot_continue=1
-fi
-
-if [[ -z "${operation}" ]]; then
-	printf "[ERROR] %s\n" "Operation to perform not given; however, it is required!";
-	cannot_continue=1
-fi
-
-if [[ "${cannot_continue}" -eq "1" ]]; then
-	printf "%s\n" ""
-	show_help
-	exit 1
-fi
-
-## Set default lab name if one was not supplied
-##
-if [[ -z "${lab_name}" ]]; then
-	lab_name=latest
-fi
-
-## Backup Operation
+	return "${RET_CODE}"
+}
 
 function cleanup_zfs_destination() {
 	##
@@ -164,16 +140,29 @@ function cleanup_zfs_destination() {
 	return "${RET_CODE}"
 }
 
-# function cleanup_zfs_destination_on_restore() {
+function cleanup_zfs_destination_on_restore() {
 
-# 	local dataset_name="$1"
-# 	local snapshot_name="$2"
-# 	local target_dataset_name=${source_from##*\/}
+	## This function will form a dataset path which we need to destroy
+	## before we can do a restore from archive.
+	##
+	local dataset_name="$1"
+	local snapshot_name="$2"
+	local target_dataset_name=${source_from##*\/}
+	local target_to_destroy=${dataset_name}/${target_dataset_name}
 
-# 	[[ "${debug}" -gt "0" ]] && set -x	
+	[[ "${debug}" -gt "0" ]] && set -x
 
-# 	echo /usr/sbin/zfs destroy -r "${target_name}/${source_dataset_name}"
-# }
+	if [[ $(/usr/sbin/zfs list -t snapshot "${target_to_destroy}@${snapshot_name}") ]]; then
+
+		printf "[INFO] %s\n" "Destination ${target_to_destroy} is being destroyed"
+		/usr/sbin/zfs destroy -r "${target_to_destroy}"
+	
+	fi
+
+	[[ "${debug}" -gt "0" ]] && set -x	
+
+	return "${RET_CODE}"
+}
 
 function create_zfs_snapshot() {
 	##
@@ -251,10 +240,6 @@ function send_zfs_snapshot() {
 	return "${RET_CODE}"	
 }
 
-# function check_if_dataset_exists_on_dest() {
-
-# }
-
 function restore_zfs_snapshot() {
 
 	function send_operation() {
@@ -327,6 +312,53 @@ function mount_zfs_after_restore() {
 
 	return "${RET_CODE}"
 }
+## Quick sanity checks to make sure we have required elements
+##
+
+
+if [[ ! -z "${test_if_exist}" ]]; then
+	
+	if [[  $(zfs list -H -oname "${test_if_exist}" ) ]]; then
+		RET_CODE=0
+	else
+		RET_CODE=1
+	fi
+	
+	exit "${RET_CODE}"
+fi
+
+if [[ "${operation}" == "destroy" ]]; then
+
+	destroy_dataset "${target_to}"; RET_CODE=$?
+	exit "${RET_CODE}"
+fi
+
+if [[ -z "${source_from}" ]]; then 
+	printf "[ERROR] %s\n" "Source was not given; however, it is required!";
+	cannot_continue=1
+fi
+
+if [[ -z "${target_to}" ]] ; then
+	printf "[ERROR] %s\n" "Target was not given; however, it is required!";
+	cannot_continue=1
+fi
+
+if [[ -z "${operation}" ]]; then
+	printf "[ERROR] %s\n" "Operation to perform not given; however, it is required!";
+	cannot_continue=1
+fi
+
+if [[ "${cannot_continue}" -eq "1" ]]; then
+	printf "%s\n" ""
+	show_help
+	exit 1
+fi
+
+## Set default lab name if one was not supplied
+##
+if [[ -z "${lab_name}" ]]; then
+	lab_name=latest
+fi
 
 
 ## Main body of the script ##
@@ -347,7 +379,7 @@ fi
 
 if [[ "${operation}" == "restore" ]]; then
 
-	#cleanup_zfs_destination "${target_to}" "${lab_name}"; RET_CODE=$?
+	#cleanup_zfs_destination_on_restore "${target_to}" "${lab_name}"; RET_CODE=$?
 	restore_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
 	mount_zfs_after_restore "${target_to}"
 	exit $?
