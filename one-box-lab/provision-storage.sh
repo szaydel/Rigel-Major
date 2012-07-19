@@ -1,26 +1,40 @@
 #!/bin/bash
+#
+# Copyright 2012 Sam Zaydel - RackTop Systems
 
-## Set some default variables here, likely will not use them all
-## right now
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
 progname=$(basename $0)
-version=0.1.2
-debug=1
+version=0.1.9
+debug=0
 cannot_continue=""
+verbose=0
 
+TR_CMD=/usr/bin/tr
 ZFS_CMD=/usr/sbin/zfs
-
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
-# Initialize our own variables:
-output_file=""
-verbose=0
 
 function show_help () {
 	usage="Usage:
-	${progname} [-h] [-b -r] -s <pool/dataset> -t <pool/dataset> -- program to calculate the answer to life, the universe and everything
-		
-		[-T <pool/dataset>]
-		[-d <pool/dataset>]
+	${progname} [-h] [-b -r] -s <pool/dataset> -t <pool/dataset> -- Save and Restore ZFS datasets
+	Version: ${version}
+
+	[-d <pool/dataset>]
+	[-T <pool/dataset>]
+	[-b -s <pool/dataset> -t <pool/dataset>]
+	[-r -s <pool/dataset> -t <pool/dataset>]
 
 	where:
     	-h    Show this help text
@@ -82,6 +96,20 @@ shift $((OPTIND-1))
 
 [ "$1" = "--" ] && shift
 
+################################################################################
+### Step 1a : Build Functions called later throughout the script ###############
+################################################################################
+linesep ()
+{
+## Print a line separator 80-characters long
+printf "%80s\n" | ${TR_CMD} ' ' '.'
+}
+
+newline ()
+{
+printf "%s\n"
+}
+
 function destroy_dataset() {
 
 	## Given a single argument that looks like a dataset path
@@ -95,7 +123,6 @@ function destroy_dataset() {
 		RET_CODE=0
 
 	else
-
 		[[ "${debug}" -gt "0" ]] && set -x
 
 		printf "[INFO] %s\n" "Removing dataset ${dataset_name}"
@@ -117,12 +144,12 @@ function cleanup_zfs_destination() {
 
 	local dataset_name="$1"
 	local snapshot_name="$2"
-	local snapshot_name_on_dest=${dataset_name}/${source_dataset_name}@${snapshot_name}
+	local full_path=${dataset_name}/${source_dataset_name}@${snapshot_name}
 
 	if [[ "${debug}" -gt "1" ]]; then
 
 		echo /usr/sbin/zfs list -t snapshot "${dataset_name}@${snapshot_name}"
-		echo destroy_dataset "${snapshot_name_on_dest}"
+		echo destroy_dataset "${full_path}"
 		RET_CODE=0
 	
 	## If there is already a snapshot available at the destination, 
@@ -132,20 +159,22 @@ function cleanup_zfs_destination() {
 	else
 		[[ "${debug}" -gt "0" ]] && set -x
 
-		/usr/sbin/zfs list -t snapshot "${snapshot_name_on_dest}"
+		/usr/sbin/zfs list -t snapshot "${full_path}"
 
-		if [[ $(/usr/sbin/zfs list -t snapshot "${snapshot_name_on_dest}") ]]; then
+		if [[ $(/usr/sbin/zfs list -t snapshot "${full_path}") ]]; then
 		
-			printf "[INFO] %s\n" "Snapshot ${snapshot_name_on_dest} exists, removing."
+			printf "[INFO] %s\n" "Snapshot ${full_path} exists, removing."
 
 			# /usr/sbin/zfs destroy -r "${snapshot_name_on_dest}"
-			destroy_dataset "${snapshot_name_on_dest}"
+			linesep
+			destroy_dataset "${full_path}"
+			destroy_dataset "${dataset_name}/${source_dataset_name}"
+			linesep
 			RET_CODE=$?
 		else
 			## There is nothing to do if snapshot on destination does not exist
 			RET_CODE=0
 		fi
-
 	fi
 
 	[[ "${debug}" -gt "0" ]] && set +x
@@ -167,11 +196,12 @@ function cleanup_zfs_destination_on_restore() {
 	if [[ $(/usr/sbin/zfs list -t snapshot "${target_to_destroy}@${snapshot_name}") ]]; then
 
 		printf "[INFO] %s\n" "Destination ${target_to_destroy} is being destroyed"
+		linesep
 		/usr/sbin/zfs destroy -r "${target_to_destroy}"
-	
+		linesep
 	fi
 
-	[[ "${debug}" -gt "0" ]] && set -x	
+	[[ "${debug}" -gt "0" ]] && set +x	
 
 	return "${RET_CODE}"
 }
@@ -201,76 +231,98 @@ function create_zfs_snapshot() {
 	fi
 
 	[[ "${debug}" -gt "0" ]] && set +x
-	return $?
+	return "${RET_CODE}"
 }
 
 function send_zfs_snapshot() {
 
-	function send_operation() {
-		/usr/sbin/zfs send -R "${dataset_name}@${snapshot_name}" | zfs recv -Fduv "${target_name}"
-		return $?
-	}
-
 	local dataset_name="$1"
 	local snapshot_name="$2"
 	local target_name="$3"
+	local full_path=${dataset_name}@${snapshot_name}
+
+	function send_operation() {
+
+		## Function used to replicate dataset between source and target.
+		## No arguments are are required by this function
+		##
+		linesep
+		/usr/sbin/zfs send -R "${full_path}" | zfs recv -Fduv "${target_name}"
+		linesep
+		return $?
+	}
 
 	if [[ "${debug}" -gt "1" ]]; then
 
-		echo "/usr/sbin/zfs send -r "${dataset_name}@${snapshot_name}" | zfs recv -Fduv "${target_name}" "
+		echo "/usr/sbin/zfs send -r "${full_path}" | zfs recv -Fduv "${target_name}" "
+
 	else
 		[[ "${debug}" -gt "0" ]] && set -x
 		
 		## We need to make sure that we successfully sent our snapshot
+		## If the Send operation was successful, we need to do the following:
+		## 1) List snapshot, to confirm that it was in fact created
+		## 2) Remove snapshot from the source
+		##
 		send_operation; recv_succeeded=$?
+
+		if [[ "${recv_succeeded}" -eq "0" ]]; then
+
+			linesep
+			printf "[INFO] %s\n" "Removing dataset ${full_path}"
+			/usr/sbin/zfs destroy -r "${full_path}"
+			linesep
+			RET_CODE=0
+		else
+			linesep
+			printf "[ERROR] %s\n" "Failed sending snapshot to ${target_name}, leaving snapshot untouched."
+			linesep
+
+			RET_CODE=1
+		fi
+
 		[[ "${debug}" -gt "0" ]] && set +x
 	fi
-
-	## If the Send operation was successful, we need to do the following:
-	## 1) List snapshot, to confirm that it was in fact created
-	## 2) Remove snapshot from the source
-
-	if [[ "${recv_succeeded}" -eq "0" ]]; then
-		RET_CODE=0
-	else
-		printf "[ERROR] %s\n" "Failure sending snapshot to ${target_name}"
-		RET_CODE=1
-	fi
-		
-		printf "%s\n" "Cleaning-up snapshot ${dataset_name}@${snapshot_name}"
-
-		[[ "${debug}" -gt "0" ]] && set -x
-		/usr/sbin/zfs destroy -r "${dataset_name}@${snapshot_name}"
 
 		## Do not enable below during testing. At some point we will want to
 		## remove the actual dataset on the source.
 		##
 		## /usr/sbin/zfs destroy -r "${dataset_name}"
 
-
-	[[ "${debug}" -gt "0" ]] && set +x
 	return "${RET_CODE}"	
 }
 
 function restore_zfs_snapshot() {
 
-	function send_operation() {
-		/usr/sbin/zfs send -R "${source_pool_name}/${source_dataset_name}@${snapshot_name}" | zfs recv -Feuv "${target_name}"
-		return $?
-	}
-
 	local dataset_name="$1"
 	local snapshot_name="$2"
 	local target_name="$3"
+	local full_path=${source_pool_name}/${source_dataset_name}@${snapshot_name}
+
+	function send_operation() {
+		/usr/sbin/zfs send -R "${full_path}" | zfs recv -Feuv "${target_name}"
+		return $?
+	}
+
 
 	if [[ "${debug}" -gt "1" ]]; then
 
-		echo "/usr/sbin/zfs send -r "${dataset_name}@${snapshot_name}" | zfs recv -Feuv "${target_name}" "
+		echo "/usr/sbin/zfs send -r "${full_path}" | zfs recv -Feuv "${target_name}" "
+	
 	else
 		[[ "${debug}" -gt "0" ]] && set -x
 		
 		## We need to make sure that we successfully sent our snapshot
+		printf "[INFO] %s\n" "Sending snapshot ${full_path} to ${target_name}"
 		send_operation; recv_succeeded=$?
+
+		if [[ "${recv_succeeded}" -eq "0" ]]; then
+			RET_CODE=0
+		else
+			printf "[ERROR] %s\n" "Failure sending snapshot to ${target_name}"
+			RET_CODE=1
+		fi
+
 		[[ "${debug}" -gt "0" ]] && set +x
 	fi
 
@@ -278,25 +330,6 @@ function restore_zfs_snapshot() {
 	## 1) List snapshot, to confirm that it was in fact created
 	## 2) Remove snapshot from the source
 
-	if [[ "${recv_succeeded}" -eq "0" ]]; then
-		RET_CODE=0
-	else
-		printf "[ERROR] %s\n" "Failure sending snapshot to ${target_name}"
-		RET_CODE=1
-	fi
-		
-		printf "%s\n" "Cleaning-up snapshot ${dataset_name}@${snapshot_name}"
-
-		# [[ "${debug}" -gt "0" ]] && set -x
-		# /usr/sbin/zfs destroy -r "${dataset_name}@${snapshot_name}"
-
-		## Do not enable below during testing. At some point we will want to
-		## remove the actual dataset on the source.
-		##
-		## /usr/sbin/zfs destroy -r "${dataset_name}"
-
-
-	[[ "${debug}" -gt "0" ]] && set +x
 	return "${RET_CODE}"	
 }
 
@@ -372,8 +405,9 @@ if [[ -z "${lab_name}" ]]; then
 	lab_name=latest
 fi
 
-
-## Main body of the script ##
+################################################################################
+### Step 2 : Begin Main body of the script #####################################
+################################################################################
 
 if [[ "${operation}" == "backup" ]]; then
 
@@ -385,7 +419,7 @@ if [[ "${operation}" == "backup" ]]; then
 
 	## Create snapshot on <poolname>/<datasetname>
 	##
-	create_zfs_snapshot "${source_from}" "${lab_name}"
+	create_zfs_snapshot "${source_from}" "${lab_name}" || exit 1
 
 	## Send snapshot to another dataset for safe keeping
 	##
@@ -401,8 +435,7 @@ if [[ "${operation}" == "restore" ]]; then
 	## rewer steps from start to finish.
 	##
 	#cleanup_zfs_destination_on_restore "${target_to}" "${lab_name}"; RET_CODE=$?
-	restore_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}"
+	restore_zfs_snapshot "${source_from}" "${lab_name}" "${target_to}" || exit 1
 	mount_zfs_after_restore "${target_to}"
 	exit $?
 fi
-
