@@ -119,14 +119,14 @@ function destroy_dataset() {
 	
 	if [[ "${debug}" -gt "1" ]]; then
 
-		echo /usr/sbin/zfs destroy -r "${dataset_name}"
+		echo /usr/sbin/zfs destroy -Rr "${dataset_name}"
 		RET_CODE=0
 
 	else
 		[[ "${debug}" -gt "0" ]] && set -x
 
 		printf "[INFO] %s\n" "Removing dataset ${dataset_name}"
-		/usr/sbin/zfs destroy -r "${dataset_name}"
+		/usr/sbin/zfs destroy -Rr "${dataset_name}"
 		RET_CODE=$?
 
 		[[ "${debug}" -gt "0" ]] && set +x
@@ -357,10 +357,13 @@ function mount_zfs_after_restore() {
 
 	return "${RET_CODE}"
 }
+
+################################################################################
+### Step 2 : Begin Main body of the script #####################################
+################################################################################
+
 ## Quick sanity checks to make sure we have required elements
 ##
-
-
 if [[ ! -z "${test_if_exist}" ]]; then
 	
 	if [[  $(zfs list -H -oname "${test_if_exist}" ) ]]; then
@@ -372,6 +375,8 @@ if [[ ! -z "${test_if_exist}" ]]; then
 	exit "${RET_CODE}"
 fi
 
+## We destroy dataset provided as an argument to `-d`.
+##
 if [[ "${operation}" == "destroy" ]]; then
 
 	destroy_dataset "${target_to}"; RET_CODE=$?
@@ -404,10 +409,6 @@ fi
 if [[ -z "${lab_name}" ]]; then
 	lab_name=latest
 fi
-
-################################################################################
-### Step 2 : Begin Main body of the script #####################################
-################################################################################
 
 if [[ "${operation}" == "backup" ]]; then
 
