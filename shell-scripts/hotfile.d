@@ -7,6 +7,7 @@ dtrace:::BEGIN
 	printf("Tracing... Hit Ctrl-C to end.\n");
 	line = "-----------";
 	x = 0;
+	hotcount = 10;
 }
 
 nfsv3:::op-read-start,
@@ -23,7 +24,7 @@ io:::start
 
 {
 	this->bytes = args[0]->b_bcount;
-	@bytesize[args[2]->fi_pathname,pid, curpsinfo->pr_psargs] = quantize(this->bytes);
+	/* @bytesize[args[2]->fi_pathname,pid, curpsinfo->pr_psargs] = quantize(this->bytes); */
 	@totalb[args[0]->b_flags & B_READ ? "[READ]" : "[WRITE]", args[2]->fi_pathname] = sum(this->bytes);
 }
 
@@ -46,17 +47,21 @@ nfsv3:::op-write-done
 
 nfsv3:::op-read-done
 {
-        @nfsreads["NFS Read IOPs",args[0]->ci_remote] = count();
-        /* Collect sum of bytes for each client IP address */
-        @nfsreadbytes[args[0]->ci_remote, "[READ]"] = sum(args[2]->res_u.ok.data.data_len);
+	this->bytes = args[2]->res_u.ok.data.data_len;
+	@nfsopsbypath["[READ]", this->filepath] = count();
+    /* Collect sum of bytes for each client IP address */
+    @nfsreadbytes[args[0]->ci_remote, "[READ]"] = sum(this->bytes);
+    @busyfiles["[READ]", this->filepath] = sum(this->bytes);
 }
 
 
 nfsv3:::op-write-done
-{
-        @nfswrites["NFS Write IOPs",args[0]->ci_remote] = count();
-        /* Collect sum of bytes for each client IP address */
-        @nfswritebytes[args[0]->ci_remote, "[WRITE]"] = sum(args[2]->res_u.ok.count);
+{	
+	this->bytes = args[2]->res_u.ok.count;
+	@nfsopsbypath["[WRITE]", this->filepath] = count();
+	/* Collect sum of bytes for each client IP address */
+	@nfswritebytes[args[0]->ci_remote, "[WRITE]"] = sum(this->bytes);
+	@busyfiles["[WRITE]", this->filepath] = sum(this->bytes);
 }
 
 tick-1sec
@@ -70,7 +75,6 @@ tick-1sec
 	/* printa("%s %d %@d\n", @bytesize); */
 	printa(@nfs_rwtime);
 	trunc(@nfs_rwtime); trunc(@rwlatency);
-	trunc(@nfsreads); trunc(@nfswrites);
 	trunc(@nfsreadbytes); trunc(@nfswritebytes);
 	trunc(@totalb);
 	x = 0;
@@ -78,9 +82,19 @@ tick-1sec
 
 dtrace:::END
 {
-	trunc(@bytesize,5);
+	/* trunc(@bytesize,5);
 	trunc(@totalb,5);
 	printf("\n%-60s  %-8s %s\n", "Pathname", "PID", "CMD");
 	printa("%-60s %-8d %S\n%@d\n", @bytesize);
-	printa("----------\nPath: %s\nBytes Total: %@d\n----------\n",@totalb);
+	printa("----------\nPath: %s\nBytes Total: %@d\n----------\n",@totalb); */
+	/* Summarize total operations and number of bytes read and written
+	for each file, organized by path, and trimmed to number of files 
+	equal to value of hotcount var. */
+    printf("%s\n\n","---------------------- NFSv3 Read/Write top files Summary ----------------------");
+    trunc(@busyfiles, hotcount);
+    trunc(@nfsopsbypath, hotcount);
+
+    printa("%s Path: %s %@d bytes, Operations: %@d\n", @busyfiles,@nfsopsbypath);
+    /* normalize(@file, 1000);
+    printa(@file); */
 }
