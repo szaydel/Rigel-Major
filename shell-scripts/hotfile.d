@@ -14,6 +14,7 @@ nfsv3:::op-read-start,
 nfsv3:::op-write-start
 
 {
+	this->filepath = args[1]->noi_curpath;
     start[args[1]->noi_xid] = timestamp;
     active_nfs = 1;
     x = 1;
@@ -34,7 +35,7 @@ nfsv3:::op-write-done
 
 {
     this->elapsed = timestamp - start[args[1]->noi_xid];
-    this->filepath = args[1]->noi_curpath;
+    /* this->filepath = args[1]->noi_curpath; */
     @nfs_rwtime[this->filepath, probename == "op-read-done" ? "Read time(us)" : "Write time(us)"] =
         quantize(this->elapsed / 1000);
     /* @host[args[0]->ci_remote] = sum(this->elapsed); */
@@ -67,16 +68,13 @@ nfsv3:::op-write-done
 tick-1sec
 / x != 0 /
 {
-	/* printa(@nfsreads); printa(@nfswrites); */
 	printa("Client IP: %-16s NFS I/O: %-8s %@d bytes\n", @nfsreadbytes); 
 	printa("Client IP: %-16s NFS I/O: %-8s %@d bytes\n", @nfswritebytes);
 	printa("                            Physical I/O: %s %@d bytes\n", @totalb);
-	normalize(@rwlatency,1000000); printa("Client IP: %-16s Path: %s\n%s (ms) %@d\n", @rwlatency);
-	/* printa("%s %d %@d\n", @bytesize); */
-	printa(@nfs_rwtime);
+	normalize(@rwlatency,1000000); trunc(@rwlatency,5); trunc(@nfs_rwtime,5);
+	printa("Client IP: %-16s Path: %s\n%s (ms) %@d\n", @rwlatency); printa(@nfs_rwtime);
 	trunc(@nfs_rwtime); trunc(@rwlatency);
-	trunc(@nfsreadbytes); trunc(@nfswritebytes);
-	trunc(@totalb);
+	trunc(@nfsreadbytes); trunc(@nfswritebytes); trunc(@totalb);
 	x = 0;
 }
 

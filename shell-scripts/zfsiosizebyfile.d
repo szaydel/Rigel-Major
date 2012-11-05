@@ -12,9 +12,11 @@ all datasets are mounted, we would expect to see /volumes/poolname...
 
 dtrace:::BEGIN
 {
-	printf("%-12s %40s\n", "OP SIZE", "PATH");
+	/* printf("%-12s %40s\n", "OP SIZE", "PATH"); */
 	printf("Tracing... Hit Ctrl-C to end.\n");
 	path = $1;
+	read = 0;
+	write = 0;
 
 }
 
@@ -24,8 +26,10 @@ fbt::zfs_read:entry
 /* Match first parameter on command line, 
 expecting partial path, like /volumes/poolname */
 
-/ strstr(stringof(args[0]->v_path), path) != NULL /
+/* If we cannot extract path information, we ignore. */
+/args[0]->v_path != NULL && strstr(stringof(args[0]->v_path), path) != NULL/
 {
+	read = 1;
 	self->path = args[0]->v_path;
 	self->bytes = args[1]->uio_resid;
 
@@ -36,8 +40,10 @@ fbt::zfs_write:entry
 /* Match first parameter on command line, 
 expecting partial path, like /volumes/poolname */
 
-/ strstr(stringof(args[0]->v_path), path) != NULL /
+/* If we cannot extract path information, we ignore. */
+/args[0]->v_path != NULL && strstr(stringof(args[0]->v_path), path) != NULL/
 {
+	write = 1;
 	self->path = args[0]->v_path;
 	self->bytes = args[1]->uio_resid;
 
@@ -46,10 +52,13 @@ expecting partial path, like /volumes/poolname */
 }
 
 dtrace:::END
+/read > 0/
 {
-	printa(@rbytes);
-	clear(@rbytes);
+	printa("%-16s Path: %s %@d\n", @rbytes);
+}
 
-	printa(@wbytes);
-	clear(@wbytes);
+dtrace:::END
+/write > 0/
+{
+	printa("%-16s Path: %s %@d\n", @wbytes);
 }

@@ -62,32 +62,32 @@ io:::start {
         start_time[arg0] = timestamp;
         fire = 1;
 }
-io:::done / (args[0]->b_flags & B_READ) && (self->start = start_time[arg0]) / {
-        self->delta = (timestamp - self->start) / 1000;
+io:::done / (args[0]->b_flags & B_READ) && (this->start = start_time[arg0]) / {
+        this->delta = (timestamp - this->start) / 1000;
         @plots["Read I/O, us",
         execname,
         args[1]->dev_statname,
         args[1]->dev_pathname,
         args[1]->dev_major,
-        args[1]->dev_minor] = quantize(self->delta);
-        @avgs["Avg Read I/O, us"] = avg(self->delta);
+        args[1]->dev_minor] = quantize(this->delta);
+        @avgs["Avg Read I/O, us"] = avg(this->delta);
         @avgbytes["Avg Read bytes"] = avg(args[0]->b_bcount);
-        @perio_t["Avg Read bytes/us"] = avg(args[0]->b_bcount / self->delta);
+        @perio_t["Avg Read bytes/us"] = avg(args[0]->b_bcount / this->delta);
         start_time[arg0] = 0;
 }
 
-io:::done / !(args[0]->b_flags & B_READ) && (self->start = start_time[arg0]) / {
-        self->delta = (timestamp - self->start) / 1000;
+io:::done / !(args[0]->b_flags & B_READ) && (this->start = start_time[arg0]) / {
+        this->delta = (timestamp - this->start) / 1000;
         @plots["Write I/O, us",
         execname,
         args[1]->dev_statname,
         args[1]->dev_pathname,
         args[1]->dev_major,
-        args[1]->dev_minor] = quantize(self->delta);
-        @avgs["Avg Write I/O, us"] = avg(self->delta);
+        args[1]->dev_minor] = quantize(this->delta);
+        @avgs["Avg Write I/O, us"] = avg(this->delta);
         @avgbytes["Avg Write bytes"] = avg(args[0]->b_bcount);
         /* self->w_lat = args[0]->b_bcount / self->delta; */
-        @perio_t["Avg Write bytes/us"] = avg(args[0]->b_bcount / self->delta);
+        @perio_t["Avg Write bytes/us"] = avg(args[0]->b_bcount / this->delta);
         start_time[arg0] = 0;
 }
 
