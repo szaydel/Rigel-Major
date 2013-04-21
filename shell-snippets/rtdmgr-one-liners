@@ -1,0 +1,24 @@
+## Get detailed information about each SAS device on system, 
+## including various error counts for each device.
+rtdmgr -sas
+
+## Finds controllers, and enclosures. Gives JBOD mapping and details about 
+## each enclosure, including space separated contents of each enclosure for
+## each path.
+rtdmgr -zdx
+
+## Generate map file, needed once only and then return detailed info
+## about the enclosure(s), including an ASCII representation of the slot
+## mapping.
+rtdmgr -EM; rtdmgr -E+
+
+## A lot of details about individual disks that we can query for various
+## data, such as various mode pages, various supported characteristics, etc.
+rtdmgr -I /dev/rdsk/c0t5E83A97E5D28A601d0 
+rtdmgr -J /dev/rdsk/c0t5E83A97E5D28A601d0
+
+## A lot of error information for individual devices
+rtdmgr -C /dev/rdsk/c0t5000CCA01C1D7EF4d0
+
+## Get only list of enclosures with serial number and model, nothing else.
+rtdmgr -F 0 /dev/es/ses*

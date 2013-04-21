@@ -1,0 +1,23 @@
+A=owner@:full_set:d:allow,owner@:full_set:f:allow,group@:read_set:d:allow,group@:read_set:f:allow
+A=owner@:modify_set:d:allow,owner@:modify_set:f:allow,group@:read_set:d:allow,group@:read_set:f:allow
+A=user:labusr_d:modify_set:d:allow,user:labusr_d:modify_set:f:allow,
+
+-R A=user:labusr_a:full_set:d:allow,owner@:full_set:f:allow,group@:read_set:d:allow,group@:read_set:f:allow
+
+-R A=everyone@:list_directory/read_data/read_xattr/execute/r
+-R A+everyone@:add_file/write_data/add_subdirectory/append_d
+
+ -Rf A-group:_forrest-iliad_Primary_Users:list_directory/read_data/read_xattr/execute/read_attributes/read_acl/synchronize/inherited:file_inherit/dir_inherit:allow /volumes/lab16_pool_a/cifs/homes/eng
+
+
+/usr/sun/bin/chmod -R A=everyone@:list_directory/read_data/read_xattr/execute/read_attributes/read_acl/synchronize:allow /volumes/lab16_pool_a/cifs/homes/eng/labusr_a
+
+/usr/sun/bin/chmod -R A+everyone@:add_file/write_data/add_subdirectory/append_data/write_xattr/write_attributes/write_acl/write_owner:deny /volumes/lab16_pool_a/cifs/homes/eng/labusr_a
+
+/usr/sun/bin/chmod -R A+group@:list_directory/read_data/execute:allow /volumes/lab16_pool_a/cifs/homes/eng/labusr_a
+
+/usr/sun/bin/chmod -R A+group@:add_file/write_data/add_subdirectory/append_data:deny /volumes/lab16_pool_a/cifs/homes/eng/labusr_a
+
+/usr/sun/bin/chmod -R A+owner@:list_directory/read_data/add_file/write_data/add_subdirectory/append_data/write_xattr/execute/write_attributes/write_acl/write_owner/synchronize:allow /volumes/lab16_pool_a/cifs/homes/eng/labusr_a
+
+/usr/sun/bin/chmod -R A+owner@::deny /volumes/lab16_pool_a/cifs/homes/eng/labusr_a

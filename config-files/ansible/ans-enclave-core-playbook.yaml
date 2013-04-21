@@ -1,0 +1,58 @@
+---
+- hosts: enclave-vlan0017
+  vars:
+      subnet: '10.1.17.0'
+      #maskedbits: 24
+      defaultrouter: '10.1.17.254'
+      config_dest_dir: '/config'
+      config_original: '$config_dest_dir/config.boot'
+      config_bkup: '$config_dest_dir/config.boot'
+      config_template: 'config.enclave.j2'
+      template_dir: '~/playbooks/templates'
+      vyatta_templ_dir: '$template_dir/vyatta'
+      vyatta_template: '$vyatta_templ_dir/encl-core-config.j2'
+      files_dir: '~/playbooks/files'
+      vyatta_files_dir: '$files_dir/vyatta'
+      vyatta_load_script: '$vyatta_files_dir/vy-load-config.sh'
+      
+  user: rtconf
+  sudo: yes
+  tasks:
+    # - name: true if firewall
+    #   action: shell /bin/true
+    #   when_string: $isfirewall == 'True'
+    - name: false if not firewall
+      action: shell /bin/false
+      when_string: $isfirewall != 'True'
+
+    # - name: write the motd
+    #  action: template src=~/playbooks/templates/motd.j2 dest=/etc/motd
+    - name: deploy vyatta config from template
+      ## We create a new config file, which will be active until system is shutdown and restarted.
+      ## After restart correct config will need to be activated again.
+      action: template src=$vyatta_template dest=$config_dest_dir/config.running owner=root group=vyattacfg mode=0775
+      when_string: $isfirewall == 'True'
+
+    - name: stage vyatta remote cli script
+      action: copy src=$vyatta_load_script dest=$config_dest_dir/vy_do_api owner=vyatta group=vyattacfg mode=0744
+      when_string: $isfirewall == 'True'
+
+    - name: store timestamp
+      action: command date +"%Y%m%d_%s"
+      register: timestamp
+
+    # - name: create backup of original config.boot
+    #   action: command /bin/mv $config_original $config_bkup.${timestamp.stdout}
+    #   when_string: $isfirewall == 'True'
+
+    # - name: create link for config.boot
+    #   action: file src=$config_dest_dir/config.rtconf dest=$config_original owner=vyatta group=vyattacfg state=link
+    #   when_string: $isfirewall == 'True'
+
+    - name: replace running config
+      # action: command '/bin/true'
+      ## This will apply latest config to the system, but will be in memory only,
+      ## on next boot default config will load.
+      action: command $config_dest_dir/vy_do_api $config_dest_dir/config.running
+      when_string: $isfirewall == 'True'
+    

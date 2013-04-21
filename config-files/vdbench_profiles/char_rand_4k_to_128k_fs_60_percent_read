@@ -1,0 +1,49 @@
+# 
+# Configuration file borrows a little bit from Richard Elling's original
+# vdbench characterization profiles. This particular profile will run read and write
+# tests with scaling recordsize from 4K to 128K, but a split of 60% read to 40% write
+# at 32 threads.
+#
+# Filesystem characterization using sliding 4KB to 128K recordsize random I/O for vdbench
+#
+# Note: file storage definition (fsd) set elsewhere
+#
+# Company:		   RackTop Systems
+# Author:          Sam Zaydel
+# Version:         1.0.5
+# Date:            07/11/2012
+# Name:			   char_rand_4k_to_128k_fs_60_percent_read
+
+# File Workload Definitions (fwd)
+## Ignore these, left as a reference. Current File Workload definition mixes reads and writes
+## on each file, as opposed to a separate read and write runs.
+##
+# // => fwd=fwd1,fsd=fsd*,operation=read,fileio=random,fileselect=random,stopafter=1000
+# // => fwd=fwd2,fsd=fsd*,operation=write,fileio=random,fileselect=random,stopafter=1000
+
+## Uncomment first fwd line below, and comment line after it to disable synchronous 
+## sementics imposed by the openflags=o_sync option
+
+# // => With this `fwd` a dedicated ZIL device will not see much, if any use.
+# fwd=fwd_W,fsd=fsd*,rdpct=60,fileio=random,fileselect=random,stopafter=100,xfersize=4k
+
+# // => If ZIL device, such as ZeusRAM is present, use this `fwd` to heavily leverage the ZIL
+fwd=fwd_W,fsd=fsd*,rdpct=60,fileio=random,fileselect=random,stopafter=100,xfersize=4k,openflags=o_sync
+
+
+# Run Definitions (rd)
+
+## Run Definition with following settings:
+##
+# => 4k Recordsize, sliding to 128K
+# => Unlimited rate of I/O
+# => Mixed Read/Write operation
+# => Data structure is created during start of run
+# => Each run will last 240 seconds (4min)
+# => Threads set to 32 for all runs
+# => Percentage of reads to writes is set to 60/40% split
+
+## Format dataset first, before running test, but do not re-format if files are already there. 
+# IMPORTANT: Export pool after each test to clear ARC.
+rd=rd_format_dataset,fwd=fwd_W,fwdrate=max,format=(restart,only)
+rd=rd_randR_4k_32thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=240,interval=1,threads=32,forxfersize=(4k,8k,16k,32k,64k,128k)

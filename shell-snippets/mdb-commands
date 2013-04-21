@@ -7,8 +7,153 @@
 ffffff0159c19a88::ps
 ::ptree
 
+## Walk cpu structure examples
+>> ::walk cpu|::print struct cpu
+>> ::walk cpu|::print -ta struct kstat
+
 ## Stack for all threads
 ::walk thread|::findstack -v
 
 ## Stack for a specific thread
 ::pgrep sshd|::walk thread|::findstack -v
+
+spa_addr::print spa_t spa_uberblock
+
+## Get process and stack info for NFSD
+# echo '::ps!grep nfsd'|mdb -k
+R    571      1    571    571      1 0x42000000 ffffff015c01eab0 nfsd
+# echo 'ffffff015c01eab0::walk thread|::findstack -v'|mdb -k
+
+## NFSv4 information
+# for i in rfs4_db rfs4_client; do echo ::"$i"| mdb -k; done
+
+## Information about state of stmf in kernel
+echo "::stmf_ilus |::print stmf_i_lu_t ilu_lu |::print stmf_lu_t lu_provider_private |::print sbd_lu_t sl_flags sl_name sl_ats_state" | mdb -k
+
+## Info about iSCSI TPGs
+echo ::iscsi_tpg | mdb -k
+iscsit_tpg_t     Name              
+ffffff015c67cb00 tpg_lab9_vnic2_vlan7
+.............
+echo ffffff015c67cb00::print -t iscsit_tpg_t | mdb -k | grep tpg_name
+
+
+## Check on what might be holding zfs hostage
+echo ::threadlist -v | mdb -k | grep zfs_ioc | sort | uniq -c
+
+## Increment counter in kstat for a particular sd.
+echo "*sd_state::softstate 1 | ::print struct sd_lun un_errstats | ::print kstat_t ks_data | ::print -a struct sd_errstats sd_harderrs.value.ui32" | mdb -k
+
+## Soft errors
+echo "*sd_state::softstate 3 | ::print struct sd_lun un_errstats | ::print kstat_t ks_data | ::print -a struct sd_errstats sd_softerrs.value.ui32" | mdb -k
+
+## Transport errors
+echo "*sd_state::softstate 3 | ::print struct sd_lun un_errstats | ::print kstat_t ks_data | ::print -a struct sd_errstats sd_transerrs.value.ui32" | mdb -k
+
+>> where "1" in sd_state::softstate is the sd number - for example sd1
+>> result is similar to:
+
+ffffff03e3eb12c0 sd_harderrs.value.ui32 = 0xca6
+>> then cut out the address and the value, increment it by one, and set it with mdb -kw 
+echo ffffff03e3eb12c0/W0xccc | mdb -kw
+
+
+>> :pgrep ntpd|::print -a -t proc_t p_pidp
+
+
+
+
+verbs,commands = :: / _ = !
+/ <= display contents at address
+? <= display contents in object file
+= <= display address
+
+::dcmds
+::walkers
+
+dcmds useful
+
+::dcmds ! grep arc
+
+address::print -t type [members]
+::walkers ! grep proc
+
+## cli arguments for commands
+::walk proc p |::print proc_t p_ppid | ::grep ".==1"|::eval "<p::print proc_t p_user.u_psargs"
+
+## Walk all children of init
+::walk proc p |::print proc_t p_ppid | ::grep ".==1"|::eval "<p::ps"
+
+## Walk all ARC buffers returning their current state, i.e. ghost, etc.
+::walk arc_buf_hdr_t |::print -t arc_buf_hdr_t b_state
+
+
+$r <= registers
+$c <= Stack
+$q <= quit
+
+MDB syntax
+
+Address::::
+
+address [,count] command modifiers
+
+default address "." - current addr.
+
+.=K <= current address
+
+::nm!wc <= count symbols that could be used as addresses
+
+::nm
+expression -,+,*,%
+
+count <= number of times to execute the command
+
+dtrace -w -n 'syscall::read:entry /pid == $target && arg0 == 0 / {self->gotit = 1; } syscall::read:return /self->gotit/ { raise(23); }' -c "od -cx /usr/dict/words" >/dev/null
+
+## Walk segments and locate a particular buffer
+>> ::pgrep od|::print proc_t p_as|::walk seg | ::seg
+
+## Segment structure from above
+>> ffffff0151ec8480::print -t struct seg
+
+Find a particular segment:
+ffffff0151ec8480          8065000            12000 ffffff0151ec5600 segvn_ops
+
+Get segvn_data_t
+>> 0xffffff0151ec5600::print -t segvn_data_t
+
+>> 0xffffff01530d7e00::print -t struct anon_map
+
+Get anon_hdr pointer
+>> 0xffffff0151ec7bb0::print struct anon_hdr
+
+Now we look at the contents of array_chunk and use size from above as length (40)
+>> 0xffffff015082be00,40/K
+
+>> ::pgrep od|::print proc_t p_as
+
+## This number is from truss
+>> 8065e14::vtop -a 0xffffff014ea61100
+
+
+## Reset kstats via mdb
+>> Find global variable via source
+
+
+::pfiles
+
+
+
+
+
+## Swap info
+>> ::walk swapinfo
+ffffff014a25ee88
+>> ::walk swapinfo|::ffffff014a25ee88
+>> ::walk swapinfo|::swapinfo
+
+## Tune NFS sessions per client
+# echo clnt_max_conns/W10|mdb -kw
+clnt_max_conns: 0x1             =       0x10
+# echo clnt_max_conns/D|mdb -k

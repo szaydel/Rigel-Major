@@ -1,0 +1,25 @@
+{
+  "alias": "server-lab-sm-5",
+  "hostname": "server-lab-sm-5.homer.lab",
+  "brand": "joyent",
+  "dataset_uuid": "e8c41d40-f161-11e1-b839-a3631c115653",
+  "autoboot": true,
+  "vcpus": 1,
+  "ram": 256,
+  "resolvers": [
+    "10.10.90.1"
+  ],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "ip": "10.10.84.14",
+      "netmask": "255.255.0.0",
+      "gateway": "10.10.90.1"
+    }
+  ],
+  "internal_metadata": {
+    "project": "moosefs",
+    "role": "chunkserver",
+    "chunkid": 1
+  }
+}

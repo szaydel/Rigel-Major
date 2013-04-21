@@ -1,0 +1,45 @@
+# 
+# Configuration file borrows a little bit from Richard Elling's original
+# vdbench characterization profiles. This particular profile will run read and write
+# tests with identical recordsize, but a 70/30% read/write split
+# at 32 threads.
+#
+# Filesystem characterization using 4KB random I/O for vdbench
+#
+# Note: file storage definition (fsd) set elsewhere
+#
+# Company:		   RackTop Systems
+# Author:          Sam Zaydel
+# Version:         1.0.3
+# Date:            08/14/2012
+# Name:			   char_rand_4k_fs_70_percent_read
+
+# File Workload Definitions (fwd)
+# fwd=fwd1,fsd=fsd*,operation=read,fileio=random,fileselect=random,stopafter=1000
+# fwd=fwd2,fsd=fsd*,operation=write,fileio=random,fileselect=random,stopafter=1000
+
+fwd=fwd_W,fsd=fsd*,rdpct=70,fileio=random,fileselect=random,stopafter=100,xfersize=4k
+
+
+# Run Definitions (rd)
+
+## Run Definition with following settings:
+##
+# => 4k Recordsize, fixed
+# => Unlimited rate of I/O
+# => Mixed Read/Write operation
+# => Data structure is created during start of run
+# => Each run will last 120 seconds (2min)
+# => Threads set to from 32 to 128
+# => Percentage of reads to writes is set to 70/30% split
+##
+rd=rd_format_dataset,fwd=fwd_W,fwdrate=max,format=restart
+rd=rd_randW_4k_32thr,fwd=fwd_W,fwdrate=max,operation=write,format=no,elapsed=120,interval=5,threads=32,xfersize=4k
+rd=rd_randR_4k_32thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=32,xfersize=4k
+rd=rd_randW_4k_64thr,fwd=fwd_W,fwdrate=max,operation=write,format=no,elapsed=120,interval=5,threads=64,xfersize=4k
+rd=rd_randR_4k_64thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=64,xfersize=4k
+
+#rd=rd_randW_4k_128thr,fwd=fwd_W,fwdrate=max,operation=write,format=no,elapsed=120,interval=5,threads=128,xfersize=4k
+#rd=rd_randR_4k_128thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=128,xfersize=4k
+#rd=rd_randW_4k_256thr,fwd=fwd_W,fwdrate=max,operation=write,format=no,elapsed=120,interval=5,threads=256,xfersize=4k
+#rd=rd_randR_4k_256thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=256,xfersize=4k

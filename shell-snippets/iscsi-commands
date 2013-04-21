@@ -46,3 +46,30 @@
 ## Information about relationship of block devices to iSCSI sessions
 
 # ls /sys/class/iscsi_session/session[[:digit:]]/device/target*/[[:digit:]]:[[:digit:]]:[[:digit:]]:[[:digit:]]*/block
+
+## Solaris tune iSCSI parameters
+
+# iscsiadm modify target-param --login-param maxrecvdataseglen=65536 iqn.2011-10.dom.homer:01:lab-nexenta-clusters-00001
+# iscsiadm modify target-param --login-param maxrecvdataseglen=262144 target-name
+# iscsiadm modify target-param --tunable-param recv-login-rsp-timeout=20 iqn.2011-10.dom.homer:02:lab-nexenta-clusters-00001
+# iscsiadm modify target-param --tunable-param polling-login-delay=20 iqn.2011-10.dom.homer:02:lab-nexenta-clusters-00001
+# iscsiadm modify target-param --tunable-param conn-login-max=60 iqn.2011-10.dom.homer:01:lab-nexenta-clusters-00001
+
+## Enable multiple connections per session
+# iscsiadm modify initiator-node --configured-sessions 4
+
+
+## Solaris / SmartOS create iscsi target
+
+# svcadm enable system/stmf; svcadm enable network/iscsi/target
+# itadm create-target -n iqn.2012-11.com.rt:01:$(uuid) -l iscsi_target-01
+# itadm create-target -n iqn.2012-11.com.rt:01:7fef091c-22ec-11e2-8e3f-cbc621c701e0 -l iscsi_target-01
+
+## Create/Expose a lun
+# stmfadm create-lu  -p vid='RACKTOP' -p pid='BRICKSTOR' /tmp/block_dev1 
+Logical unit created: 600144F0F2790C000000509069D30002
+# stmfadm add-view -n10 600144F0FA7E0A0000005090954C0002
+# stmfadm add-view -n11 600144F0FA7E0A000000509095520003
+
+# stmfadm create-lu  -p vid='RACKTOP' -p pid='BRICKSTOR' /dev/zvol/rdsk/zones/export/block/zvol-003
+# stmfadm add-view -n12 600144F0D854040000005090A19A0001

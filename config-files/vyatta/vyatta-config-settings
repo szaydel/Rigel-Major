@@ -1,0 +1,18 @@
+## Static mapping for a DHCP entry
+set service dhcp‐server shared‐network‐name ETH1_POOL subnet 192.168.0.0/22 static‐mapping sepiidae-mbp ip‐address 192.168.0.105
+set service dhcp‐server shared‐network‐name ETH1_POOL subnet 192.168.0.0/22 static‐mapping sepiidae-mbp mac‐address b8:f6:b1:12:58:03
+
+
+set firewall name WEB_to_LOCAL description "Block Unwanted Internet Traffic"
+## rule 10
+set firewall name WEB_to_LOCAL rule 10 description "Accept Established-Related Connections"
+set firewall name WEB_to_LOCAL rule 10 action accept
+set firewall name WEB_to_LOCAL rule 10 state established enable
+set firewall name WEB_to_LOCAL rule 10 state related enable
+set firewall name WEB_to_LOCAL rule 10 log disable
+
+## rule 20 == Reject ICMP
+set firewall name WEB_to_LOCAL rule 20 description "Reject ICMP"
+set firewall name WEB_to_LOCAL rule 20
+set firewall name WEB_to_LOCAL rule 20 action reject
+set firewall name WEB_to_LOCAL rule 20 protocol icmp

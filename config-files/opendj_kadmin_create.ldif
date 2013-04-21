@@ -1,0 +1,18 @@
+dn: uid=kadmin,ou=admins,dc=opendj,dc=homer,dc=lab
+changetype: add
+cn: Kerberos Admin
+givenName: Kerberos Administrator
+description: homer.lab Kerberos Domain Administrator
+mail: kadmin@homer.lab
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: top
+sn: Admin
+uid: kadmin
+userPassword: homer
+
+dn: dc=opendj,dc=homer,dc=lab
+changetype: modify
+add: aci
+aci: (target="ldap:///dc=opendj,dc=homer,dc=lab") (targetattr ="*")(version 3.0; acl "allow Kerberos admin to manage user attributes"; allow(all)(userdn = "ldap:///uid=kadmin,ou=admins,dc=opendj,dc=homer,dc=lab");)

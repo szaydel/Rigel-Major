@@ -12,8 +12,17 @@
     fi
 
 ## Begin : Non-standard exports
-export http_proxy=http://10.10.100.5:3128/  # Squid 3.1 running on router
-export https_proxy=http://10.10.100.5:3128/
+
+if [[ -f ~/prodproxy ]]; then
+    
+    ## Use production proxy IP address
+    export http_proxy=http://192.168.0.5:3128/  # Squid 3.1 running on router
+    export https_proxy=http://192.168.0.5:3128/
+else
+    export http_proxy=http://10.10.100.5:3128/  # Squid 3.1 running on router
+    export https_proxy=http://10.10.100.5:3128/
+fi
+
 ## End : Non-standard exports
 
 ## Begin : Non-standard shopt

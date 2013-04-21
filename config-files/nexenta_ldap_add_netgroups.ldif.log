@@ -1,0 +1,12 @@
+#!RESULT OK
+#!CONNECTION ldap://server-lab9.homer.lab:389
+#!DATE 2011-05-20T18:15:22.510
+#!RESULT OK
+#!CONNECTION ldap://server-lab9.homer.lab:389
+#!DATE 2012-02-17T21:05:41.947
+dn: cn=ng_eng_10_8_0,ou=netgroups,dc=homer,dc=lab
+objectClass: top
+objectClass: nisNetgroup
+cn: ng_eng_10_8_0
+nisNetgroupTriple: (server-lab3,-,-)
+nisNetgroupTriple: (10.8.0.39,-,-)

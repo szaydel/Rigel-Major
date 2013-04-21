@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+
+<!--
+
+Copyright (c) 2007, Matthew Flanagan
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice,
+       this list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+
+    3. Neither the name of the project nor the names of its contributors may
+       be used to endorse or promote products derived from this software
+       without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-->
+
+<service_bundle type='manifest' name='splunk'>
+
+<service
+	name='system/splunk'
+	type='service'
+	version='2'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance />
+
+    <dependency name='splunk_multi-user'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+        <service_fmri value='svc:/milestone/multi-user' />
+    </dependency>
+
+    <dependency name='splunk_network'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+        <service_fmri value='svc:/milestone/network' />
+    </dependency>
+
+	<dependency name='syslog_splunk'
+		grouping='require_all'
+		restart_on='none'
+		type='path'>
+		<service_fmri value='file://localhost/var/log/splunk-syslog' />
+	</dependency>
+
+    <dependent name='splunk_multi-user-server' 
+        grouping='optional_all'  
+        restart_on='none'>
+        <service_fmri value='svc:/milestone/multi-user-server' />
+    </dependent>
+
+    <method_context>
+        <method_credential user='splunk' group='splunk' />
+        <method_environment>
+            <envvar name='SPLUNK_BINDIP' value='127.0.0.1'/>
+        </method_environment>
+    </method_context>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/opt/splunk/bin/splunk %m --accept-license'
+		timeout_seconds='300'>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec='/opt/splunk/bin/splunk %m'
+		timeout_seconds='300'>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec='/opt/splunk/bin/splunk restart'
+		timeout_seconds='600'>
+	</exec_method>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>
+			splunk log server
+			</loctext>
+		</common_name>
+	</template>
+
+</service>
+
+</service_bundle>

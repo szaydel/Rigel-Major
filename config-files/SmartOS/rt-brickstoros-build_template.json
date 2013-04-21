@@ -1,0 +1,33 @@
+{
+  "alias": "rts_brickstorOS_build_env-01",
+  "autoboot": true,
+  "brand": "joyent",
+  "fs_allowed": "ufs,pcfs,tmpfs",
+  "hostname": "rts-wmbuild-01.racktoplabs.com",
+  "image_uuid": "01b2c898-945f-11e1-a523-af1afbe22822",
+  "max_physical_memory": 32768,
+  "quota": 15,
+  "ram": 16384,
+  "resolvers": [
+    "10.1.2.250",
+    "10.1.2.248"
+  ],
+  "tmpfs": 8192,
+  "vcpus": 4,
+  "nics": [
+    {
+      "nic_tag": "v0004dev",
+      "gateway": "10.1.4.254",
+      "index": 0,
+      "ip": "10.1.4.17",
+      "netmask": "255.255.255.0",
+      "physical": "v0004dev01",
+      "vlan_id": 4
+    }
+  ],
+  "internal_metadata": {
+    "project": "development",
+    "role": "build_server",
+    "member_id": 1
+  }
+}

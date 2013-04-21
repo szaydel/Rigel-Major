@@ -27,3 +27,34 @@ printf "%s %5s %s\n" "Current ARC Size:" "$(( $(kstat -p zfs:*:arc*:size|awk '{p
 
 ## Errors on all disks
 # for a in H S T; do kstat -p sderr:*:sd*,err:$a*Err*; done
+
+## Calculate percentage of hits vs. misses against demand data from ARC
+python -c "print '%1.2f' % (100 - (float($(kstat -p zfs:0:arcstats:demand_data_misses|cut -f2)) / float($(kstat -p zfs:0:arcstats:demand_data_hits|cut -f2)) * 100))"
+
+
+kstat -p ::vopstats_zfs:{nread,read_bytes,nwrite,write_bytes}
+
+kstat -p unix:0:vopstats_zfs:nread
+kstat -p unix:0:vopstats_zfs:read_bytes
+
+## Read to write ratio as percentage of total bytes at ZFS layer
+python -c "print '%1.2f' % (100 - float( $(kstat -p unix:0:vopstats_zfs:write_bytes|cut -f2) ) / (float( $(kstat -p unix:0:vopstats_zfs:read_bytes|cut -f2) + $(kstat -p unix:0:vopstats_zfs:write_bytes|cut -f2) )) *100)"
+
+## Write to read ratio as percentage of total bytes at ZFS layer
+python -c "print '%1.2f' % (100 - float( $(kstat -p unix:0:vopstats_zfs:read_bytes|cut -f2) ) / (float( $(kstat -p unix:0:vopstats_zfs:read_bytes|cut -f2) + $(kstat -p unix:0:vopstats_zfs:write_bytes|cut -f2) )) *100)"
+
+{nread,read_bytes,nwrite,write_bytes}
+
+## Average bytes per read IO
+python -c "print '%1.2f' % (float($(kstat -p ::vopstats_zfs:read_bytes|cut -f2)) / float($(kstat -p ::vopstats_zfs:nread|cut -f2)) )"
+
+## Average bytes written per IO
+python -c "print '%1.2f' % (float($(kstat -p ::vopstats_zfs:write_bytes|cut -f2)) / float($(kstat -p ::vopstats_zfs:nwrite|cut -f2)))"
+
+## Memory page information
+kstat -p unix:0:system_pages:\
+{pagesfree,pagestotal,physmem}
+
+## CPU sys.usr.idle information
+kstat -p cpu:0:sys:cpu_ticks_{kernel,user,idle}
+

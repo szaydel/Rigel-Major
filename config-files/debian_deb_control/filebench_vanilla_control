@@ -1,0 +1,14 @@
+Package: filebench-vanilla
+Version: 1.4.9.1
+Section: contrib/utils
+Priority: optional
+Architecture: solaris-i386
+Depends: sunwcakr (>= 5.11.134-31-0-100), sunwcar (>= 5.11.134-31-0-100), sunwckr (>= 5.11.134-31-0-100), sunwcnetr (>= 5.11.134-31-0-100), sunwcsd (>= 5.11.134-31-0-100), sunwcsl (>= 5.11.134-31-0-100), sunwcsr (>= 5.11.134-31-0-100), sunwcsu (>= 5.11.134-31-0-100), sunwkvm (>= 5.11.134-31-0-100), sunwlibm
+Installed-Size: 855
+Maintainer: Nexenta Systems <maintainer@nexenta.com>
+Conflicts: filebench-vanilla
+Replaces: filebench-vanilla
+Homepage: http://sourceforge.net/projects/filebench/
+Description: Filebench - A Model Based File System Workload Generator
+ Filebench is a file system and storage benchmark that allows to generate a large variety of workloads. Unlike typical benchmarks it is very flexible and allows to minutely specify (any) applications' behaviour using extensive Workload Model Language (WML). Filebench uses loadable workload personalities to allow easy emulation of complex applications (e.g., mail, web, file, and database servers). Filebench is quick to set up and easy to use compared to deploying real applications. It is also a handy tool for micro-benchmarking.
+ This is a vanilla build of filebench, without any real customizations, other than installation path being /opt/sfw/fb

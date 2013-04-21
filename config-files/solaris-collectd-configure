@@ -1,0 +1,31 @@
+./configure --prefix /opt/collectd \
+--disable-all-plugins \
+--enable-contextswitch \
+--enable-cpufreq \
+--enable-cpu \
+--enable-csv \
+--enable-curl \
+--enable-df \
+--enable-disk \
+--enable-ethstat \
+--enable-exec \
+--enable-interface \
+--enable-load \
+--enable-logfile \
+--enable-match_regex \
+--enable-match_timediff \
+--enable-match_value \
+--enable-memory \
+--enable-nfs \
+--enable-snmp \
+--enable-swap \
+--enable-syslog \
+--enable-table \
+--enable-tail \
+--enable-unixsock \
+--enable-uptime \
+--enable-users \
+--enable-vmem \
+--enable-write_graphite \
+--enable-write_http \
+--enable-zfs_arc

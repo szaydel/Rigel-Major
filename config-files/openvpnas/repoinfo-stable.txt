@@ -1,0 +1,24 @@
+IMPORTING THE PUBLIC GPG KEY
+
+These Debian packages and associated repository files have been signed with GPG. 
+Therefore, you need to import proper public key or you get warnings when updating 
+software catalogs (e.g. when doing apt-get update):
+
+$ wget -O - http://repos.openvpn.net/repos/repo-public.gpg|apt-key add -
+
+
+ADDING THE REPOSITORY FILE
+
+You also need to download a sources.list fragment so that apt can find these 
+packages:
+
+$ cd /etc/apt/sources.list.d
+$ wget http://repos.openvpn.net/repos/apt/conf/repos.openvpn.net-as-stable.list
+
+
+INSTALLING PACKAGES
+
+In most cases, this is as simple as
+
+$ apt-get update && apt-get install <packagename>
+

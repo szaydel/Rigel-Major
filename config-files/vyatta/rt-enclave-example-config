@@ -1,0 +1,317 @@
+firewall {
+    all-ping enable
+    broadcast-ping disable
+    group {
+        port-group ALLOWED_DST_PORTS {
+            port 443
+            port 943
+            port 8443
+            port 9443
+            port 53
+            port 80
+            port 67
+            port 68
+            port 9022
+            port 123
+        }
+        port-group ALLOWED_PORTS {
+            port 443
+            port 943
+            port 53
+            port 80
+            port 8443
+            port 9022
+            port 67
+            port 68
+        }
+        port-group ALLOWED_SRC_PORTS {
+            port 67
+            port 68
+            port 53
+            port 123
+        }
+    }
+    ipv6-receive-redirects disable
+    ipv6-src-route disable
+    ip-src-route disable
+    log-martians enable
+    name FROM_TRUSTED_TO_LOCAL {
+        default-action accept
+        rule 10 {
+            action accept
+            description "Traffic from Trusted Zone to Local Zone"
+        }
+    }
+    name FROM_TRUSTED_TO_UNTRUSTED {
+        default-action accept
+        enable-default-log
+        rule 10 {
+            action accept
+            description "Traffic from Trusted Zone to Untrusted Zone"
+        }
+    }
+    name FROM_UNTRUSTED_TO_LOCAL {
+        default-action drop
+        rule 10 {
+            action accept
+            description "Traffic from Untrusted Zone to Local Zone"
+            destination {
+                group {
+                    port-group ALLOWED_DST_PORTS
+                }
+            }
+        }
+        rule 11 {
+            action accept
+            source {
+                group {
+                    port-group ALLOWED_SRC_PORTS
+                }
+            }
+        }
+        rule 101 {
+            action drop
+            description "Drop and log all packets hitting this rule"
+            log enable
+        }
+    }
+    name FROM_UNTRUSTED_TO_TRUSTED {
+        default-action reject
+        description "Traffic from Untrusted Zone to Trusted Zone"
+        enable-default-log
+        rule 10 {
+            action accept
+            destination {
+                group {
+                    port-group ALLOWED_DST_PORTS
+                }
+            }
+            protocol tcp_udp
+        }
+        rule 11 {
+            action accept
+            protocol tcp_udp
+            source {
+                group {
+                    port-group ALLOWED_SRC_PORTS
+                }
+            }
+        }
+        rule 12 {
+            action accept
+            protocol icmp
+        }
+        rule 101 {
+            action drop
+            description "Drop and log all packets"
+            log enable
+        }
+    }
+    receive-redirects enable
+    send-redirects enable
+    source-validation disable
+    state-policy {
+        established {
+            action accept
+        }
+        invalid {
+            action accept
+            log {
+                enable
+            }
+        }
+        related {
+            action accept
+        }
+    }
+    syn-cookies enable
+}
+interfaces {
+    ethernet eth0 {
+        address 108.45.37.102/24
+        description "REDZONE: Internet facing interface on Public vSwitch"
+        duplex auto
+        hw-id 00:0c:29:11:b0:77
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth1 {
+        address 10.1.16.253/24
+        description "Internal VLAN16 Interface Private Enclave"
+        duplex auto
+        hw-id 00:0c:29:11:b0:81
+        smp_affinity auto
+        speed auto
+    }
+    ethernet eth2 {
+        address 10.1.253.16/24
+        duplex auto
+        hw-id 00:0c:29:11:b0:8b
+        smp_affinity auto
+        speed auto
+    }
+    loopback lo {
+    }
+}
+nat {
+    destination {
+        rule 10 {
+            description "Destination NAT for 108.45.37.102 port 943"
+            destination {
+                address 108.45.37.102
+                port 943,443,8443
+            }
+            inbound-interface eth0
+            log enable
+            protocol tcp_udp
+            source {
+            }
+            translation {
+                address 10.1.16.252
+            }
+        }
+    }
+    source {
+        rule 10 {
+            log enable
+            outbound-interface eth0
+            source {
+                address 10.1.16.0/24
+            }
+            translation {
+                address masquerade
+            }
+        }
+    }
+}
+service {
+    dhcp-server {
+        disabled false
+        shared-network-name ETH1_POOL {
+            authoritative disable
+            description "Default DHCP Pool Range .100 through .199"
+            subnet 10.1.16.0/24 {
+                default-router 10.1.16.253
+                dns-server 10.1.16.253
+                lease 86400
+                start 10.1.16.100 {
+                    stop 10.1.16.199
+                }
+            }
+        }
+    }
+    dns {
+        forwarding {
+            cache-size 10000
+            listen-on eth1
+            listen-on eth2
+            listen-on eth0
+            system
+        }
+    }
+    ssh {
+        listen-address 10.1.253.16
+        listen-address 10.1.16.253
+        port 9022
+    }
+}
+system {
+    config-management {
+        commit-revisions 20
+    }
+    console {
+        device ttyS0 {
+            speed 9600
+        }
+    }
+    gateway-address 108.45.37.1
+    host-name e016-fw-01
+    login {
+        user vyatta {
+            authentication {
+                encrypted-password $1$uqd/WfiB$G7gGVdL7NCOXymDCnWe6k/
+            }
+            level admin
+        }
+    }
+    name-server 208.67.222.222
+    name-server 208.67.220.220
+    name-server 8.8.4.4
+    name-server 8.8.8.8
+    ntp {
+        server 0.vyatta.pool.ntp.org {
+        }
+        server 1.vyatta.pool.ntp.org {
+        }
+        server 2.vyatta.pool.ntp.org {
+        }
+    }
+    package {
+        auto-sync 1
+        repository community {
+            components main
+            distribution stable
+            password ""
+            url http://packages.vyatta.com/vyatta
+            username ""
+        }
+    }
+    static-host-mapping {
+        host-name viewmgr.e017.racktoplabs.com {
+            inet 10.1.16.201
+        }
+    }
+    syslog {
+        global {
+            facility all {
+                level notice
+            }
+            facility protocols {
+                level debug
+            }
+        }
+    }
+    time-zone GMT
+}
+zone-policy {
+    zone LOCAL {
+        default-action drop
+        from TRUSTED {
+            firewall {
+                name FROM_TRUSTED_TO_LOCAL
+            }
+        }
+        from UNTRUSTED {
+            firewall {
+                name FROM_UNTRUSTED_TO_LOCAL
+            }
+        }
+        local-zone
+    }
+    zone TRUSTED {
+        default-action reject
+        description "Limited access VLAN 16: Internal Interface of Enclave VPN"
+        from UNTRUSTED {
+            firewall {
+                name FROM_UNTRUSTED_TO_TRUSTED
+            }
+        }
+        interface eth1
+        interface eth2
+    }
+    zone UNTRUSTED {
+        default-action reject
+        description "REDZONE: External-facing Interface"
+        from TRUSTED {
+            firewall {
+                name FROM_TRUSTED_TO_UNTRUSTED
+            }
+        }
+        interface eth0
+    }
+}
+
+
+/* Warning: Do not remove the following line. */
+/* === vyatta-config-version: "conntrack@1:cluster@1:webgui@1:zone-policy@1:conntrack-sync@1:firewall@5:ipsec@4:dhcp-relay@1:vrrp@1:qos@1:system@6:quagga@2:webproxy@1:nat@4:config-management@1:wanloadbalance@3:dhcp-server@4" === */
+/* Release version: VC6.5R1 */

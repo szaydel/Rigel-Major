@@ -1,0 +1,54 @@
+to_lowercase () {
+	echo $@|tr '[:upper:]' '[:lower:]' 
+
+}
+
+to_uppercase () {
+	echo $@|tr '[:lower:]' '[:upper:]' 
+
+}
+
+## Modifying PATH to include custom interpreters and libraries.
+## This will overwrite current path and will execute certain binaries
+## from /racktop, before searching the system path.
+
+
+## Copy below block for any additional interpreters, such as Ruby, etc.
+## Add variables from each block to the PATH below, matching OS version. 
+
+OS=$(to_lowercase $(uname))
+case $OS in
+
+	sunos)
+		if [[ -d  /racktop/usr/local/lib/python2.7.3 ]]; then
+
+      		PYTHON_BASE=/racktop/usr/local/lib/python2.7.3/bin
+      		PYTHON=${PYTHON_BASE}/python2.7
+  		else
+      		PYTHON=""
+  		fi
+
+  		export PATH=${HOME}/bin:${PYTHON_BASE}:/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin:/usr/ccs/bin
+  		export PYTHON
+  		;;
+
+  	*)
+  		if [[ -d  /racktop/usr/local/lib/python2.7.3 ]]; then
+
+      		PYTHON_BASE=/racktop/usr/local/lib/python2.7.3/bin
+      		PYTHON=${PYTHON_BASE}/python2.7
+  		else
+      		PYTHON=""
+  		fi
+  		
+  		export PATH=${HOME}/bin:${PYTHON_BASE}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/usr/bin/X11:/usr/dtrctkit/bin
+  		export PYTHON
+  		;;
+esac
+
+
+## Enable proxy settings if necessary
+
+if [[ -f ~/proxyrc ]]; then
+  . ~/proxyrc
+fi

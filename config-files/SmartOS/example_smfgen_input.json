@@ -1,0 +1,8 @@
+{
+  "ident": "sample_smf_service",
+  "label": "Human Readable Name for Sample SMF Service",
+  "start": "node bapi.js",
+  "dependencies": [
+    "svc:/system/filesystem/local:default"
+  ]
+}

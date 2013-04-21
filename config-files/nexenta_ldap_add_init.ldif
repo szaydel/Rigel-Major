@@ -1,0 +1,25 @@
+dn: dc=homer,dc=lab
+description: homer.lab top of the org structure
+dc: homer
+o: homer.lab
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+
+# Subtree for users
+dn: ou=Users,dc=homer,dc=lab
+ou: Users
+description: homer.lab Users
+objectClass: organizationalUnit
+
+# Subtree for groups
+dn: ou=Groups,dc=homer,dc=lab
+ou: Groups
+description: homer.lab Groups
+objectClass: organizationalUnit
+
+# Subtree for system accounts
+dn: ou=System,dc=homer,dc=lab
+ou: System
+description: Special accounts used by software applications.
+objectClass: organizationalUnit

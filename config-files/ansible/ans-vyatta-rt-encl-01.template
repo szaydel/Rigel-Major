@@ -1,0 +1,40 @@
+---
+- hosts: enclave-vlan0017
+  vars:
+      subnet: '10.1.17.0'
+      #maskedbits: 24
+      defaultrouter: '10.1.17.254'
+      config_dest_dir: '/tmp'
+      config_orig_name: '$config_dest_dir/config.boot'
+      config_ren: '/config/config.orig'
+      config_template: 'config.enclave.j2'
+      template_dir: '~/playbooks/templates'
+      vyatta_templ_dir: '$template_dir/vyatta'
+      vyatta_template: '$vyatta_templ_dir/encl-core-config.j2'
+      files_dir: '~/playbooks/files'
+      vyatta_files_dir: '$files_dir/vyatta'
+      vyatta_load_script: '$vyatta_files_dir/vy-load-config.sh'
+      
+  user: rtconf
+  sudo: yes
+  tasks:
+    - name: true if firewall
+      action: shell /bin/true
+      when_string: $isfirewall == 'True'
+    - name: false if not firewall
+      action: shell /bin/false
+      when_string: $isfirewall != 'True'
+    #- name: write the motd
+    #  action: template src=~/playbooks/templates/motd.j2 dest=/etc/motd
+    - name: deploy vyatta config from template
+      action: template src=$vyatta_template dest=$config_dest_dir/config.rtconf
+      when_string: $isfirewall == 'True'
+    #- name: make backup of original config
+    #  action: command /bin/mv $config_orig $config_ren creates=$config_ren
+    #- name: create link for config.boot
+    #  action: file src=/config/config.rtconf dest=$config_orig owner=vyatta group=vyattacfg state=link
+    - name: stage vyatta remote cli script
+      action: copy src=~/playbooks/files/enclave-fw-load-config.sh dest=/tmp/vy_do_api owner=vyatta group=vyattacfg mode=0744
+      when_string: $isfirewall == 'True'
+    #- name: replace running config
+    #  action: command /tmp/vy_do_api

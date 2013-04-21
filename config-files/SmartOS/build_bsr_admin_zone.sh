@@ -36,6 +36,20 @@
 ##
 ###############################################################################
 
+# case $1 in
+# 	start)
+# 		_running_in_startup=true
+# 		;;
+
+# 	stop)
+# 		## For the moment, this is a pass, we do not do anything here.
+# 		## In the future we might add some useful tasks to do on shutdown, 
+# 		## perhaps copying some files to non-volatile storage, etc.
+# 		_running_in_shutdown=true
+# 		exit 0
+# 		;;
+# esac
+
 debug=1
 inzone=''
 local_zone_name="rt_brickstor_admin_zone"
@@ -57,8 +71,9 @@ fablib==0.1.0
 fabtools==0.7.0
 greenlet==0.4.0
 httpie==0.3.0
+lggr==0.1.5	
 pycrypto==2.6
-pytz==2012g
+pytz==2012h
 requests==0.14.1
 sh==1.04
 ssh==1.7.14
@@ -81,10 +96,10 @@ function _check_return_code()
 	## Function's only argument is return code from previous command.
 	local rc=$1
 	if [[ ${rc} -ne 0 ]]; then 
-		printf "[DEBUG] %s\n" "Received status code other than 0."
+		[[ ${debug} -ge 1 ]] && printf "[DEBUG] %s\n" "Received status code other than 0."
 		return 1 
 	else
-		printf "[DEBUG] %s\n" "Received status code 0."
+		[[ ${debug} -ge 1 ]] && printf "[DEBUG] %s\n" "Received status code 0."
 		return 0
 	fi
 }
@@ -110,6 +125,7 @@ function _populate_ssh_authorized_users()
 
 function _create_admin_zone()
 {
+	printf "[INFO] %s\n" "Creating new admin zone. Please be patient, this could take a while."
 	vmadm create <<EOF
 {
   "alias": "rt_brickstor_admin_zone",
@@ -172,6 +188,7 @@ function _configure_global_zone ()
 		_check_return_code $? || \
 		(printf "[CRIT] Failed assignments of security settings for %s. Cannot continue.\n" ${racktop_adm}
 		return 1)
+		[[ ${debug} -ge 1 ]] && printf "[INFO] %s\n" "Configured /etc/security/prof_attr for ${racktop_adm}."
 	fi
 
 	## If we return a hit here, we already have entries in /etc/user_attr, 
@@ -183,6 +200,7 @@ function _configure_global_zone ()
 		_check_return_code $? || \
 		(printf "[CRIT] Failed assignments of security settings for %s. Cannot continue.\n" ${racktop_adm}
 		return 1)
+		[[ ${debug} -ge 1 ]] && printf "[INFO] %s\n" "Configured /etc/security/user_attr for ${racktop_adm}."
 	fi
 
 	## If we return a hit here, we already have entries in /etc/security/exec_attr, 
@@ -272,12 +290,14 @@ function _admin_zone_not_exist()
 	## If lookup fails and we have an emtpy string, the zone does not
 	## exist yet, and we should go ahead and create it. In this case
 	## we will return 0 from this function. Otherwise, we return 1.
+
+	printf "Got this far. x is $x\n\n"
 	if [[ -z ${x} ]]; then
-		[[ ${debug} -ge 1 ]] && printf "[INFO] %s\n" "Zone \<${local_zone_name}\> does not exist."
-		return 0
-	else
-		[[ ${debug} -ge 1 ]] && printf "[INFO] %s\n" "Zone \<${local_zone_name}\> already exists."
+		[[ ${debug} -ge 1 ]] && printf "[INFO] %s\n" "Zone <${local_zone_name}> does not exist."
 		return 1
+	else
+		[[ ${debug} -ge 1 ]] && printf "[INFO] %s\n" "Zone <${local_zone_name}> already exists."
+		return 0
 	fi
 }
 
@@ -294,6 +314,18 @@ function _base_ds_already_exist()
 		fi
 	done
 	return 1
+}
+
+function _create_mortarrc()
+{
+	local mortarrc_dir=/racktop/local/mortar
+	local mrc_file=${mortarrc_dir}/.mortarrc
+	x=$(awk '$NR ~ "user" {print 1}' ${mrc})
+
+	if [[ $(( ${x:=0} )) -lt 1 ]]; then
+		printf "user = rtadmin\n" >> ${mrc_file}
+	fi
+
 }
 
 function _configure_admin_zone()
@@ -318,6 +350,10 @@ function _configure_admin_zone()
 
 	## Modify path, ever so slightly.
 	printf "%s\n" "export PATH=/racktop/local/bin:$PATH" >> ~/.bashrc
+
+	## Customizations of mortarrc file.
+	_create_mortarrc || _check_return_code $? || \
+		(printf "[WARN] %s\n" "Failed with creation of mortarrc file. Please, check manually.")
 
 	if [[ ! -x "${CURL_CMD}" ]]; then
 		printf "[CRIT] Unable to locate %s, cannot continue. Please, make sure %s is installed.\n" "${CURL_CMD}"
@@ -369,14 +405,15 @@ case ${inzone} in
 		printf "[INFO] %s\n" "Running inside the Global Zone. Please be patient, setting-up environment."
 
 		_configure_global_zone; _check_return_code $? || \
-			printf "[WARN] %s\n" "Something unexpected occurred, and tasks stopped prematurely. Cannot continue."
-			exit 1
+			(printf "[WARN] %s\n" "Something unexpected occurred, and tasks stopped prematurely. Cannot continue."
+			exit 1)
 		## If we are in the Global Zone we need to determine whether we already
 		## have a smart machine built for administration of host. If we do,
 		## we should stop here and move on to the host.
-		_admin_zone_not_exist; _check_return_code $? || \
-			printf "[WARN] %s\n" "Administration zone appears to already exist. Cannot continue."
-			exit 1
+
+		_admin_zone_not_exist; _check_return_code $? || _create_admin_zone || \
+			(printf "[WARN] %s\n" "Administration zone creation has failed. Cannot continue."
+			exit 1)
 			## Get list of all available datasets and make import one we need if not
 			## already imported. If one of the elements in the array matches $default_uuid,
 			## we skip dataset related tasks and create the zone right away.

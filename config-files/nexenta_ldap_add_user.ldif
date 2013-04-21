@@ -1,0 +1,191 @@
+#
+dn: ou=admins,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: admins
+
+dn: ou=engineers,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: engineers
+
+dn: ou=groups,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: groups
+
+dn: ou=posix_groups,ou=groups,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: posix_groups
+
+## LDAP Groups
+dn: cn=LD_ldap_admins,ou=admins,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: LD_ldap_admins
+
+dn: cn=LD_all_engineers,ou=engineers,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: LD_all_engineers
+
+dn: cn=LD_normal_users,ou=groups,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: groupOfNames
+objectClass: top
+cn: LD_normal_users
+
+## Posix groups in OpenDJ schema require structural objectclass
+## groupOfUniqueNames or groupOfNames
+dn: cn=deneb,ou=posix_groups,ou=groups,dc=opendj,dc=homer,dc=lab
+gidnumber: 10010
+cn: deneb
+objectClass: top
+objectClass: posixGroup
+objectClass: namedObject
+memberuid: ldapusr_a
+memberuid: ldapusr_b
+memberuid: ldapusr_c
+
+dn: cn=P_eng-a,ou=posix_groups,ou=groups,dc=opendj,dc=homer,dc=lab
+changetype: add
+gidNumber: 20101
+cn: P_eng-a
+objectClass: top
+objectClass: posixGroup
+objectClass: namedObject
+memberUid: 30001
+memberUid: 30002
+memberUid: 30003
+
+dn: cn=P_eng-b,ou=posix_groups,ou=groups,dc=opendj,dc=homer,dc=lab
+changetype: add
+gidNumber: 20102
+cn: P_eng-b
+objectClass: top
+objectClass: posixGroup
+objectClass: namedObject
+
+## Posix groups in OpenDJ schema require structural objectclass
+## groupOfUniqueNames or groupOfNames
+dn: cn=P_admins,ou=posix_groups,ou=groups,dc=opendj,dc=homer,dc=lab
+gidnumber: 11099
+cn: P_admins
+objectClass: top
+objectClass: posixGroup
+objectClass: namedObject
+
+dn: ou=users,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: users
+
+# netgroups OU
+dn: ou=netgroups,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: netgroups
+
+# profile OU
+dn: ou=profile,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: organizationalUnit
+objectClass: top
+ou: profile
+
+## Netgroups
+dn: cn=ng_testgrp1,ou=netgroups,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: nisNetgroup
+objectClass: top
+cn: ng_testgrp1
+nisNetgroupTriple: "(" "server-lab2", "-", "-"  ")"
+nisNetgroupTriple: "(" "server-lab3, "-", "-"  ")"
+nisNetgroupTriple: "(" "server-lab4", "-", "-"  ")"
+nisNetgroupTriple: "(" "server-lab5", "-", "-"  ")"
+nisNetgroupTriple: "(" "server-lab6", "-", "-"  ")"
+
+# labusr_a
+dn: uid=ldapusr_a,ou=users,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: LDAP User A
+sn: None
+displayName: LDAP User A
+homeDirectory: /export/home/ldapusr_a
+uid: ldapusr_a
+uidNumber: 30001
+gidNumber: 10
+userPassword: password
+
+# labusr_b
+dn: uid=ldapusr_b,ou=users,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: LDAP User B
+sn: None
+displayName: LDAP User B
+homeDirectory: /export/home/ldapusr_b
+uid: ldapusr_a
+uidNumber: 30002
+gidNumber: 10
+userPassword: password
+
+# labusr_c
+dn: uid=ldapusr_c,ou=users,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: LDAP User C
+sn: None
+displayName: LDAP User C
+homeDirectory: /export/home/ldapusr_c
+uid: ldapusr_a
+uidNumber: 30003
+gidNumber: 10
+userPassword: password
+
+# szaydel
+dn: uid=szaydel,ou=users,dc=opendj,dc=homer,dc=lab
+changetype: add
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: szaydel
+sn: Zaydel
+displayName: Sam Zaydel
+homeDirectory: /export/home/szaydel
+uid: szaydel
+uidNumber: 10001
+gidNumber: 10010
+userPassword: password
+
+# proxy, profile, homer.lab
+changetype: add
+dn: cn=proxy,ou=profile,dc=opendj,dc=homer,dc=lab
+gidNumber: 10
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: proxy
+sn: None
+uid: proxy
+uidNumber: 9901
+displayName: Proxy Account
+homeDirectory: /fake
+userPassword: e01ENX1ReE9INjNKaTRjL0hteEpldUtaOFlBPT0=
+

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.backup.daily.default_backup</string>
+	<key>Nice</key>
+	<integer>1</integer>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/local/Cellar/ruby/1.9.3-p286/bin/backup</string>
+		<string>perform</string>
+		<string>--trigger</string>
+		<string>default_backup</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/tmp/backup-stderr.log</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/backup-stdout.log</string>
+	<key>StartInterval</key>
+	<integer>60</integer>
+	<key>UserName</key>
+	<string>szaydel</string>
+	<key>WorkingDirectory</key>
+	<string>/Users/szaydel</string>
+</dict>
+</plist>

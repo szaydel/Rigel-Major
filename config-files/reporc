@@ -1,0 +1,48 @@
+## Repo user run-control file .reporc
+
+printf "%s\n" "You logged in as the Repository Administrator Account."
+
+printf "%s\n" "--------------------------------------------------------------------------------"
+printf "%s\n" "Available Commands: " 
+printf "%s\n" "--------------------------------------------------------------------------------"
+printf "        %s\n" "add-bsr-pkg -- adding a package" "remove-bsr-pkg -- removing a package"
+
+function add-user-to-repo ()
+{
+
+local username=$1
+local password=$2
+local numargs=2
+local tmp_passwd_file=~/.tmphtpasswd
+local final_passwd_file=/etc/nginx/user_auth
+local access=""
+
+if [[ $# -lt ${numargs} ]]; then
+    printf "%s\n" "Please check your syntax. Command requires at least ${numargs} argument(s)." \
+"Usage: add-user-to-repo username password"
+    return 1
+fi
+
+if [[ $(grep ^${username} ${final_passwd_file}) ]]; then
+    printf "%s\n" "[ERROR] User already exists in database. Please check."
+    return 1
+fi
+
+touch ${final_passwd_file} 2>/dev/null || access=no
+
+if [[ ${access} == "no" ]]; then
+    printf "%s\n" "[ERROR] Please verify that you can access/modify ${final_passwd_file}"
+    return 1
+fi
+
+htpasswd -m -b -c ${tmp_passwd_file} ${username} ${password}
+cat ${tmp_passwd_file} >> ${final_passwd_file}
+shred ${tmp_passwd_file} ; rm -rf ${tmp_passwd_file} > /dev/null
+
+}
+
+## Aliases useful for repo user
+alias add-bsr-pkg='reprepro includedeb racktop ${@}'
+alias remove-bsr-pkg='reprepro --delete includedeb racktop ${@}'
+
+cd /srv/reprepro/brickstor

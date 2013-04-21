@@ -1,0 +1,5 @@
+while true; do echo ******start******;  \
+printf "%s %s %s\n" "$(date +"%F-%H:%M:%S")" "PROC:" "$(ps -ef -o ppid,pid,args | grep rsync| egrep -v "^$|$$" | sed -e "s/^ *//g")"; \
+echo ******stop******; sleep 5; done
+
+fmdump -eV -t5day | gzip -9 -c > fmdump-$(hostname)-$(date +%Y%m%d).gz

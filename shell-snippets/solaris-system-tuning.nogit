@@ -1,0 +1,6 @@
+## Creating a project to define available resources
+projadd -p 1000 -U root \ 
+-K "process.max-file-descriptor=(priv,4096,deny)" tuning.os.root
+
+for a in svc:/network/rsync:default; do svcadm disable $a; svcadm enable $a; done
+

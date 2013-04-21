@@ -1,0 +1,17 @@
+#!RESULT OK
+#!CONNECTION ldap://server-lab2.homer.lab:389
+#!DATE 2012-03-24T07:36:52.716
+dn: cn=Administrator_Privileges,ou=admins,dc=opendj,dc=homer,dc=lab
+objectClass: collectiveAttributeSubentry
+objectClass: extensibleObject
+objectClass: subentry
+objectClass: top
+cn: Administrator_Privileges
+ds-privilege-name;collective: config-read
+ds-privilege-name;collective: config-write
+ds-privilege-name;collective: ldif-export
+ds-privilege-name;collective: modify-acl
+ds-privilege-name;collective: password-reset
+ds-privilege-name;collective: proxied-auth
+subtreeSpecification: {base "ou=admins", specificationFilter "(isMemberOf=cn
+ =LD_ldap_admins,ou=admins,dc=opendj,dc=homer,dc=lab)" }

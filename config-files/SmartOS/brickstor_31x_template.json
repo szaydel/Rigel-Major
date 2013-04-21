@@ -1,0 +1,43 @@
+{
+  "alias": "server-lab2",
+  "autoboot": false,
+  "hostname": "server-lab2.homer.lab",
+  "brand": "kvm",
+  "vcpus": "1",
+  "ram": "512",
+  "resolvers": [
+    "10.10.90.1",
+    "10.10.100.1"
+  ],
+  "default-gateway": "10.10.100.1",
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "ip": "10.10.88.20",
+      "netmask": "255.255.0.0",
+      "gateway": "10.10.90.1",
+      "model": "virtio",
+      "primary": true
+    }
+  ],
+  "disks": [
+    {
+      "boot": true,
+      "model": "virtio",
+      "size": 10240,
+      "compression": "on"
+    },
+    {
+      "boot": false,
+      "model": "virtio",
+      "size": 10240,
+      "compression": "on"
+    },
+    {
+      "boot": false,
+      "model": "virtio",
+      "size": 10240,
+      "compression": "on"
+    }
+  ]
+}

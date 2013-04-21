@@ -1,0 +1,37 @@
+# 
+# Configuration file borrows a little bit from Richard Elling's original
+# vdbench characterization profiles. This particular profile will run read only
+# tests with fixed recordsize, doubling of threads but a straight 100% read
+# at 32 threads to 128 threads.
+#
+# Filesystem characterization using 4KB random I/O for vdbench
+#
+# Note: file storage definition (fsd) set elsewhere
+#
+# Company:		   RackTop Systems
+# Author:          Sam Zaydel
+# Version:         1.0.4
+# Date:            08/13/2012
+# Name:			   char_rand_4k_fs_100_percent_read_128thr
+
+# File Workload Definitions (fwd)
+fwd=fwd_W,fsd=fsd*,rdpct=100,fileio=random,fileselect=random,stopafter=100,xfersize=4k
+
+
+# Run Definitions (rd)
+
+## Run Definition with following settings:
+##
+# => 4k Recordsize, fixed
+# => Unlimited rate of I/O
+# => Strictly read operation
+# => Data structure is created during start of run, once
+# => Each run will last 120 seconds (2min)
+# => Threads set to grow from 32 to 128
+# => Selection of files is random
+##
+rd=rd_format_dataset,fwd=fwd_W,fwdrate=max,format=restart
+#rd=rd_randR_4k_32thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=32,xfersize=4k
+#rd=rd_randR_4k_64thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=64,xfersize=4k
+# rd=rd_randR_4k_128thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=240,interval=5,threads=128,xfersize=4k
+rd=rd_randR_4k_256thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=120,interval=5,threads=256,xfersize=4k

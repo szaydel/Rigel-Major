@@ -1,0 +1,12 @@
+{
+  "zones/shared/d00/backups": {
+    "daily": {
+      "when": "00 05 * * *",
+      "count": 30,
+      "exclude": [
+        "zones/swap",
+        "zones/dump"
+      ]
+    }
+  }
+}

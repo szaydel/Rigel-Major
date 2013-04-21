@@ -1,0 +1,38 @@
+# 
+# Configuration file borrows a little bit from Richard Elling's original
+# vdbench characterization profiles. This particular profile will run several
+# iterations of a test with identical recordsize, but increasing number of
+# threads and increasing read percentage v. write percentage.
+#
+# Filesystem characterization using 4KB random I/O for vdbench
+#
+# Note: file storage definition (fsd) set elsewhere
+#
+# Author:          Sam Zaydel
+# Version:         1.0.1
+# Date:            05/08/2012
+
+# File Workload Definitions (fwd)
+# fwd=fwd1,fsd=fsd*,operation=read,fileio=random,fileselect=random,stopafter=10000
+# fwd=fwd2,fsd=fsd*,operation=write,fileio=random,fileselect=random,stopafter=10000
+fwd=fwd_random_4k,fsd=fsd*,fileio=random,fileselect=random,stopafter=10000,xfersize=4k
+
+
+
+# Run Definitions (rd)
+# rd=rd1,fwd=fwd1,fwdrate=max,operations=(read,write),format=yes,elapsed=120,interval=1,forthreads=(1-32,d),forxfersize=(4k)
+# rd=rd1,fwd=fwd1,fwdrate=max,operations=(read,write),format=yes,elapsed=120,interval=1,forthreads=(1-32,d)xfersize=4k
+
+## Run Definition with following settings:
+##
+# => 4k Recordsize, fixed
+# => Unlimited rate of I/O
+# => Mixed Read/Write operation
+# => Data structure is created during start of run
+# => Each run will last 120 seconds (2min)
+# => Threads go from 1 to 32, and are increased by doubling between runs
+# => Percentage of reads to writes increases from 10 to 100% in steps of 25%
+##
+rd=rd1,fwd=fwd_random_4k,fwdrate=max,operation=write,format=yes,elapsed=120,interval=1,forthreads=(1-32,d),forrdpct=(10-100,25),xfersize=4k
+
+

@@ -1,0 +1,43 @@
+{
+  "alias": "server-lab8",
+  "hostname": "server-lab8.homer.lab",
+  "brand": "kvm",
+  "vcpus": 1,
+  "autoboot": false,
+  "ram": 256,
+  "resolvers": [
+    "10.10.90.1",
+    "10.10.100.1"
+  ],
+  "disks": [
+    {
+      "boot": true,
+      "image_uuid": "a61ea9da-f6f5-11e1-8eb5-b7d5bdd42a47",
+      "model": "virtio",
+      "size": 10240
+    },
+    {
+      "model": "virtio",
+      "size": 1024
+    },
+    {
+      "model": "virtio",
+      "size": 1024
+    }
+  ],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "model": "virtio",
+      "ip": "10.10.88.80",
+      "netmask": "255.255.0.0",
+      "gateway": "10.10.90.1",
+      "primary": 1
+    }
+  ],
+  "internal_metadata": {
+    "project": "glusterfs",
+    "role": "brick",
+    "chunkid": 1
+  }
+}

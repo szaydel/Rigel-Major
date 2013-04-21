@@ -6,20 +6,52 @@ dtrace -n 'nfsv3:::op-write-start { self->t = timestamp; } nfsv3:::op-write-done
 
 dtrace -n 'nfsv3:::op-write-start { self->t = timestamp; } nfsv3:::op-write-done /self->t != 0 / { printf("%s spent %d ms in write(2)\n", args[1]->noi_curpath, (timestamp - self->t) / 1000000); } nfsv3:::op-write-done /self->t != 0/ { @[args[1]->noi_curpath] = count(); }'
 
+## Obtaining path information using fbt probes
+dtrace -n 'nfsv3:::op-read-done,nfsv3:::op-write-done { self->in = 1; } fbt:nfssrv:nfs3_fhtovp:return /self->in > 0/ {trace(args[1]->v_path != NULL ? stringof(args[1]->v_path) : "NULL");  self->in=0; }'
+
 ## Watch ARC
 dtrace -n 'sdt:::arc-delete,sdt:::arc-evict,sdt:::arc-hit,sdt:::arc-miss { @[probefunc] = count(); }'
 
+## Observe memory throttle events
+dtrace -qn 'fbt:zfs:arc_memory_throttle:entry /self->ct = 0/ { self->ct++; } tick-5sec {printf("%d : %d\n",walltimestamp/1000000,self->ct); }'
+
+dtrace -qn 'BEGIN { cnt=0 } ::txg_delay:entry { cnt+=1 } tick-1sec /cnt/ {printf("%d\n",cnt); cnt=0}'
+
+## Sum bytes read by processes in 10 seconds, aggregated by process
+dtrace -qn 'BEGIN {ct=0} sysinfo:::readch {@bytes[execname,probefunc] = sum(arg0); } tick-1sec {ct++; printf("%d\n",ct); } tick-1sec /ct >= 10/ {exit(0); }'
+
+## Amount of time in arc_adjust function
+dtrace -qn 'fbt:zfs:arc_adjust:entry { self->start = timestamp; } fbt:zfs:arc_adjust:return {@[walltimestamp,"Time(ms):"] = sum(timestamp - self->start); } tick-1sec {normalize(@,1000); printa("%-24Y %s %@d\n",@); trunc(@); }'
+
 ## Distribution of blocksizes for blocks added to ARC
 dtrace -n 'fbt:zfs:arc_buf_add_ref:entry {@t = quantize(args[0]->b_hdr->b_size); }'
+
+## Measure how quickly checksums are being calculated
+dtrace -n 'fbt:zfs:arc_cksum_verify:entry { self->start =timestamp; } fbt:zfs:arc_cksum_verify:return {@["Time us:"] = quantize(timestamp - self->start); }'
 
 ## Data vs. Metadata hits and misses in ARC
 dtrace -n 'sdt:zfs::arc-hit,sdt:zfs::arc-miss { @b["bytes"] = quantize(((arc_buf_hdr_t *)arg0)->b_size); } sdt:zfs::arc-hit,sdt:zfs::arc-miss { @t["type"] = quantize(((arc_buf_hdr_t *)arg0)->b_type); }'
 
 ## Same as above, with formatted output and a tick-1sec probe
-dtrace -qn 'sdt:zfs::arc-hit,sdt:zfs::arc-miss { @b["bytes"] = quantize(((arc_buf_hdr_t *)arg0)->b_size); } sdt:zfs::arc-hit,sdt:zfs::arc-miss { @t["type"] = quantize(((arc_buf_hdr_t *)arg0)->b_type);} tick-1sec {printa("\n   Bytes: %@d\n", @b); printa("\n   Type(0->data, 1->metadata): %@d\n", @t); clear(@b); clear(@t); }'
+dtrace -qn 'sdt:zfs::arc-hit,sdt:zfs::arc-miss { @b["bytes"] = quantize(((arc_buf_hdr_t *)arg0)->b_size); } sdt:zfs::arc-hit,sdt:zfs::arc-miss { @t["type"] = quantize(((arc_buf_hdr_t *)arg0)->b_type);} tick-1sec { printf("%Y\n", walltimestamp); printa("\n   Bytes: %@d\n", @b); printa("\n   Type(0->data, 1->metadata): %@d\n", @t); clear(@b); clear(@t); }'
+
+## Accesses into the ARC
+dtrace -n 'fbt:zfs:arc_access:entry {@[args[0]->b_type,args[0]->b_size,args[0]->b_birth] = count();} tick-1sec {printa(@); clear(@);}'
+
+## Quantize by size of arc buffer, and split into "Data" and "Metadata"
+dtrace -n '::arc_access:entry { @[args[0]->b_type == 1 ? "Medatadata" : "Data" ] = quantize(args[0]->b_size)} '
 
 ## Top system calls against ZFS storage, with 
 dtrace -n 'syscall::read:entry /fds[arg0].fi_fs == "zfs"/ { @[execname] = count(); }'
+
+
+dtrace -qn 'syscall:::entry /probefunc == "pwrite64" || probefunc == "pread64"/ {@[fds[arg0].fi_pathname,probefunc,arg2] = sum(arg2);} tick-5sec {normalize(@,1024*1024); printf("\n%Y\n",walltimestamp); printa(@); trunc(@);}'
+
+## Any open events
+dtrace -qn 'syscall::open*:entry { printf("%s %s", execname, copyinstr(arg0)); }''
+
+## Any open events associated with a particular command
+dtrace -qn 'syscall::open:entry { printf("%-16s %-16s\n", execname, copyinstr(arg0)); }' -c 'add_drv -m "* 0666 bin bin" '
 
 ## Which files on a ZFS filesystem are we touching, and is it read or write
 dtrace -qn 'syscall::read:entry,syscall::write:entry /fds[arg0].fi_fs == "zfs"/ { @[probefunc, fds[arg0].fi_pathname] = count(); printf("%Y  %s  %s\n", walltimestamp, stringof(probefunc), stringof(fds[arg0].fi_pathname)); } END { trunc(@,10); }'
@@ -35,6 +67,28 @@ dtrace -n 'fbt:zfs::entry { @[probefunc] = count(); }'
 dtrace -n 'fbt:zfs::entry { @func[probefunc] = count(); } tick-1sec { printf("\n%Y:\n", walltimestamp); trunc(@func,3); printa(@func); } { @func[probefunc] = count(); }'
 dtrace -n '::zfs::entry { @a[probefunc, stack()] = count(); } END {trunc(@a,7);}'
 
+## ZFS metaslab condition, percentage free in current metaslab
+dtrace -qn 'fbt::metaslab_pp_load:entry /arg0/ { this->pct = (args[0]->sm_space *100)/ args[0]->sm_size; @pct[walltimestamp, this->pct] = count();} tick-1s { printa("%Y %%pct free: %d count: %@d\n",@pct); trunc(@pct); }'
+
+## Metaslab allocation latency
+dtrace -n '::metaslab_alloc:entry { this->datetime = timestamp} ::metaslab_alloc:return / this->datetime /{ this->elapsed = timestamp
+- this->datetime; this->datetime = 0; printf ("%s=%-16d","Elapsed",this->elapsed/1000)}'
+
+## Same as above, using a quantize function
+dtrace -n '::metaslab_alloc:entry { self->ts = timestamp} ::metaslab_alloc:return / self->ts /{ this->elapsed = timestamp
+- self->ts; @lat["Time(us)"] = quantize(this->elapsed/1000); self->ts = 0} tick-5sec{ printa(@lat); trunc(@lat)}'
+
+
+dtrace -n '::metaslab_alloc:entry { this->child = stringof(args[0]->spa_dsl_pool->dp_mos_dir->dd_myname); this->parent = stringof(args[0]->spa_dsl_pool->dp_mos_dir->dd_parent->dd_myname); @parent[this->child, this->parent] = count(); }'
+
+dtrace -qn 'BEGIN {printf("Tracing ZFS metaslab alloc. metaslab_df_free_pct = %d %%\n",`metaslab_df_free_pct); } fbt::metaslab_pp_load:entry /arg0/ { this->pct = (args[0]->sm_space *100)/ args[0]->sm_size; @pct["%pct free"] = lquantize(this->pct,0,100,1); }'
+
+## ZFS writes by file with path
+dtrace -n 'fbt::zfs_write:entry {@[args[0]->v_path != NULL ? stringof(args[0]->v_path) : "null" ] = count(); }'
+
+## ZFS read and write latency lquantized for events between 10 and 50 microseconds
+dtrace -qn 'fbt::zfs_read:entry,fbt::zfs_write:entry {self->ts = vtimestamp; } fbt::zfs_read:return,fbt::zfs_write:return /self->ts/ {@[probefunc] = lquantize((vtimestamp - self->ts)/1000,50,200,20); self->ts=0; } END {printa("        Time(us) %48s %@d\n",@)}'
+
 ## Top 20 stack of ZFS-related functions
 dtrace -n 'fbt:zfs::entry { @func[probefunc, execname, stack()] = count(); } END {trunc(@func, 20); }'
 
@@ -45,6 +99,11 @@ dtrace -n 'fbt::kmem_cache_alloc:entry { @[args[0]->cache_name] = sum(args[0]->c
 dtrace -n 'profile:::profile-1001 /arg0/ { @[stack()] = count(); }'
 
 dtrace -n 'profile-1001 { @[stack()] = count(); } END {trunc(@,5); }'
+
+dtrace -qn 'BEGIN {this->c = 0;} profile-1001 {@[execname,func(arg0)] = count();} tick-1sec /this->c++/{} tick-1sec /this->c > 30/ {exit(0)}  END {trunc(@,10);}'
+
+## Get top 10 functions during last 10 seconds
+dtrace -qn 'profile-1001 /arg0/ { @[ func(arg0) ] = count(); } tick-10sec {trunc(@,10); printa(@); clear(@); }'
 
 ## Check for arc shrink events
 dtrace -n 'fbt::arc_shrink:* { @[probefunc, stack()] = count(); }'
@@ -58,19 +117,34 @@ dtrace -n 'mutex_enter:* { @st[stack()] = count(); } END {trunc(@st, 2); exit(0)
 ## Check for whether there is write throttling
 dtrace -n '::txg_delay:entry {@st[stack()] =count(); printf("%Y\n", walltimestamp)} END{ trunc(@st); exit(0)}'
 dtrace -n '::txg_delay:entry {printf("%s\n", stringof(args[0]->dp_spa->spa_name)); }'
+dtrace -n '::txg_delay:entry {@hit[walltimestamp] =count(); x=1} tick-1sec /x/ {printa("%Y %@d\n", @hit); trunc(@hit); x=0}'
+dtrace -qn '::txg_delay:entry /x=1/ { @cnt[args[0]] = count(); } tick-1sec /x/ {printf("%Y count: ",walltimestamp); printa("%@d\n",@cnt); trunc(@cnt); x=0; }'
 
 ## Observe zfs spa_sync events for pool name <poolname>
 dtrace -n 'fbt:zfs:spa_sync:entry /stringof(args[0]->spa_name) == "<poolname>"/ { printf("%Y",walltimestamp); }'
+dtrace -n '::spa_sync:entry /stringof(args[0]->spa_name) == "testp"/ { self->start = timestamp; } ::spa_sync:return / self->start && (this->delta = (timestamp - self->start) / 1000000) / { @["latency (ms)"] = quantize(this->delta); this->delta = 0; self->start = 0; }'
 
 ## Observe ARC shrink events
 dtrace -n '::arc_shrink:entry {@st[probefunc] =count(); printf("%Y\n", walltimestamp)} END{ trunc(@st); exit(0)}'
 dtrace -n '::arc_shrink:entry {@st[probefunc, stack()] =count(); printf("%Y\n", walltimestamp)} END{ printa(@st); exit(0)}'
+
+dtrace -n '::arc_shrink:entry {@st[probefunc, stack()] =count()} tick-5sec {printf("%Y\n", walltimestamp); printa(@st); printf("%s\n", ""); trunc(@st)}'
+
 
 dtrace -n 'fbt:zfs:arc_reclaim_needed:return /args[1]/ { printf("%Y   return=%d\n", walltimestamp, args[1]); } fbt:zfs:arc_shrink:entry {printf("%Y\n", walltimestamp);
 
 ## Run these two together on two screens
 dtrace -n 'fbt:zfs:arc_reclaim_needed:return /args[1]/ { printf("%Y :: return=%d\n", walltimestamp, args[1]); } fbt:zfs:arc_shrink:return {@[probefunc, args[0] ] = count(); printf("%Y :: return=%d\n", walltimestamp,args[0]);}'
 li=$(printf "%40s\n" " "|tr " " "x"); while :; do echo $li; date "+%c"; echo $li; echo ::arc|mdb -k|egrep '^p |^c |^size|arc_meta'; echo $li; sleep 5; done
+
+## Watch reads on any files that begin with /volumes
+dtrace -n 'fsinfo:::read / strstr(args[0]->fi_pathname, "/volumes") != NULL / { @C[args[0]->fi_fs, args[0]->fi_pathname] = count(); } tick-1sec   {printa(@C); clear(@C); }'
+
+
+dtrace -qn 'fsinfo:genunix:fop_write:write,fsinfo:genunix:fop_read:read / strstr(args[0]->fi_pathname, "/root") != NULL && args[0]->fi_fs == "zfs"/{ this->flag = 1; @sum[args[0]->fi_pathname] = sum(arg1); } tick-1sec /this->flag/ {printa("%s %@d\n",@sum); trunc(@sum); this->flag = 0; }'
+
+## Filesystem flush events, longest times
+dtrace -qn '::fsflush_do_pages:entry {self->st=vtimestamp } ::fsflush_do_pages:return {self->delta = vtimestamp - self->st;  @ = max(self->delta); self->st = 0} tick-10sec {normalize(@, 1000); printf("%d ", walltimestamp); printa("%@d\n", @); }'
 
 ## Observe arc_adapt events
 dtrace -n 'fbt::arc_adapt:entry { self->bytes = args[0]; @[stack(),args[0],args[1]->arcs_size] = count(); } fbt::arc_adapt:entry /self->bytes != 0/ {printf("%Y Adjust by %d Kb", walltimestamp, self->bytes/1024); self->bytes = 0; } END{trunc(@,5); }'
@@ -106,3 +180,106 @@ dtrace -n 'nfsv3:nfssrv:rfs3_getattr:op-getattr-done { @[probefunc,args[0]->ci_r
 ## Observe top 10 function calls and source commands, including name and PID
 ## that triggered these function calls
 dtrace -qn 'syscall:::entry /execname != "dtrace"/ {@num[pid, execname, probefunc] = count(); } tick-1sec {trunc(@num, 10); printa("%d\t%s\t%s\t%@d\n", @num); clear(@num); }'
+
+dtrace -qn 'syscall:::entry /probefunc == "pwrite64" || probefunc == "pread64"/ {@[probefunc,arg2] = sum(arg2);} tick-1sec {normalize(@,1024*1024); printf("\n%Y\n",walltimestamp); printa(@); trunc(@);}'
+
+## Identifying a specific file, and tracing it
+dtrace -n syscall::write:entry'/strstr(fds [arg0].fi_pathname,"nohup.out")!=0/{printf("%s wrote to %s \n",execname,fds[arg0].fi_pathname)}
+
+## Observe vfs level file activity, in this case `open` events
+dtrace -n 'fsinfo::: /probename == "open"/ { @[probefunc, probename, args[0]->fi_fs,args[0]->fi_pathname] = count(); }'
+
+## Filesystem latency observed averaged and with quantize function
+dtrace -n 'fbt::fop_read:entry { self->start = timestamp; } fbt::fop_read:return /self->start/ { @[execname, "ns"] = avg(timestamp - self->start); self->start = 0; }'
+
+dtrace -n 'fbt::fop_read:entry { self->start = timestamp; } fbt::fop_read:return /self->start/ { @[execname, "ns"] = quantize(timestamp - self->start); self->start = 0; }'
+
+## Distribution of blocksizes for blocks whose size is not power of 2
+dtrace -n 'dmu_buf_hold_array_by_dnode:entry /args[0]->dn_datablkshift == 0 && args[0]->dn_objset->os_dsl_dataset/ {@[args[3] != NULL ? "Reads" : "Writes"] = quantize(args[0]->dn_datablksz); }'
+
+## ZFS only latency measured on fop_read function
+dtrace -n 'fbt::fop_read:entry /args[0]->v_op->vnop_name == "zfs"/ { self->start = timestamp; } fbt::fop_read:return /self->start/ { @[execname, "ns"] = avg(timestamp - self->start); self->start = 0; }'
+
+dtrace -n 'fbt::fop_read:entry /args[0]->v_op->vnop_name == "zfs"/ { self->start = timestamp; } fbt::fop_read:return /self->start/ { @[execname, "ns"] = quantize(timestamp - self->start); self->start = 0; }'
+
+## Measure total bandwidth
+dtrace -qn 'fbt:genunix:biodone:entry {@["sum"] = sum(args[0]->b_bcount); } tick-1sec { normalize(@,(1024 * 1024)); printa("%@d MB/s\n",@); trunc(@); }'
+
+## Check overhead of the clock function 
+dtrace -n 'fbt:genunix:clock:entry {self->ts = vtimestamp; } fbt:genunix:clock:return /self->ts/ {@=quantize(vtimestamp-self->ts)}'
+
+## Check time for switching threads off and onto CPU
+dtrace -n 'sched:::off-cpu{ ts[cpu] = timestamp; } sched:::on-cpu {@ = quantize(timestamp - ts[cpu]); ts[cpu] = 0; }'
+
+## On-cpu in microseconds
+dtrace -n 'sched:::on-cpu{ ts[cpu] = timestamp; } sched:::off-cpu {@ = quantize((timestamp - ts[cpu]) / 1000); ts[cpu] = 0; } END {printa(@); }'
+
+
+dtrace -qn 'fbt:genunix:bdev_strategy:entry
+/ args[0]->b_flags & B_WRITE /
+{
+self->st = timestamp; 
+self->bs = args[0]->b_bufsize; 
+self->addr = args[0]->b_un.b_addr;
+addr = args[0]->b_un.b_addr;
+} 
+
+fbt:genunix:bdev_strategy:return 
+
+/self->st && self->addr/
+{
+@[self->bs/1024] = lquantize((timestamp - self->st) / 1000,20,100,10);
+total_t = (timestamp - self->st);
+@avg_t["avg_time"] = avg(total_t/1000);
+self->bs = 0;
+self->st = 0;
+self->addr = 0;
+}
+
+/* io:genunix::done
+
+/addr == args[0]->b_addr && total_t > 1000/
+
+{
+self->path = args[1]->dev_pathname; 
+@long["avg microsecs", self->path] = avg(total_t);
+ts = 0;
+addr = 0;
+total_t = 0;
+} */
+
+END
+{
+printa("\t time(us)\t\t\t blocksize (KB): %d %24@d\n",@);
+/* printa("Slow disks: %s -- %@d\n",@long); */
+printa(@avg_t);
+}'
+
+dtrace -qn 'fbt:genunix:bdev_strategy:entry {self->ts = vtimestamp; self->bs = args[0]->b_bufsize; self->dev = args[0]->b_edev} fbt:genunix:bdev_strategy:return /self->ts/ {@[self->bs, self->dev] = lquantize((vtimestamp - self->ts) / 1000,20,90,10); self->bs=0; self->ts=0; }'
+
+## Trace iSCSI sessions
+dtrace -n 'sbd_alloc_ats_handle:entry{trace(args[0]->task_session); trace(((sbd_lu_t *)(args[0]->task_lu->lu_provider_private))->sl_ats_state.as_cur_ats_handle); printf("%Y",walltimestamp); }'
+
+## Login/Logout events with iscsi
+
+dtrace -n 'iscsi*::: { @[probename] = count(); }'
+
+## Latency at the socket layer, measuring time in various vop functions, first one is grouped by exacname, second by probefunc.
+dtrace -qn '::socket_vop_*:entry { self->start = timestamp; @[probefunc] = count(); } ::socket_vop_*:return /self->start/ { @tt["Time (us)",execname] = lquantize((timestamp - self->start) / 1000,1,12,1); self->start = 0; } END {printa("%18s        OP: %s %@d\n",@tt); printa("%18s        %@d\n",@funcnt); }'
+
+dtrace -qn '::socket_vop_*:entry { self->start = timestamp; } ::socket_vop_*:return /self->start/ { this->delta = timestamp - self->start; @tt["Time(us):",probefunc] = lquantize((timestamp - self->start) / 1000,1,12,1); @funcnt[probefunc] = avg(this->delta/1000); self->start = 0; } END {printa("%18s        OP: %s %@d\n",@tt); printa("%18s        Avg. Time(us): %@d\n",@funcnt); }'
+
+## MAX Latency on a socket_vop_write operation
+dtrace -qn '::BEGIN { ct=0 }  ::socket_vop_write:entry {self->st = vtimestamp; } ::socket_vop_write:return { self->delta = vtimestamp - self->st; @ = max(self->delta/1000); ct++; } tick-10sec /ct > 0/ {printf("%d ", walltimestamp); printa("%@d\n", @); exit(0); }'
+
+## Watch zil_commit latency
+dtrace -qn '::zil_commit:entry {self->seq = args[0]->zl_lr_seq; self->ts = timestamp; } ::zil_commit:return / self->seq && (this->delta = (timestamp - self->ts) / 1000) / {@["latency (us)"] = quantize(this->delta); this->delta = 0; self->ts = 0; self->seq = 0; }'
+
+dtrace -qn '::zil_commit:entry {self->seq = args[0]->zl_lr_seq; self->ts = timestamp; } ::zil_commit:return / self->seq && (this->delta = (timestamp - self->ts) / 1000) > 4096 / {@["latency (us)"] = quantize(this->delta); this->delta = 0; } ::zil_commit:return / self->seq && (this->delta = (timestamp - self->ts) / 1000) > 16384 / {@["(Above 16ns) latency (us)"] = quantize(this->delta); this->delta = 0; } ::zil_commit:return {self->ts = 0; }'
+
+## DNLC cache lookups hits v. misses
+dtrace -n 'BEGIN {hits = 0; misses = 0;} fbt:genunix:dnlc_lookup:return {hits   += arg1 == 0 ? 0 : 1; misses += arg1 == 0 ? 1 : 0; } tick-1sec {printf("hits: %d misses: %d\n",hits, misses); hits = 0; misses = 0; }'
+
+dtrace -qn 'fbt:genunix:dnlc_lookup:return {@dnlc[arg1 == 0 ? "misses" : "hits"] = count(); } tick-1sec {printf("%d DNLC entries: %d    ",walltimestamp/1000000,`dnlc_nentries); printa("%-8s    %-8@d", @dnlc); printf("\n"); clear(@dnlc);}'
+
+dtrace -qn 'dnlc_lookup:return{printf("%d hits: %d, misses: %d ratio: %d\n", walltimestamp/1000000, genunix`ncs.ncs_hits.value.ui64, genunix`ncs.ncs_misses.value.ui64, 100*genunix`ncs.ncs_hits.value.ui64/(genunix`ncs.ncs_misses.value.ui64+genunix`ncs.ncs_hits.value.ui64) );}'

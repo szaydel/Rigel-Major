@@ -1,0 +1,6 @@
+#!/bin/bash 
+## Create boot environment on solaris
+beadm create -d 'Pre-vlan-7' sol-11-$(date '+%Y%m%d-%T'-001)
+
+## List snapshot names
+beadm list -H|cut -d';' -f1

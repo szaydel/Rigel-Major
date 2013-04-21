@@ -1,4 +1,5 @@
-# /etc/bash.bashrc
+#!/bin/echo 'Please, do not execute this file, only source.'
+# /etc/vanilla-svr.bashrc
 #
 # This file is sourced by all *interactive* bash shells on startup,
 # including some apparently interactive shells such as scp and rcp
@@ -40,6 +41,10 @@ shopt -s autocd
 # filename expansion.
 shopt -s dotglob
 
+# If set, the extended pattern matching features described above (see
+# Section 3.5.8.1 [Pattern Matching], page 24) are enabled.
+shopt -s extglob
+
 # If set, the history list is appended to the file named by the value of
 # the HISTFILE variable when the shell exits, rather than overwriting
 # the file.
@@ -50,19 +55,21 @@ shopt -s histappend
 # commands.
 shopt -s cmdhist
 
-#-----------------------------------------------------------------------------
-# Check for 256-color terminal and export TERM
-#-----------------------------------------------------------------------------
-if [[ "$(tput -Tgnome-256color colors)" = "256" ]]; then
-    TERM=gnome-256color
-elif [[ "$(put -Txterm-256color colors)" = "256" ]]; then
-    TERM=xterm-256color
-elif tput -T gnome; then
-    TERM=gnome
-else
-    TERM=xterm
-fi
-export TERM
+# If set, and Readline is being used, Bash will attempt to perform
+# hostname completion when a word containing a ‘@’ is being completed 
+# (see Section 8.4.6 [Commands For Completion], page 110).
+# This option is enabled by default.
+shopt -s hostcomplete
+
+# If set, Bash attempts spelling correction on directory names during
+# word completion if the directory name initially supplied does not
+# exist.
+shopt -s dirspell
+
+# If set, patterns which fail to match filenames during filename expansion
+# result in an expansion error
+shopt -s lithist
+
 
 # Change the window title of X terminals 
 case ${TERM} in
@@ -75,35 +82,7 @@ case ${TERM} in
 esac
 # set a fancy prompt (non-color, unless we know we "want" color)
 case "${TERM}" in
-    xterm-256color|xterm-color) color_prompt=yes;;
-esac
-
-#-----------------------------------------------------------------------------
-# Generic functions
-#-----------------------------------------------------------------------------
-
-_upper_to_lower()
-{
-"$@"|tr '[:upper:]' '[:lower:]'
-}
-
-_lower_to_upper()
-{
-"$@"|tr '[:lower:]' '[:upper:]'
-}
-
-#-----------------------------------------------------------------------------
-# OS-specific Actions
-#-----------------------------------------------------------------------------
-OS_type=$(_upper_to_lower uname -o)
-
-case "${OS_type}" in
-    "solaris")
-        alias acl_ls='/usr/bin/ls'
-        alias acl_chmod='/usr/bin/chmod'
-        ;;
-    "gnu/linux")
-        ;;
+    xterm-256color|xterm-color|gnome) color_prompt=yes;;
 esac
 #use_color=false
 
@@ -130,9 +109,119 @@ match_lhs=""
 #             eval $(dircolors -b /etc/DIR_COLORS)
 #         fi
 # fi
+#-----------------------------------------------------------------------------
+# Generic functions
+#-----------------------------------------------------------------------------
+_upper_to_lower()
+{
+"$@"|tr '[:upper:]' '[:lower:]'
+}
+
+_lower_to_upper()
+{
+"$@"|tr '[:lower:]' '[:upper:]'
+}
+
+#-----------------------------------------------------------------------------
+# OS-specific Actions
+#-----------------------------------------------------------------------------
+if [[ -x /usr/gnu/bin/uname ]]; then
+    ## Solaris and variants may be using `/usr/gnu/bin/uname`
+    uname_cmd=/usr/gnu/bin/uname
+
+    ## Normal GNU/Linux distros will use `/bin/uname`
+    elif [[ -x /bin/uname ]]; then
+        uname_cmd=/bin/uname
+    else uname_cmd=$(which uname)
+fi
+
+if [[ -f /opt/custom/is_smartos ]]; then
+    OS_type=smartos
+    else
+    OS_type=$(_upper_to_lower ${uname_cmd} -o)
+fi
+
+
+case "${OS_type}" in
+    "smartos")
+        export TZ="US/Pacific"
+        ;;
+
+    "solaris")
+        ## Solaris 11 seems to have partial support for xterm-256color
+        ## as such, we will force xterm-color instead
+        is_oracle=''
+        is_oracle=$(_upper_to_lower cat /etc/release|head -1|sed -e 's/^  *//g'|cut -d' ' -f1)
+
+        ## Add all Solaris and variant aliases here
+        alias acl_ls='/usr/bin/ls'
+        alias acl_chmod='/usr/bin/chmod'
+
+        ## Test to see if `/usr/bin/gnu` is in the path, if not, add it
+        gnu_inpath=N
+        for iter in $(echo $PATH|tr ':' ' '); do 
+            [[ $iter = '/usr/gnu/bin' ]] && gnu_inpath=Y
+        done
+
+        ## If `/usr/gnu/bin` is present, and not already in the path,
+        ## we need to make sure to prepend it to existing $PATH env. variable
+        if [[ -d /usr/gnu/bin && ${gnu_inpath} = 'N' ]]; then
+            export PATH=~/bin:/usr/gnu/bin:$PATH
+        else
+            export PATH=~/bin:$PATH
+        fi
+        unset gnu_inpath
+        ;;
+
+    "gnu/linux")
+        grep_cmd=$(which grep)
+        OS_dist=$(_upper_to_lower sed -n '1p' /etc/issue|cut -d' ' -f1)
+        case "${OS_dist}" in
+            "centos") export DISTRO=centos
+                ;;
+            "ubuntu") export DISTRO=ubuntu 
+                ;;
+            *) ## Do something if anything else
+                printf "%s\n" "Your operating system is not known!"
+                ;;
+        esac
+
+        ;;
+esac
+
+#-----------------------------------------------------------------------------
+# Check for 256-color terminal and export TERM
+#-----------------------------------------------------------------------------
+## Build array of expected terminal types from most to least preferred
+TERM_TYPE=(
+xterm-256color
+gnome-256color
+xterm-color
+xterm
+gnome
+)
+
+## Walk through array of terminal types TERM_TYPE and settle on one
+## of the types, hopefully one of first two
+for term in "${TERM_TYPE[@]}"; do
+    ## If OS is oracle, due to Solaris 10's and 11's partial xterm-256color
+    ## support, let's not use it
+    if [[ ${is_oracle} = 'oracle' ]]; then
+        export TERM=xterm-color
+        unset is_oracle
+        break
+    fi
+    if [[ $(tput -T "$term" colors 2>/dev/null) ]]; then
+        echo "Setting TERM environment variable to $term"
+        export TERM="$term"
+        break
+    fi
+done
+
 # enable color support of ls and also add handy aliases
 if [[ -x /usr/bin/dircolors ]]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+
     alias ls='ls --color=auto'
     alias dir='dir --color=auto'
     alias vdir='vdir --color=auto'
@@ -227,9 +316,9 @@ fi
 
 prompt_symbol() {
 if [ "${UID}" -eq "0" ]; then
-        printf "[root]⌘"
+        printf "[root]⌘ "
     else
-        printf "⌘"
+        printf "⌘ "
 fi
 
 }
@@ -287,8 +376,28 @@ fi
 #-----------------------------------------------------------------------------
 # Proxy/Tunneling Settings
 #-----------------------------------------------------------------------------
-export http_proxy="http://10.10.100.5:3128/"
-export https_proxy="http://10.10.100.5:3128/"
+if [[ ! -f ~/noproxy ]]; then 
+    export http_proxy="http://10.10.100.5:3128/"
+    export https_proxy="http://10.10.100.5:3128/"
+fi
 
 # Try to keep environment pollution down, EPA loves us.
 unset use_color safe_term match_lhs
+
+#-----------------------------------------------------------------------------
+# Environment variables
+#-----------------------------------------------------------------------------
+if [[ -x /usr/bin/vim ]]; then
+    export EDITOR=/usr/bin/vim
+elif [[ -x /usr/bin/nano ]]; then
+    export EDITOR=/usr/bin/nano
+else
+    printf "%s\n" "[WARN] Unable to find an editor, and export \$EDITOR variable"
+fi
+
+#-----------------------------------------------------------------------------
+# Additional Customizations
+#-----------------------------------------------------------------------------
+if [[ -f ~/.envrc ]]; then
+    . ~/.envrc
+fi

@@ -198,3 +198,11 @@ zdb -U /path/to/cache/file -C -e <poolname>
 
 ## entry for sd.conf to deal with power issues on Hard Drives
 sd-config-list="SEAGATE ST100FM0002","power-condition:false";
+
+## Observe amount of swap and memory related tunables on system
+for i in {minfree,desfree,reserve}; do echo "swapfs_$i/D" | mdb -k|awk '{print $1,($2*4096),"bytes"}'; done
+for i in {minfree,desfree,reserve}; do echo "swapfs_$i/D" | mdb -k|awk '{print $1,(($2*4)/1024),"Mbytes"}'; done
+
+
+## Get JBOD layout
+rtdmgr -E+

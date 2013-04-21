@@ -1,0 +1,10 @@
+#!RESULT OK
+#!CONNECTION ldap://server-lab2.homer.lab:389
+#!DATE 2012-03-24T14:12:29.000
+dn: dc=opendj,dc=homer,dc=lab
+changetype: modify
+add: aci
+aci: (target="ldap:///dc=opendj,dc=homer,dc=lab") (targetattr = "* || +")(vers
+ ion 3.0;acl "Admins have Full ACI"; allow(all, proxy, import, export) groupdn
+  = "ldap:///cn=LD_ldap_admins,ou=admins,dc=opendj,dc=homer,dc=lab";)
+-

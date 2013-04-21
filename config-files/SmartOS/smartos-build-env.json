@@ -1,0 +1,29 @@
+{
+  "alias": "racktop_build_environment-01",
+  "autoboot": false,
+  "brand": "joyent",
+  "fs_allowed": "ufs,pcfs,tmpfs",
+  "hostname": "rt-build-01.homer.lab",
+  "image_uuid": "01b2c898-945f-11e1-a523-af1afbe22822",
+  "max_physical_memory": 32768,
+  "quota": 15,
+  "ram": 16384,
+  "resolvers": [
+    "10.10.90.1"
+  ],
+  "tmpfs": 8192,
+  "vcpus": 2,
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "ip": "10.10.3.10",
+      "netmask": "255.255.0.0",
+      "gateway": "10.10.90.1"
+    }
+  ]
+internal_metadata": {
+    "project": "moosefs",
+    "role": "chunkserver",
+    "chunkid": 1
+  }
+

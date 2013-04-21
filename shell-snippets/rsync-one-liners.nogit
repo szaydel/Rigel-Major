@@ -1,0 +1,7 @@
+[0] % rsync rsync@server-vm5::pool_sandb_0_d00      [ 03/04/11 9:26:06 ] (5482)
+drwxr-xr-x           3 2011/03/01 10:27:31 .
+-rw-r--r--      102400 2011/03/01 10:27:31 a_test_file
+ testd
+[0] % rsync -avz . rsync@server-vm5::pool_sandb_0_d00
+sending incremental file list
+

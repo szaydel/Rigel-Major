@@ -1,0 +1,57 @@
+#
+# Nexenta Systems, Inc
+# RSF-1 3.x configuration file.
+#
+
+# Optional global defaults & definitions
+CLUSTER_NAME SAN01
+DISC_HB_BACKOFF 20,3,3600
+POLL_TIME 1
+REALTIME 1
+EVENT_NOTIFY "/opt/HAC/RSF-1/bin/event_notifier"
+IPDEVICE_MONITOR 3,2
+
+# Machines section
+MACHINE jets
+ NET patriots
+ DISC patriots /dev/rdsk/c0t5000C5002BF0432Bd0s0:512:518
+
+MACHINE patriots
+ NET jets
+ DISC jets /dev/rdsk/c0t5000C5002BF0432Bd0s0:518:512
+
+SERVICE dataset1 san01.cloud360.com "NexentaStor dataset1 ZFS service"
+ OPTION "sdir=appliance ip_up_after=1 ip_down_before=1 zfs_export_fail_reboot=n zfs_mhdc_disable=n"
+ INITIMEOUT 180
+ RUNTIMEOUT 8
+ MOUNT_POINT "/volumes/dataset1"
+ SERVER jets
+  EXTRA_IPDEVICE "aggr100001"
+   IPDEV_ADDRESS 172.16.6.245 / 255.255.255.0
+  EXTRA_IPDEVICE "aggr102001"
+   IPDEV_ADDRESS 10.0.1.1 / 255.255.255.0
+  EXTRA_IPDEVICE "aggr200001"
+   IPDEV_ADDRESS 172.16.7.245 / 255.255.255.0
+  IPDEVICE "aggr1"
+ SERVER patriots
+  EXTRA_IPDEVICE "aggr100001"
+   IPDEV_ADDRESS 172.16.6.245 / 255.255.255.0
+  EXTRA_IPDEVICE "aggr102001"
+   IPDEV_ADDRESS 10.0.1.1 / 255.255.255.0
+  EXTRA_IPDEVICE "aggr200001"
+   IPDEV_ADDRESS 172.16.7.245 / 255.255.255.0
+  IPDEVICE "aggr1"
+
+SERVICE cloud01 storage.cloud360.com "NexentaStor cloud01 ZFS service"
+ OPTION "sdir=appliance ip_up_after=1 ip_down_before=1 zfs_export_fail_reboot=n zfs_mhdc_disable=n"
+ INITIMEOUT 20
+ RUNTIMEOUT 8
+ MOUNT_POINT "/volumes/cloud01"
+ SERVER patriots
+  EXTRA_IPDEVICE "aggr103001"
+   IPDEV_ADDRESS 10.155.0.2 / 255.255.0.0
+  IPDEVICE "aggr103001"
+ SERVER jets
+  EXTRA_IPDEVICE "aggr103001"
+   IPDEV_ADDRESS 10.155.0.2 / 255.255.0.0
+  IPDEVICE "aggr103001"

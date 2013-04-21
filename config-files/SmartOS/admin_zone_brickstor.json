@@ -1,0 +1,27 @@
+{
+  "alias": "rt_brickstor_admin_zone",
+  "hostname": "project_lhc.local",
+  "brand": "joyent",
+  "dataset_uuid": "${default_uuid}",
+  "autoboot": true,
+  "vcpus": 1,
+  "ram": 256,
+  "resolvers": [
+    "8.8.8.8",
+    "8.8.4.4"
+  ],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "ip": "10.255.0.100",
+      "netmask": "255.255.0.0",
+      "gateway": "10.255.1.30"
+    },
+    {
+      "nic_tag": "external",
+      "ip": "dhcp",
+      "gateway": "10.0.3.2",
+      "primary": "true"
+    }
+  ]
+}

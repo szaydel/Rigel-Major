@@ -1,0 +1,38 @@
+# 
+# Configuration file borrows a little bit from Richard Elling's original
+# vdbench characterization profiles. This particular profile will run read and write
+# tests with identical recordsize, but a split of 60% read to 40% write
+# at 32 threads.
+#
+# Filesystem characterization using 128KB random I/O for vdbench
+#
+# Note: file storage definition (fsd) set elsewhere
+#
+# Company:		   RackTop Systems
+# Author:          Sam Zaydel
+# Version:         1.0.4
+# Date:            07/13/2012
+# Name:			   char_rand_128k_fs_60_percent_read
+
+# File Workload Definitions (fwd)
+# fwd=fwd1,fsd=fsd*,operation=read,fileio=random,fileselect=random,stopafter=1000
+# fwd=fwd2,fsd=fsd*,operation=write,fileio=random,fileselect=random,stopafter=1000
+
+fwd=fwd_W,fsd=fsd*,rdpct=60,fileio=random,fileselect=random,stopafter=100,xfersize=4k,openflags=o_sync
+
+
+# Run Definitions (rd)
+
+## Run Definition with following settings:
+##
+# => 128k Recordsize, fixed
+# => Unlimited rate of I/O
+# => Mixed Read/Write operation
+# => Data structure is created during start of run
+# => Each run will last 240 seconds (4min)
+# => Threads set to 32 for all runs
+# => Percentage of reads to writes is set to 60/40% split
+##
+rd=rd_format_dataset,fwd=fwd_W,fwdrate=max,format=only
+rd=rd_randW_4k_32thr,fwd=fwd_W,fwdrate=max,operation=write,format=no,elapsed=240,interval=1,threads=32,xfersize=128k
+rd=rd_randR_4k_32thr,fwd=fwd_W,fwdrate=max,operation=read,format=no,elapsed=240,interval=1,threads=32,xfersize=128k

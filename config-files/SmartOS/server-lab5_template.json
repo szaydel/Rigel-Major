@@ -1,0 +1,29 @@
+{
+  "alias": "server-lab5",
+  "hostname": "server-lab5.homer.lab",
+  "brand": "kvm",
+  "vcpus": 1,
+  "autoboot": false,
+  "ram": 256,
+  "resolvers": [
+    "10.10.90.1"
+  ],
+  "disks": [
+    {
+      "boot": true,
+      "model": "virtio",
+      "size": 20480,
+      "compression": "on"
+    }
+  ],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "model": "virtio",
+      "ip": "10.10.88.50",
+      "netmask": "255.255.0.0",
+      "gateway": "10.10.90.1",
+      "primary": 1
+    }
+  ]
+}

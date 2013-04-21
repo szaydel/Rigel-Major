@@ -1,4 +1,53 @@
+## Zabbix Agent on BrickStor
+
+./configure --enable-agent --with-libcurl --with-net-snmp --with
+-ssh2 --prefix=/racktop/usr/local --sysconfdir=/racktop/etc --localstatedir=/racktop/var
+
 ## syslog-ng compile
 
 ./configure --prefix /opt/syslog-ng --enable-debug --enable-ssl --enable-tcp-wrapper --enable-sun-streams EVTLOG_LIBS=/opt/eventlog/lib EVTLOG_CFLAGS=/opt/eventlog/include/eventlog
 
+
+## Python 2.7.3 on BrickStor
+./configure \
+  --disable-ipv6 \
+  --prefix=/racktop/usr/local/lib/python2.7.3
+
+
+## MooseFS Chunk server for brickstor
+CC=/opt/sunstudio12.1/bin/cc ./configure \
+--prefix=/racktop/mfsclus \
+--sysconfdir=/racktop/etc \
+--localstatedir=/racktop/var/lib \
+--without-zlib \
+--with-default-user=mfs \
+--with-default-group=mfs \
+--disable-mfsmaster
+
+## MooseFS master server on Ubuntu
+./configure \
+--prefix=/racktop/mfsclus \
+--sysconfdir=/racktop/etc \
+--localstatedir=/racktop/var/lib \
+--with-default-user=mfs  \
+--with-default-group=mfs \
+--disable-mfschunkserver
+
+## MooseFS client on Ubuntu
+./configure \
+--prefix=/racktop/mfsclus \
+--sysconfdir=/racktop/etc \
+--localstatedir=/racktop/var/lib \
+--with-default-user=mfs  \
+--with-default-group=mfs \
+--disable-mfsmaster \
+--disable-mfschunkserver
+
+## GlusterFS brick on SmartOS Smart machine
+CFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib" \
+./configure \
+--disable-fuse-client \
+--disable-fusermount \
+--disable-epoll \
+--disable-ibverbs \
+--disable-georeplication

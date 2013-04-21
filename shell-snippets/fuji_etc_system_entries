@@ -1,0 +1,74 @@
+*** Tuning done during install on 08/15/2012 by Sam Zaydel ***
+*** => Please, do not make changes, unless advised by a RackTop
+*** => support expert
+***
+set ddi_msix_alloc_limit = 6
+
+********************************************************************************
+** Reduce io timeout to 8 seconds from default of 60 seconds
+** Reduce retry io count for failed io to 3, for a total of
+** set sd:sd_io_time * sd:sd_retry_count = 24 seconds of possible
+** pause in io, until further actions are taken. We want to keep this
+** under 60 seconds if at all possible.
+********************************************************************************
+set sd:sd_io_time = 8
+set sd:sd_retry_count = 3
+set scsi_reset_delay = 1500
+
+set swapfs_minfree = 65536
+set nfs:nfs3_max_transfer_size_cots = 131072
+set ncsize = 10000000
+********************************************************************************
+** Tuning ARC for a high memory system, above 96GB of RAM.
+** The goal is to keep ARC from shrinking violently, leading to possible
+** periodic outages during large shrink events. This is very common with VMWare
+** environments, where vMotion could lead to a lot of blocks being purged from
+** ARC at once. We protect from this by tuning zfs_arc_min to a value that's not
+** much smaller than MAX of system memory. This could create memory pressure
+** and may need to be tuned lower. This does require observation of the system
+** to correctly adjust this threshold.
+********************************************************************************
+set zfs:zfs_arc_shrink_shift  = 9
+set zfs:zfs_arc_p_min_shift  = 8
+* set zfs:zfs_arc_meta_limit = 0x1800000000
+set zfs:zfs_txg_timeout  = 5
+set zfs:zfs_txg_synctime_ms = 4000
+set zfs:zfs_no_write_throttle = 1
+set zfs:zfs_vdev_cache_size = 0
+set zfs:zfs_vdev_max_pending = 10
+set zfs:zfs_arc_min = 2e63000000
+
+*For NFS throughput 
+set rpcmod:clnt_max_conns = 8 
+
+** Set nfs{3,4}_bsize only if Brickstor is a NFS and NFS server. This parameter
+** is only applicable is we are mounting filesystems from elsewhere
+set nfs:nfs3_bsize = 1048576
+set nfs:nfs4_bsize = 1048576
+** End nfs{3,4}_bsize
+
+** Maximum transfer size should be set to something lower than the default of 1MB
+** which seems to lead to a somewhat bursty behavior.
+** This is the default of 1MB, depending on situation 128K may be better
+** as it matches well with the maximum IO size which ZFS can perform.
+set nfs:nfs3_max_transfer_size_cots = 1048576 
+set nfs:nfs4_max_transfer_size_cots = 1048576
+
+set rpcmod:cotsmaxdupreqs = 8192
+set rpcmod:maxdupreqs = 8192
+
+
+## Bigswitch tuning parameters
+##
+set sd:sd_io_time = 8
+set swapfs_minfree = 65536
+set zfs:zfs_txg_timeout  = 5
+set zfs:zfs_txg_synctime_ms = 4000
+set zfs:zfs_no_write_throttle = 1
+set zfs:zfs_arc_shrink_shift  = 9
+set zfs:zfs_arc_p_min_shift  = 8
+set nfs:nfs3_max_transfer_size_cots = 131072
+set ncsize = 10000000
+set rpcmod:clnt_max_conns = 8
+set rpcmod:cotsmaxdupreqs = 8192
+set rpcmod:maxdupreqs = 8192
